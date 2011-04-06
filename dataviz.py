@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Apr  6 17:50:50 2011 (+0530)
+# Last-Updated: Wed Apr  6 19:08:14 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1251
+#     Update #: 1287
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -72,6 +72,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.h5tree = H5TreeWidget(self.leftDock)
         self.leftDock.setWidget(self.h5tree)
         self.dataList = UniqueListView()
+        self.dataList.setModel(UniqueListModel(QtCore.QStringList([])))
         self.rightDock.setWidget(self.dataList)
         self.setCentralWidget(self.mdiArea) # for testing only
         self.__setupActions()
@@ -90,6 +91,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.cascadeAction, QtCore.SIGNAL('triggered()'), self.mdiArea.cascadeSubWindows)
         self.tileAction = QtGui.QAction('&Tile', self)
         self.connect(self.tileAction, QtCore.SIGNAL('triggered()'), self.mdiArea.tileSubWindows)
+
+        self.h5tree.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
+        self.connect(self.h5tree, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__setupDataSelectionMenu)
         
     def __setupMenuBar(self):
         fileMenu = self.menuBar().addMenu('&File')
@@ -105,6 +109,20 @@ class DataVizWidget(QtGui.QMainWindow):
             print 'Opening:', name
             self.h5tree.addH5Handle(str(name))
 
+    def __setupDataSelectionMenu(self, point):
+        print 'Custom context menu ...'
+        self.dataMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
+        self.selectForRasterAction = QtGui.QAction(self.tr('Raster Plot'), self.h5tree)
+        self.connect(self.selectForRasterAction, QtCore.SIGNAL('triggered()'), self.__selectForRaster)
+        self.dataMenu.addAction(self.selectForRasterAction)
+        self.dataMenu.popup(point)
+
+    def __selectForRaster(self):
+        item = self.h5tree.currentItem()
+        path = item.path()
+        print 'Selected node', path, 'for plotting.'
+        self.dataList.model().insertItem(path)
+        
     def __doRasterPlot(self):
         pass
         

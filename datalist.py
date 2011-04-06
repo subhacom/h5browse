@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sun Mar  6 14:00:42 2011 (+0530)
+# Last-Updated: Wed Apr  6 19:11:55 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1425
+#     Update #: 1436
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -178,6 +178,11 @@ class UniqueListModel(QtGui.QStringListModel):
                 item[Qt.Qt.ItemDataRole(key)] = value
             data.append(item)
         return data
+
+    def insertItem(self, data):
+        if not self.insertRow(self.rowCount()):
+            raise Exception('Failed to append row.')
+        self.setData(self.createIndex(self.rowCount()-1,0), QtCore.QVariant(data))
         
 class UniqueListView(QtGui.QListView):
     def __init__(self, *args):
