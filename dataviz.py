@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Apr  6 19:08:14 2011 (+0530)
+# Last-Updated: Thu Apr  7 12:32:32 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1287
+#     Update #: 1336
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -56,6 +56,8 @@
 # Code:
 
 import sys
+import numpy
+
 from PyQt4 import QtCore, QtGui, Qt
 from spikeplot import SpikePlotWidget
 from hdftree import H5TreeWidget
@@ -70,6 +72,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.rightDock = QtGui.QDockWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.rightDock)
         self.h5tree = H5TreeWidget(self.leftDock)
+        self.h5tree.setSelectionMode(self.h5tree.MultiSelection)
         self.leftDock.setWidget(self.h5tree)
         self.dataList = UniqueListView()
         self.dataList.setModel(UniqueListModel(QtCore.QStringList([])))
@@ -92,6 +95,12 @@ class DataVizWidget(QtGui.QMainWindow):
         self.tileAction = QtGui.QAction('&Tile', self)
         self.connect(self.tileAction, QtCore.SIGNAL('triggered()'), self.mdiArea.tileSubWindows)
 
+        self.rasterPlotAction = QtGui.QAction('&Raster plot', self)
+        self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
+
+        self.clearRasterListAction = QtGui.QAction('&Clear raster plot list', self)
+        self.connect(self.clearRasterListAction, QtCore.SIGNAL('triggered()'), self.dataList.model().clear)
+        
         self.h5tree.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
         self.connect(self.h5tree, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__setupDataSelectionMenu)
         
@@ -102,6 +111,9 @@ class DataVizWidget(QtGui.QMainWindow):
         windowMenu = self.menuBar().addMenu('&Window')
         windowMenu.addAction(self.cascadeAction)
         windowMenu.addAction(self.tileAction)
+        toolsMenu = self.menuBar().addMenu('&Tools')
+        toolsMenu.addAction(self.rasterPlotAction)
+        toolsMenu.addAction(self.clearRasterListAction)
         
     def __openFileDialog(self):
         file_names = QtGui.QFileDialog.getOpenFileNames()
@@ -112,19 +124,35 @@ class DataVizWidget(QtGui.QMainWindow):
     def __setupDataSelectionMenu(self, point):
         print 'Custom context menu ...'
         self.dataMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
-        self.selectForRasterAction = QtGui.QAction(self.tr('Raster Plot'), self.h5tree)
+        self.selectForRasterAction = QtGui.QAction(self.tr('Select for raster plot'), self.h5tree)
         self.connect(self.selectForRasterAction, QtCore.SIGNAL('triggered()'), self.__selectForRaster)
         self.dataMenu.addAction(self.selectForRasterAction)
         self.dataMenu.popup(point)
 
     def __selectForRaster(self):
-        item = self.h5tree.currentItem()
-        path = item.path()
-        print 'Selected node', path, 'for plotting.'
-        self.dataList.model().insertItem(path)
+        print 'selectForRaster'
+        items = self.h5tree.selectedItems()
+        for item in items:
+            if item.childCount() > 0: # not a leaf node                
+                print 'Ignoring non-leaf node:', item.text(0), 'childCount:', item.childCount()
+                for ii in range(item.childCount()):
+                    print ii, item.child(ii).text(0)
+                continue
+            path = item.path()
+            print 'Selected node', path, 'for plotting.'
+            self.dataList.model().insertItem(path)
         
-    def __doRasterPlot(self):
-        pass
+    def __makeRasterPlot(self):        
+        table_paths = self.dataList.model().stringList()
+        data_list = []
+        for path in table_paths:
+            data = self.h5tree.getData(path)
+            data_list.append(numpy.array(data))
+        plotWidget = SpikePlotWidget()
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        plotWidget.addPlotCurveList(table_paths, data_list)
+        mdiChild.show()
+        
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

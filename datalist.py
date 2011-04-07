@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Apr  6 19:11:55 2011 (+0530)
+# Last-Updated: Thu Apr  7 11:44:04 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1436
+#     Update #: 1451
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -104,7 +104,6 @@ class UniqueListModel(QtGui.QStringListModel):
 
     def data(self, index, role):
         text = self.stringList()[index.row()]
-        # print text
         if role == Qt.Qt.DisplayRole:
             tname_start = text.lastIndexOf('/')        
             table_name = text.mid(tname_start+1)
@@ -126,9 +125,7 @@ class UniqueListModel(QtGui.QStringListModel):
             unique_entries = []
             for item in data_items:
                 table_path = item[Qt.Qt.ToolTipRole].toString()
-                print 'table path:', table_path
                 if table_path in self.stringList():
-                    print table_path, 'already in'
                     continue
                 unique_entries.append(table_path)
             if unique_entries:
@@ -138,7 +135,6 @@ class UniqueListModel(QtGui.QStringListModel):
                 for ii in range(len(unique_entries)):
                     tname_start = unique_entries[ii].lastIndexOf('/')
                     table_name = unique_entries[ii].mid(tname_start+1)
-                    print 'setting data for row', row + ii, ':', unique_entries[ii]
                     self.setData(self.index(row + ii), QtCore.QVariant(unique_entries[ii]))
             # self.emit(QtCore.SIGNAL('dataChanged(const QModelIndex&, const QModelIndex&)'), self.index(row), self.index(row+len(unique_entries)))
                 return True
@@ -180,9 +176,20 @@ class UniqueListModel(QtGui.QStringListModel):
         return data
 
     def insertItem(self, data):
+        
+        if (not isinstance(data, QtCore.QString)) and isinstance(data, str):
+            data = Qt.QString(data)
+        else:
+            raise TypeError('data should be of type str or QString.')
+        if data in self.stringList():
+            print 'Data %s exists.' % (data)
+            return
         if not self.insertRow(self.rowCount()):
-            raise Exception('Failed to append row.')
+            raise Exception('Failed to append row.')              
         self.setData(self.createIndex(self.rowCount()-1,0), QtCore.QVariant(data))
+
+    def clear(self):
+        return self.removeRows(0, self.rowCount())
         
 class UniqueListView(QtGui.QListView):
     def __init__(self, *args):

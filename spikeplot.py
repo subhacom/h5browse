@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Mar  8 16:21:44 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Mar  9 16:50:46 2011 (+0530)
+# Last-Updated: Thu Apr  7 12:31:35 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 112
+#     Update #: 125
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -41,8 +41,15 @@ class SpikePlotWidget(QtGui.QWidget):
         layout.addWidget(self.plot)
         self.setLayout(layout)
         self.path_curve_dict = {}
+        self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue]
+        self.__nextColor = 0
 
-    def addPlotCurve(self, path, data, color):
+    def nextColor(self):
+        ret = self.__colors[self.__nextColor]
+        self.__nextColor = (1 + self.__nextColor) % len(self.__colors)
+        return ret
+
+    def addPlotCurve(self, path, data, color=None):
         """Adds or updates a curve in the plot.
 
         If the curve is already there, this function will set the
@@ -54,13 +61,15 @@ class SpikePlotWidget(QtGui.QWidget):
             curve.attach(self.plot)
             self.path_curve_dict[path] = curve
         curve.setData(data, numpy.ones(len(data))*(1 + len(self.path_curve_dict.keys())))
+        if color is None:
+            color = self.nextColor()
         pen = Qt.QPen(color, 1)
         curve.setPen(pen)
         curve.setStyle(Qwt.QwtPlotCurve.NoCurve)
         curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.VLine, Qt.QBrush(), pen, Qt.QSize(7, 7)))
         self.plot.replot()
 
-    def addPlotCurveList(self, pathlist, datalist, colorlist):
+    def addPlotCurveList(self, pathlist, datalist, colorlist=None):
         """Adds or updates a list of curves in the plot.
 
         If the curves (each identified by the path of the table it
@@ -84,7 +93,8 @@ class SpikePlotWidget(QtGui.QWidget):
             path = pathlist[ii]
             if color_iter is not None:
                 color = colorlist[ii % len(colorlist)]
-
+            else:
+                color = self.nextColor()
             try:            
                 curve = self.path_curve_dict[path]
             except KeyError:

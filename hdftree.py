@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Apr  6 19:05:58 2011 (+0530)
+# Last-Updated: Thu Apr  7 12:22:40 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 62
+#     Update #: 128
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -37,21 +37,24 @@ from PyQt4 import Qt, QtCore, QtGui
 class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
     def __init__(self, parent, h5node):
         QtGui.QTreeWidgetItem.__init__(self, parent)
+        print h5node, type(h5node)
         self.h5node = h5node
         if isinstance(h5node, h5py.File):
             self.setText(0, QtCore.QString(h5node.filename))
         else:
             self.setText(0, QtCore.QString(h5node))
 
-    def childCount(self):
-        ret = len(self.h5node)
-        print ret
-        return ret
+    # def childCount(self):
+    #     ret = 0
+    #     if isinstance(self.h5node, h5py.Group):
+    #         ret = len(self.h5node)
+    #     print self.text(0), type(self.h5node), 'childCount =', ret
+    #     return ret
 
-    def hasChildren(self, index):
-        ret = (len(self.h5node) > 0)
-        print ret
-        return ret
+    # def hasChildren(self, index):
+    #     ret = (len(self.h5node) > 0)
+    #     print ret
+    #     return ret
     
     def index(self):
         print 'here'
@@ -85,8 +88,25 @@ class H5TreeWidget(QtGui.QTreeWidget):
     def addTree(self, currentItem, node):
         if isinstance(node, h5py.Group) or isinstance(node, h5py.File):
             for child in node:
+                print '## ', child, type(child)
                 item = H5TreeWidgetItem(currentItem, child)
                 self.addTree(item, node[child])
+
+    def getData(self, path):
+        path = str(path)
+        filename = None
+        h5f = None
+        for key, value in self.fhandles.items():
+            if path.startswith(key):
+                filename = key
+                path = path[len(filename):] # 1 for '/'
+                h5f = value
+                break
+        if filename is None:
+            raise Exception('No open file for path: %s', path)
+        node = h5f[path]
+        if isinstance(node, h5py.Dataset):
+            return node
 
 
     def __del__(self):
