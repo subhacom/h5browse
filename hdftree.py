@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Apr  7 12:22:40 2011 (+0530)
+# Last-Updated: Thu Apr  7 18:06:48 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 128
+#     Update #: 185
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -31,13 +31,13 @@
 
 import sys
 import os
+import re
 import h5py
 from PyQt4 import Qt, QtCore, QtGui
 
 class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
     def __init__(self, parent, h5node):
         QtGui.QTreeWidgetItem.__init__(self, parent)
-        print h5node, type(h5node)
         self.h5node = h5node
         if isinstance(h5node, h5py.File):
             self.setText(0, QtCore.QString(h5node.filename))
@@ -56,9 +56,9 @@ class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
     #     print ret
     #     return ret
     
-    def index(self):
-        print 'here'
-        QtCore.qDebug('Here')
+    # def index(self):
+    #     print 'here'
+    #     QtCore.qDebug('Here')
 
     def path(self):        
         path = str(self.data(0, Qt.Qt.DisplayRole).toString())
@@ -88,7 +88,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
     def addTree(self, currentItem, node):
         if isinstance(node, h5py.Group) or isinstance(node, h5py.File):
             for child in node:
-                print '## ', child, type(child)
+                # print '## ', child, type(child)
                 item = H5TreeWidgetItem(currentItem, child)
                 self.addTree(item, node[child])
 
@@ -108,11 +108,46 @@ class H5TreeWidget(QtGui.QTreeWidget):
         if isinstance(node, h5py.Dataset):
             return node
 
+    # I have a little problem here - how do we find nodes by regular
+    # expression for arbitrary file structure?
+    #
+    # This is not trivial to solve and will need writing a dfa in
+    # python. Looks like an overkill.
+    
+    def getDataByRe(self, pattern):
+        """Select data items based on pattern.
+
+        Currently this will do just a regular expression match. It
+        checks through all the currently selected files.
+
+        """
+        regex = re.compile(pattern)
+        ret = {}
+        for item in self.selectedItems():
+            current = item
+            parent = current.parent()
+            while parent != self.invisibleRootItem():
+                current = parent
+            filename = str(current.text())
+            filehandle = self.fhandles(filename)
+            # It's 5 PM and I feel too lazy to implement a regex
+            # matcher. So using old policy of letting the user(me) do
+            # the work.
+            path = current.path()[len(filename)+1:]
+            current_node = filehandle[path]
+            paths = []
+            current_node.visit(paths.append)
+            for path in paths:
+                if regex.match(path):
+                    ret[filename+path] = current_node[path]
+        return ret
+                
+            
+            
+
 
     def __del__(self):
-        print 'H5TreeWidget.__del__'
         for filename, fhandle in self.fhandles.items():
-            print 'Closing', filename
             fhandle.close()
             
 if __name__ == '__main__':

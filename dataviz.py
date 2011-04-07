@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Apr  7 12:32:32 2011 (+0530)
+# Last-Updated: Thu Apr  7 18:05:32 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1336
+#     Update #: 1379
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -103,6 +103,9 @@ class DataVizWidget(QtGui.QMainWindow):
         
         self.h5tree.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
         self.connect(self.h5tree, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__setupDataSelectionMenu)
+
+        self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
+        self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
         
     def __setupMenuBar(self):
         fileMenu = self.menuBar().addMenu('&File')
@@ -114,6 +117,7 @@ class DataVizWidget(QtGui.QMainWindow):
         toolsMenu = self.menuBar().addMenu('&Tools')
         toolsMenu.addAction(self.rasterPlotAction)
         toolsMenu.addAction(self.clearRasterListAction)
+        toolsMenu.addAction(self.selectByRegexAction)
         
     def __openFileDialog(self):
         file_names = QtGui.QFileDialog.getOpenFileNames()
@@ -152,7 +156,30 @@ class DataVizWidget(QtGui.QMainWindow):
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
         plotWidget.addPlotCurveList(table_paths, data_list)
         mdiChild.show()
+
+    def __popupRegexTool(self):
+        self.regexDialog = QtGui.QDialog(self)
+        self.regexDialog.setWindowTitle('Select data by regex')
+        regexlabel = QtGui.QLabel(self.regexDialog)
+        regexlabel.setText('Regular expression:')
+        self.regexLineEdit = QtGui.QLineEdit(self.regexDialog)        
+        okButton = QtGui.QPushButton('OK', self.regexDialog)
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), self.__plotDataByRegex)
+        cancelButton = QtGui.QPushButton('Cancel', self.regexDialog)
+        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), self.regexDialog.reject)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(regexlabel, 0, 0, 1, 2)
+        layout.addWidget(self.regexLineEdit, 0, 2, 1, 2)
+        layout.addWidget(okButton, 1, 0, 1, 1)
+        layout.addWidget(cancelButton, 1, 2, 1, 1)
+        self.regexDialog.setLayout(layout)
+        self.regexDialog.show()
         
+    def __plotDataByRegex(self):
+        pattern = str(self.regexLineEdit.text())
+        data_dict = self.h5tree.getDataByRe(pattern)
+        for key in data_dict.keys():
+            print key
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
