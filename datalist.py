@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Apr  8 11:30:59 2011 (+0530)
+# Last-Updated: Fri Apr  8 15:12:58 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1452
+#     Update #: 1457
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -210,6 +210,10 @@ class UniqueListView(QtGui.QListView):
             if event.source() == self:
                 event.setDropAction(Qt.Qt.MoveAction)
             QtGui.QListView.dropEvent(self, event)
+            
+    def removeSelected(self):
+        for index in self.selectedIndexes():
+            self.model().removeRow(index.row())
             
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

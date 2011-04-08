@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Apr  8 11:44:00 2011 (+0530)
+# Last-Updated: Fri Apr  8 17:33:14 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1413
+#     Update #: 1563
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -69,17 +69,25 @@ class DataVizWidget(QtGui.QMainWindow):
         self.mdi_data_map = {}
         self.data_dict = {}
         self.mdiArea = QtGui.QMdiArea(self)
+        self.mdiArea.setViewMode(self.mdiArea.TabbedView)
         self.leftDock = QtGui.QDockWidget(self)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.leftDock)
         self.rightDock = QtGui.QDockWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.rightDock)
         self.h5tree = H5TreeWidget(self.leftDock)
         self.h5tree.setSelectionMode(self.h5tree.ExtendedSelection)
+        self.h5tree.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
         self.leftDock.setWidget(self.h5tree)
         self.dataList = UniqueListView()
         self.dataList.setModel(UniqueListModel(QtCore.QStringList([])))
+        self.dataList.setSelectionMode(self.dataList.ExtendedSelection)
+        self.dataList.setContextMenuPolicy(Qt.Qt.CustomContextMenu)        
         self.rightDock.setWidget(self.dataList)
-        self.setCentralWidget(self.mdiArea) # for testing only
+        self.setCentralWidget(self.mdiArea)
+        self.windowMapper = QtCore.QSignalMapper(self)
+        self.connect(self.windowMapper, QtCore.SIGNAL('mapped(QWidget*)'),
+                     self.__setActiveSubWindow)
+
         self.__setupActions()
         self.__setupMenuBar()
 
@@ -92,48 +100,67 @@ class DataVizWidget(QtGui.QMainWindow):
         self.openAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+O')))
         self.connect(self.openAction, QtCore.SIGNAL('triggered()'), self.__openFileDialog)
 
-        self.cascadeAction = QtGui.QAction('&Cascade', self)
-        self.connect(self.cascadeAction, QtCore.SIGNAL('triggered()'), self.mdiArea.cascadeSubWindows)
-        self.tileAction = QtGui.QAction('&Tile', self)
-        self.connect(self.tileAction, QtCore.SIGNAL('triggered()'), self.mdiArea.tileSubWindows)
 
         self.rasterPlotAction = QtGui.QAction('&Raster plot', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
 
-        self.clearRasterListAction = QtGui.QAction('&Clear raster plot list', self)
-        self.connect(self.clearRasterListAction, QtCore.SIGNAL('triggered()'), self.dataList.model().clear)
+        self.removeSelectedAction = QtGui.QAction('Remove selected items', self)
+        self.connect(self.removeSelectedAction, QtCore.SIGNAL('triggered()'), self.dataList.removeSelected)
+
+        self.clearPlotListAction = QtGui.QAction('&Clear data list', self)
+        self.connect(self.clearPlotListAction, QtCore.SIGNAL('triggered()'), self.dataList.model().clear)
+
+        self.selectForPlotAction = QtGui.QAction(self.tr('Select for plotting'), self.h5tree)
+        self.connect(self.selectForPlotAction, QtCore.SIGNAL('triggered()'), self.__selectForPlot)
+
         
-        self.h5tree.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
-        self.connect(self.h5tree, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__setupDataSelectionMenu)
+        
+
 
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
+
+        self.switchMdiViewAction = QtGui.QAction('Subwindow view', self)
+        self.connect(self.switchMdiViewAction, QtCore.SIGNAL('triggered()'), self.__switchMdiView)
+        self.cascadeAction = QtGui.QAction('&Cascade', self)
+        self.connect(self.cascadeAction, QtCore.SIGNAL('triggered()'), self.mdiArea.cascadeSubWindows)
+        self.cascadeAction.setVisible(False)
+        self.tileAction = QtGui.QAction('&Tile', self)
+        self.connect(self.tileAction, QtCore.SIGNAL('triggered()'), self.mdiArea.tileSubWindows)
+        self.tileAction.setVisible(False)
         
     def __setupMenuBar(self):
-        fileMenu = self.menuBar().addMenu('&File')
-        fileMenu.addAction(self.openAction)
-        fileMenu.addAction(self.quitAction)
-        windowMenu = self.menuBar().addMenu('&Window')
-        windowMenu.addAction(self.cascadeAction)
-        windowMenu.addAction(self.tileAction)
-        toolsMenu = self.menuBar().addMenu('&Tools')
-        toolsMenu.addAction(self.rasterPlotAction)
-        toolsMenu.addAction(self.clearRasterListAction)
-        toolsMenu.addAction(self.selectByRegexAction)
+        self.fileMenu = self.menuBar().addMenu('&File')
+        self.fileMenu.addAction(self.openAction)
+        self.fileMenu.addAction(self.quitAction)
+        self.windowMenu = self.menuBar().addMenu('&Window')
+        self.connect(self.windowMenu, QtCore.SIGNAL('aboutToShow()'), self.__updateWindowMenu)
+        self.closeAction = QtGui.QAction('Close Current Window', self)
+        self.connect(self.closeAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeActiveSubWindow)
+        self.closeAllAction = QtGui.QAction('Close All Windows', self)
+        self.connect(self.closeAllAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeAllSubWindows)
+        self.toolsMenu = self.menuBar().addMenu('&Tools')
+        self.toolsMenu.addAction(self.rasterPlotAction)
+        self.toolsMenu.addAction(self.clearPlotListAction)
+        self.toolsMenu.addAction(self.selectForPlotAction)
+        self.toolsMenu.addAction(self.selectByRegexAction)
+        # These are custom context menus
+        self.h5treeMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
+        self.h5treeMenu.addAction(self.selectForPlotAction)
+        self.h5treeMenu.addAction(self.selectByRegexAction)
+        self.connect(self.h5tree, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__popupH5TreeMenu)
+        self.dataListMenu = QtGui.QMenu(self.tr('Selected Data'), self.dataList)
+        self.dataListMenu.addAction(self.removeSelectedAction)
+        self.dataListMenu.addAction(self.clearPlotListAction)
+        self.connect(self.dataList, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__popupDataListMenu)
         
     def __openFileDialog(self):
         file_names = QtGui.QFileDialog.getOpenFileNames()
         for name in file_names:
             self.h5tree.addH5Handle(str(name))
 
-    def __setupDataSelectionMenu(self, point):
-        self.dataMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
-        self.selectForRasterAction = QtGui.QAction(self.tr('Select for raster plot'), self.h5tree)
-        self.connect(self.selectForRasterAction, QtCore.SIGNAL('triggered()'), self.__selectForRaster)
-        self.dataMenu.addAction(self.selectForRasterAction)
-        self.dataMenu.popup(point)
 
-    def __selectForRaster(self):
+    def __selectForPlot(self):
         items = self.h5tree.selectedItems()
         self.data_dict = {}
         for item in items:
@@ -144,11 +171,12 @@ class DataVizWidget(QtGui.QMainWindow):
             self.dataList.model().insertItem(path)
             self.data_dict[path] = self.h5tree.getData(path)
         
-    def __makeRasterPlot(self):        
+    def __makeRasterPlot(self):
         plotWidget = SpikePlotWidget()
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values())
-        mdiChild.show()
+        mdiChild.showMaximized()
 
     def __popupRegexTool(self):
         self.regexDialog = QtGui.QDialog(self)
@@ -174,6 +202,51 @@ class DataVizWidget(QtGui.QMainWindow):
         self.dataList.model().clear()
         for key in self.data_dict.keys():
             self.dataList.model().insertItem(key)
+
+    def __switchMdiView(self):
+        if self.mdiArea.viewMode() == self.mdiArea.TabbedView:
+            self.mdiArea.setViewMode(self.mdiArea.SubWindowView)
+        else:
+            self.mdiArea.setViewMode(self.mdiArea.TabbedView)
+
+    def __popupH5TreeMenu(self, point):
+        if self.h5tree.model().rowCount() == 0:
+            return
+        globalPos = self.h5tree.mapToGlobal(point)
+        self.h5treeMenu.exec_(globalPos)
+
+    def __popupDataListMenu(self, point):
+        if self.dataList.model().rowCount() == 0:
+            return
+        globalPos = self.dataList.mapToGlobal(point)
+        self.dataListMenu.exec_(globalPos)
+
+    def __updateWindowMenu(self):
+        self.windowMenu.clear()
+        if  len(self.mdiArea.subWindowList()) == 0:
+            return
+        self.windowMenu.addAction(self.closeAction)
+        self.windowMenu.addAction(self.closeAllAction)
+        self.windowMenu.addSeparator()
+        self.windowMenu.addAction(self.switchMdiViewAction)
+        if self.mdiArea.viewMode() == self.mdiArea.TabbedView:
+            self.switchMdiViewAction.setText('Subwindow view')
+        else:
+            self.switchMdiViewAction.setText('Tabbed view')            
+            self.windowMenu.addAction(self.cascadeAction)
+            self.windowMenu.addAction(self.tileAction)
+        self.windowMenu.addSeparator()
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        for window in self.mdiArea.subWindowList():
+            action = self.windowMenu.addAction(window.windowTitle())
+            action.setCheckable(True)
+            action.setChecked(window == activeSubWindow)
+            self.connect(action, QtCore.SIGNAL('triggered()'), self.windowMapper, QtCore.SLOT('map()'))
+            self.windowMapper.setMapping(action, window)
+
+    def __setActiveSubWindow(self, window):
+        if window:
+            self.mdiArea.setActiveSubWindow(window)
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

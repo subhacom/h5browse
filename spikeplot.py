@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Mar  8 16:21:44 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Apr  8 11:28:29 2011 (+0530)
+# Last-Updated: Fri Apr  8 17:35:01 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 128
+#     Update #: 131
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,6 +48,10 @@ class SpikePlotWidget(QtGui.QWidget):
         ret = self.__colors[self.__nextColor]
         self.__nextColor = (1 + self.__nextColor) % len(self.__colors)
         return ret
+
+    def setColotList(self, colotList):
+        self.__colors = colorList
+        self.__nextColor = 0
 
     def addPlotCurve(self, path, data, color=None):
         """Adds or updates a curve in the plot.
