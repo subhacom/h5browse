@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Apr  7 18:05:32 2011 (+0530)
+# Last-Updated: Fri Apr  8 11:44:00 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1379
+#     Update #: 1413
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,7 +46,7 @@
 # 2011-03-03 23:46:42 (+0530) -- h5py browsing tree is functional.
 #
 # 2011-03-06 14:12:59 (+0530) -- This has now been split into
-# multipple files in the dataviz directory. Also, all data
+# multiple files in the dataviz directory. Also, all data
 # visualization code is being shifted to cortical/dataviz directory as
 # they are independent of the simulation.
 
@@ -66,13 +66,15 @@ from datalist import UniqueListModel, UniqueListView
 class DataVizWidget(QtGui.QMainWindow):
     def __init__(self, *args):
         QtGui.QMainWindow.__init__(self, *args)
+        self.mdi_data_map = {}
+        self.data_dict = {}
         self.mdiArea = QtGui.QMdiArea(self)
         self.leftDock = QtGui.QDockWidget(self)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.leftDock)
         self.rightDock = QtGui.QDockWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.rightDock)
         self.h5tree = H5TreeWidget(self.leftDock)
-        self.h5tree.setSelectionMode(self.h5tree.MultiSelection)
+        self.h5tree.setSelectionMode(self.h5tree.ExtendedSelection)
         self.leftDock.setWidget(self.h5tree)
         self.dataList = UniqueListView()
         self.dataList.setModel(UniqueListModel(QtCore.QStringList([])))
@@ -122,11 +124,9 @@ class DataVizWidget(QtGui.QMainWindow):
     def __openFileDialog(self):
         file_names = QtGui.QFileDialog.getOpenFileNames()
         for name in file_names:
-            print 'Opening:', name
             self.h5tree.addH5Handle(str(name))
 
     def __setupDataSelectionMenu(self, point):
-        print 'Custom context menu ...'
         self.dataMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
         self.selectForRasterAction = QtGui.QAction(self.tr('Select for raster plot'), self.h5tree)
         self.connect(self.selectForRasterAction, QtCore.SIGNAL('triggered()'), self.__selectForRaster)
@@ -134,27 +134,20 @@ class DataVizWidget(QtGui.QMainWindow):
         self.dataMenu.popup(point)
 
     def __selectForRaster(self):
-        print 'selectForRaster'
         items = self.h5tree.selectedItems()
+        self.data_dict = {}
         for item in items:
             if item.childCount() > 0: # not a leaf node                
                 print 'Ignoring non-leaf node:', item.text(0), 'childCount:', item.childCount()
-                for ii in range(item.childCount()):
-                    print ii, item.child(ii).text(0)
                 continue
             path = item.path()
-            print 'Selected node', path, 'for plotting.'
             self.dataList.model().insertItem(path)
+            self.data_dict[path] = self.h5tree.getData(path)
         
     def __makeRasterPlot(self):        
-        table_paths = self.dataList.model().stringList()
-        data_list = []
-        for path in table_paths:
-            data = self.h5tree.getData(path)
-            data_list.append(numpy.array(data))
         plotWidget = SpikePlotWidget()
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        plotWidget.addPlotCurveList(table_paths, data_list)
+        plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values())
         mdiChild.show()
 
     def __popupRegexTool(self):
@@ -164,7 +157,7 @@ class DataVizWidget(QtGui.QMainWindow):
         regexlabel.setText('Regular expression:')
         self.regexLineEdit = QtGui.QLineEdit(self.regexDialog)        
         okButton = QtGui.QPushButton('OK', self.regexDialog)
-        self.connect(okButton, QtCore.SIGNAL('clicked()'), self.__plotDataByRegex)
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), self.regexDialog.accept)
         cancelButton = QtGui.QPushButton('Cancel', self.regexDialog)
         self.connect(cancelButton, QtCore.SIGNAL('clicked()'), self.regexDialog.reject)
         layout = QtGui.QGridLayout()
@@ -173,13 +166,14 @@ class DataVizWidget(QtGui.QMainWindow):
         layout.addWidget(okButton, 1, 0, 1, 1)
         layout.addWidget(cancelButton, 1, 2, 1, 1)
         self.regexDialog.setLayout(layout)
-        self.regexDialog.show()
+        if self.regexDialog.exec_() == QtGui.QDialog.Accepted:
+            self.__selectDataByRegex(str(self.regexLineEdit.text()))
         
-    def __plotDataByRegex(self):
-        pattern = str(self.regexLineEdit.text())
-        data_dict = self.h5tree.getDataByRe(pattern)
-        for key in data_dict.keys():
-            print key
+    def __selectDataByRegex(self, pattern):
+        self.data_dict = self.h5tree.getDataByRe(pattern)
+        self.dataList.model().clear()
+        for key in self.data_dict.keys():
+            self.dataList.model().insertItem(key)
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

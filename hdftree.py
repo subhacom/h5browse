@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Apr  7 18:06:48 2011 (+0530)
+# Last-Updated: Fri Apr  8 11:32:02 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 185
+#     Update #: 234
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -43,22 +43,6 @@ class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
             self.setText(0, QtCore.QString(h5node.filename))
         else:
             self.setText(0, QtCore.QString(h5node))
-
-    # def childCount(self):
-    #     ret = 0
-    #     if isinstance(self.h5node, h5py.Group):
-    #         ret = len(self.h5node)
-    #     print self.text(0), type(self.h5node), 'childCount =', ret
-    #     return ret
-
-    # def hasChildren(self, index):
-    #     ret = (len(self.h5node) > 0)
-    #     print ret
-    #     return ret
-    
-    # def index(self):
-    #     print 'here'
-    #     QtCore.qDebug('Here')
 
     def path(self):        
         path = str(self.data(0, Qt.Qt.DisplayRole).toString())
@@ -112,7 +96,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
     # expression for arbitrary file structure?
     #
     # This is not trivial to solve and will need writing a dfa in
-    # python. Looks like an overkill.
+    # python. Looks like an overkill. So do it the stupid way.
     
     def getDataByRe(self, pattern):
         """Select data items based on pattern.
@@ -126,20 +110,20 @@ class H5TreeWidget(QtGui.QTreeWidget):
         for item in self.selectedItems():
             current = item
             parent = current.parent()
-            while parent != self.invisibleRootItem():
+            while current.parent() != None:
                 current = parent
-            filename = str(current.text())
-            filehandle = self.fhandles(filename)
-            # It's 5 PM and I feel too lazy to implement a regex
-            # matcher. So using old policy of letting the user(me) do
-            # the work.
-            path = current.path()[len(filename)+1:]
-            current_node = filehandle[path]
-            paths = []
-            current_node.visit(paths.append)
-            for path in paths:
-                if regex.match(path):
-                    ret[filename+path] = current_node[path]
+                parent = current.parent()
+            filename = str(current.text(0))
+            filehandle = self.fhandles[filename]
+            path = item.path()                        
+            if current != item:
+                current_node = filehandle[path[len(filename)+1:]]
+            else:
+                current_node = filehandle
+            def check_n_select(name, obj):
+                if isinstance(obj, h5py.Dataset) and regex.match(obj.name):
+                    ret[path + '/' + name] = obj                
+            current_node.visititems(check_n_select)
         return ret
                 
             

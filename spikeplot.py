@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Mar  8 16:21:44 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Apr  7 12:31:35 2011 (+0530)
+# Last-Updated: Fri Apr  8 11:28:29 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 125
+#     Update #: 128
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -90,7 +90,11 @@ class SpikePlotWidget(QtGui.QWidget):
             
         for ii in range(len(datalist)):
             data = datalist[ii]
+            if not isinstance(data, numpy.ndarray):
+                data = numpy.array(data)
             path = pathlist[ii]
+            if not isinstance(path, str):
+                path = str(path)
             if color_iter is not None:
                 color = colorlist[ii % len(colorlist)]
             else:
