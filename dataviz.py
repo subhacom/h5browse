@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Apr 12 16:31:54 2011 (+0530)
+# Last-Updated: Tue Apr 12 16:52:41 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1621
+#     Update #: 1634
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -55,6 +55,7 @@
 
 # Code:
 
+import os
 import sys
 import numpy
 
@@ -160,9 +161,13 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.dataList, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__popupDataListMenu)
         
     def __openFileDialog(self):
-        file_names = QtGui.QFileDialog.getOpenFileNames()
+        settings = QtCore.QSettings()
+        last_dir = settings.value('lastVisitedDir').toString()
+        file_names = QtGui.QFileDialog.getOpenFileNames(self, self.tr('Open hdf5 file'), last_dir)
+        name = last_dir
         for name in file_names:
             self.h5tree.addH5Handle(str(name))
+        settings.setValue('lastVisitedDir', QtCore.QString(os.path.dirname(str(name))))
 
 
     def __selectForPlot(self):
