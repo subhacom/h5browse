@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Apr 12 12:45:07 2011 (+0530)
+# Last-Updated: Tue Apr 12 16:31:54 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1577
+#     Update #: 1621
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -101,6 +101,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.openAction, QtCore.SIGNAL('triggered()'), self.__openFileDialog)
 
 
+        self.plotAction = QtGui.QAction('&Plot', self)
+        self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
         self.rasterPlotAction = QtGui.QAction('&Raster plot', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
 
@@ -139,11 +141,14 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.closeAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeActiveSubWindow)
         self.closeAllAction = QtGui.QAction('Close All Windows', self)
         self.connect(self.closeAllAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeAllSubWindows)
+        self.editMenu = self.menuBar().addMenu('&Edit')
+        self.editMenu.addAction(self.selectForPlotAction)
+        self.editMenu.addAction(self.selectByRegexAction)
+        self.editMenu.addAction(self.clearPlotListAction)
+
         self.toolsMenu = self.menuBar().addMenu('&Tools')
+        self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
-        self.toolsMenu.addAction(self.clearPlotListAction)
-        self.toolsMenu.addAction(self.selectForPlotAction)
-        self.toolsMenu.addAction(self.selectByRegexAction)
         # These are custom context menus
         self.h5treeMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
         self.h5treeMenu.addAction(self.selectForPlotAction)
@@ -169,24 +174,35 @@ class DataVizWidget(QtGui.QMainWindow):
                 continue
             path = item.path()
             self.dataList.model().insertItem(path)
-            data = numpy.array(self.h5tree.getData(path))
-            filename = self.h5tree.getOpenFileName(path)
-            print 'Looking at file:', filename
-            simtime = self.h5tree.getProperty(filename, 'simtime')
-            self.data_dict[path] = (numpy.linspace(0, simtime, len(data)), data)
         
     def __makeRasterPlot(self):
         plotWidget = PlotWidget()
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
         mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
-        plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values(), mode='raster')
+        namelist = []
+        datalist = []
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            datalist.append(numpy.array(self.h5tree.getData(path)))
+            namelist.append(path)
+        plotWidget.addPlotCurveList(namelist, datalist, mode='raster')
         mdiChild.showMaximized()
 
     def __makeLinePlot(self):
         plotWidget = PlotWidget()
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
         mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
-        plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values(), mode='curve')
+        datalist = []
+        pathlist = []
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            pathlist.append(path)
+            filename = self.h5tree.getOpenFileName(path)
+            simtime = self.h5tree.getAttribute(filename, 'simtime')
+            data = numpy.array(self.h5tree.getData(path))
+            tseries = numpy.linspace(0, simtime, len(data))
+            datalist.append((tseries, data))
+        plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
         mdiChild.showMaximized()
         
 

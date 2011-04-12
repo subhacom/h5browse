@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Apr 12 12:30:10 2011 (+0530)
+# Last-Updated: Tue Apr 12 13:32:33 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 276
+#     Update #: 277
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -126,7 +126,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
             current_node.visititems(check_n_select)
         return ret
                 
-    def getProperty(self, path, attribute=None):
+    def getAttribute(self, path, attribute=None):
         h5f = None
         ret = None
         filename = self.getOpenFileName(path)
