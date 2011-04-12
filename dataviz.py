@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Apr  8 17:33:14 2011 (+0530)
+# Last-Updated: Tue Apr 12 12:45:07 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1563
+#     Update #: 1577
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -59,7 +59,7 @@ import sys
 import numpy
 
 from PyQt4 import QtCore, QtGui, Qt
-from spikeplot import SpikePlotWidget
+from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
             
@@ -169,14 +169,26 @@ class DataVizWidget(QtGui.QMainWindow):
                 continue
             path = item.path()
             self.dataList.model().insertItem(path)
-            self.data_dict[path] = self.h5tree.getData(path)
+            data = numpy.array(self.h5tree.getData(path))
+            filename = self.h5tree.getOpenFileName(path)
+            print 'Looking at file:', filename
+            simtime = self.h5tree.getProperty(filename, 'simtime')
+            self.data_dict[path] = (numpy.linspace(0, simtime, len(data)), data)
         
     def __makeRasterPlot(self):
-        plotWidget = SpikePlotWidget()
+        plotWidget = PlotWidget()
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
         mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
-        plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values())
+        plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values(), mode='raster')
         mdiChild.showMaximized()
+
+    def __makeLinePlot(self):
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        plotWidget.addPlotCurveList(self.data_dict.keys(), self.data_dict.values(), mode='curve')
+        mdiChild.showMaximized()
+        
 
     def __popupRegexTool(self):
         self.regexDialog = QtGui.QDialog(self)

@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Apr  8 11:32:02 2011 (+0530)
+# Last-Updated: Tue Apr 12 12:30:10 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 234
+#     Update #: 276
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -42,7 +42,7 @@ class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
         if isinstance(h5node, h5py.File):
             self.setText(0, QtCore.QString(h5node.filename))
         else:
-            self.setText(0, QtCore.QString(h5node))
+            self.setText(0, QtCore.QString(h5node.name.rpartition('/')[-1]))
 
     def path(self):        
         path = str(self.data(0, Qt.Qt.DisplayRole).toString())
@@ -73,7 +73,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
         if isinstance(node, h5py.Group) or isinstance(node, h5py.File):
             for child in node:
                 # print '## ', child, type(child)
-                item = H5TreeWidgetItem(currentItem, child)
+                item = H5TreeWidgetItem(currentItem, node[child])
                 self.addTree(item, node[child])
 
     def getData(self, path):
@@ -126,9 +126,37 @@ class H5TreeWidget(QtGui.QTreeWidget):
             current_node.visititems(check_n_select)
         return ret
                 
+    def getProperty(self, path, attribute=None):
+        h5f = None
+        ret = None
+        filename = self.getOpenFileName(path)
+        h5f = self.fhandles[filename]
+        if path != filename:
+            path = path[len(filename)+1:] # 1 for '/'
+            node = h5f[path]        
+        else:
+            node = h5f
             
-            
+        if (attribute is not None) and isinstance(attribute, str):
+            try:
+                ret = node.attrs[attribute]
+            except KeyError:
+                ret = None
+        else:
+            ret = node.attrs
+        return ret
 
+    def getOpenFileName(self, path):
+        """Added this little function to avoid repetition."""
+        for key, value in self.fhandles.items():
+            if path.startswith(key):
+                return key
+    
+    def getTimeSeries(self, path):
+        h5f = self.fhandles[self.getOpenFileName(path)]
+        simtime = h5f.attrs['simtime']
+        plotdt = h5f.attrs['plotdt']
+        return numpy.arange(0, simtime, plotdt)
 
     def __del__(self):
         for filename, fhandle in self.fhandles.items():
