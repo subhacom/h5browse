@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Apr 12 12:47:30 2011 (+0530)
+# Last-Updated: Sat May  7 00:13:09 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 63
+#     Update #: 64
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -74,7 +74,6 @@ class PlotWidget(Qwt.QwtPlot):
                 curve.setStyle(curve.NoCurve)
                 curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.VLine, Qt.QBrush(), pen, Qt.QSize(7,7)))
                 # n-th entry in data list to be plotted at y = n+1 (counting from 0)
-                print type(data), len(data)
                 if (isinstance(data, tuple) or isinstance(data, list)) and len(data) == 2:
                     curve.setData(data[1], numpy.ones(len(data[1])) * (1 + len(self.path_curve_dict.keys())))
                 else:
