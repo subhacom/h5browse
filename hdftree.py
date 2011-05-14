@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Apr 12 13:32:33 2011 (+0530)
+# Last-Updated: Sat May 14 10:30:24 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 277
+#     Update #: 305
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -115,15 +115,20 @@ class H5TreeWidget(QtGui.QTreeWidget):
                 parent = current.parent()
             filename = str(current.text(0))
             filehandle = self.fhandles[filename]
-            path = item.path()                        
+            print 'File: ', filename
+            path = item.path()
+            print 'Path:', path
             if current != item:
                 current_node = filehandle[path[len(filename)+1:]]
             else:
                 current_node = filehandle
+            print 'Current node:', current_node, type(current_node), isinstance(current_node, h5py.Group)
             def check_n_select(name, obj):
                 if isinstance(obj, h5py.Dataset) and regex.match(obj.name):
-                    ret[path + '/' + name] = obj                
-            current_node.visititems(check_n_select)
+                    ret[path + '/' + name] = obj
+                return None
+            if isinstance(current_node, h5py.Group):
+                current_node.visititems(check_n_select)
         return ret
                 
     def getAttribute(self, path, attribute=None):
