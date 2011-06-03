@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat May 14 10:30:24 2011 (+0530)
+# Last-Updated: Thu Jun  2 06:56:43 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 305
+#     Update #: 308
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -125,7 +125,8 @@ class H5TreeWidget(QtGui.QTreeWidget):
             print 'Current node:', current_node, type(current_node), isinstance(current_node, h5py.Group)
             def check_n_select(name, obj):
                 if isinstance(obj, h5py.Dataset) and regex.match(obj.name):
-                    ret[path + '/' + name] = obj
+                    table_path = path + '/' + name
+                    ret[table_path] = obj
                 return None
             if isinstance(current_node, h5py.Group):
                 current_node.visititems(check_n_select)
