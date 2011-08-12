@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 12 17:24:12 2011 (+0530)
+# Last-Updated: Fri Aug 12 17:50:25 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 382
+#     Update #: 398
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -210,16 +210,15 @@ class TraubDataVis(object):
             self.mapper[classname] = mapper
             actor = vtk.vtkActor()
             actor.SetMapper(mapper)
-            actor.SetOpacity(0.5)
+            actor.GetProperty().SetOpacity(0.5)
             self.actor[classname] = actor
             self.renderer.AddActor(actor)
         print 'End setup_visualization'
 
     def display(self, animate=True):
         self.camera = vtk.vtkCamera()
-        self.camera.SetPosition(10.0, 10.0, 0.0)
-        self.camera.SetViewUp(1.0, 0.0, 0.0)
-        # self.camera.Elevation(-90)
+        self.camera.SetPosition(0.0, -500.0, -500.0)
+        self.camera.SetViewUp(1, 0.0, 0.0)
         self.renderer.SetActiveCamera(self.camera)
         if not animate:
             self.interactor = vtk.vtkRenderWindowInteractor()
