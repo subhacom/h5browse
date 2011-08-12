@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 12 16:15:30 2011 (+0530)
+# Last-Updated: Fri Aug 12 17:24:12 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 361
+#     Update #: 382
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -87,7 +87,7 @@ class TraubDataHandler(object):
             end = float(self.class_pos[cellclass]['end'])
             rad = float(self.class_pos[cellclass]['dia'])/2.0
             size = len(self.class_cell[cellclass])
-            zpos = numpy.random.uniform(low=start, high=end, size=size)
+            zpos = -numpy.random.uniform(low=start, high=end, size=size)
             rpos = numpy.sqrt(numpy.random.uniform(low=start, high=end, size=size)/numpy.pi)
             theta = numpy.random.uniform(low=start, high=end, size=size)
             xpos = rpos * numpy.cos(theta)
@@ -111,14 +111,15 @@ class TraubDataHandler(object):
             print 'simtime or plotdt attribute absent'
             self.simtime = None
             self.plotdt = None
+        try:
+            firstcell = self.cellname[0]
+            self.num_time = float(len(self.vm_node[firstcell]))
+        except IndexError, e:
+            print 'There are no Vm arrays in the data file.'
+            raise e
         if self.simtime is None or self.plotdt is None:
-            try:
-                firstcell = self.cellname[0]
-                self.simtime = float(len(self.vm_node[firstcell]))
-                self.plotdt = 1.0
-            except IndexError, e:
-                print 'There are no Vm arrays in the data file.'
-                raise e
+            self.simtime = self.num_time
+            self.plotdt = 1.0
         
     def get_vm(self, cellclass, step):
         """Get the Vm for all cells at step ordered in the same
@@ -209,11 +210,17 @@ class TraubDataVis(object):
             self.mapper[classname] = mapper
             actor = vtk.vtkActor()
             actor.SetMapper(mapper)
+            actor.SetOpacity(0.5)
             self.actor[classname] = actor
             self.renderer.AddActor(actor)
         print 'End setup_visualization'
 
     def display(self, animate=True):
+        self.camera = vtk.vtkCamera()
+        self.camera.SetPosition(10.0, 10.0, 0.0)
+        self.camera.SetViewUp(1.0, 0.0, 0.0)
+        # self.camera.Elevation(-90)
+        self.renderer.SetActiveCamera(self.camera)
         if not animate:
             self.interactor = vtk.vtkRenderWindowInteractor()
             self.interactor.SetRenderWindow(self.renwin)
@@ -225,18 +232,16 @@ class TraubDataVis(object):
             self.imwriter = vtk.vtkPNGWriter()
             self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
             time = 0.0
-            ii = 0
-            while time < self.datahandler.simtime:
+            for ii in range(self.datahandler.num_time):
                 time += self.datahandler.plotdt
                 print 'Time:', time
                 for cellclass in self.datahandler.cellclass:
                     vm = self.datahandler.get_vm(cellclass, ii)
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
-                renwin.Render()
+                self.renwin.Render()
                 self.win2image.Modified()
-                self.imwriter.SetFileName('frame_%5d.png' % (ii))
+                self.imwriter.SetFileName('frame_%05d.png' % (ii))
                 self.imwriter.Write()
-                ii += 1
 
 if __name__ == '__main__':
     posfile = '/home/subha/src/sim/cortical/dataviz/cellpos.csv'
@@ -245,7 +250,7 @@ if __name__ == '__main__':
     vis = TraubDataVis()
     vis.load_data(posfile, datafile)
     vis.setup_visualization()
-    vis.display()
+    vis.display(animate=False)
         
 
 # 
