@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 12 14:42:18 2011 (+0530)
+# Last-Updated: Fri Aug 12 16:15:30 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 287
+#     Update #: 361
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -69,6 +69,7 @@ class TraubDataHandler(object):
             cellclass = tmp[0]
             self.class_cell[cellclass].append(cellname)
         for cellclass in self.cellclass:
+            print cellclass, len(self.class_cell[cellclass])
             self.cellname.extend(self.class_cell[cellclass])
         for cellname in self.cellname:
             if self.vm is None:
@@ -94,11 +95,13 @@ class TraubDataHandler(object):
             pos = numpy.column_stack((xpos, ypos, zpos))
             if pos.size == 0:
                 continue
-            try:
-                self.pos = numpy.concatenate((self.pos, pos), 1)
-            except ValueError:
+            print '>>', cellclass, len(pos)
+            if self.pos is None:
                 self.pos = pos
+            else:
+                self.pos = numpy.concatenate((self.pos, pos))
         self.pos = numpy.array(self.pos, copy=True, order='C')
+        print 'pos len', len(self.pos)
 
     def update_times(self):
         try:
@@ -117,11 +120,12 @@ class TraubDataHandler(object):
                 print 'There are no Vm arrays in the data file.'
                 raise e
         
-    def get_vm(self, step):
+    def get_vm(self, cellclass, step):
         """Get the Vm for all cells at step ordered in the same
         sequence as cellname."""
-        print get_vm
-        return numpy.array(self.vm[:][step], copy=True, order='C')
+        cellrange = self.get_range(cellclass)
+        if cellrange[0] != cellrange[1]:
+            return numpy.array(self.vm[cellrange[0]:cellrange[1]][step], copy=True, order='C')
 
     def get_range(self, cellclass):
         start = 0
@@ -156,25 +160,25 @@ class TraubDataVis(object):
         self.mapper = {}
         self.glyph = {}
         self.actor = {}
+        self.colorXfun = {}
         self.renderer = vtk.vtkRenderer()
         self.renwin = vtk.vtkRenderWindow()
         self.renwin.AddRenderer(self.renderer)
-        self.interactor = vtk.vtkRenderWindowInteractor()
-        self.interactor.SetRenderWindow(self.renwin)
         for classname in self.datahandler.cellclass:
             cellrange = self.datahandler.get_range(classname)
             if cellrange[0] == cellrange[1]:
                 continue
             # print cellrange, 
             pos = self.datahandler.pos[cellrange[0]: cellrange[1]]
+            print classname, 'Pos', len(pos)
             # print pos, pos.size
             pos_array = vtknp.numpy_to_vtk(pos, deep=True)
             points = vtk.vtkPoints()
             points.SetData(pos_array)
             polydata = vtk.vtkPolyData()
             polydata.SetPoints(points)
-            data = self.datahandler.get_vm(0)
-            polydata.GetPointData().SetScalars(vtknp.numpy_to_vtk(data))
+            # data = self.datahandler.get_vm(0)
+            # polydata.GetPointData().SetScalars(vtknp.numpy_to_vtk(data))
             self.positionSource[classname] = polydata 
             sphere = vtk.vtkSphereSource()
             sphere.SetRadius(1)
@@ -184,9 +188,24 @@ class TraubDataVis(object):
             glyph = vtk.vtkGlyph3D()
             glyph.SetSource(sphere.GetOutput())
             glyph.SetInput(polydata)
+            glyph.SetScaleModeToDataScalingOff()
+            # glyph.SetScaleFactor(10)
             self.glyph[classname] = glyph
+            colorXfun = vtk.vtkColorTransferFunction()
+            colorXfun.AddRGBPoint(-120e-3, 0.0, 0.0, 10.0)
+            colorXfun.AddRGBPoint(-90e-3, 0.0, 0.1, 9.0)
+            colorXfun.AddRGBPoint(-60e-3, 0.0, 0.5, 8.0)
+            colorXfun.AddRGBPoint(-30e-3, 0.0, 1.0, 7.0)
+            colorXfun.AddRGBPoint(0.0, 0.0, 2.0, 5.0)
+            colorXfun.AddRGBPoint(10.0, 0.0, 5.0, 3.0)
+            colorXfun.AddRGBPoint(20.0, 0.0, 10.0, 3.0)
+            colorXfun.AddRGBPoint(30.0, 0.0, 10.0, 2.0)
+            colorXfun.AddRGBPoint(40.0, 0.0, 10.0, 0.0)
+            self.colorXfun[classname] = colorXfun
             mapper = vtk.vtkPolyDataMapper()
             mapper.SetInput(glyph.GetOutput())
+            mapper.SetLookupTable(colorXfun)
+            mapper.ImmediateModeRenderingOn()
             self.mapper[classname] = mapper
             actor = vtk.vtkActor()
             actor.SetMapper(mapper)
@@ -194,13 +213,35 @@ class TraubDataVis(object):
             self.renderer.AddActor(actor)
         print 'End setup_visualization'
 
-    def display(self):
-        self.interactor.Initialize()
-        self.interactor.Start()
+    def display(self, animate=True):
+        if not animate:
+            self.interactor = vtk.vtkRenderWindowInteractor()
+            self.interactor.SetRenderWindow(self.renwin)
+            self.interactor.Initialize()
+            self.interactor.Start()
+        else:
+            self.win2image = vtk.vtkWindowToImageFilter()
+            self.win2image.SetInput(self.renwin)
+            self.imwriter = vtk.vtkPNGWriter()
+            self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
+            time = 0.0
+            ii = 0
+            while time < self.datahandler.simtime:
+                time += self.datahandler.plotdt
+                print 'Time:', time
+                for cellclass in self.datahandler.cellclass:
+                    vm = self.datahandler.get_vm(cellclass, ii)
+                    self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
+                renwin.Render()
+                self.win2image.Modified()
+                self.imwriter.SetFileName('frame_%5d.png' % (ii))
+                self.imwriter.Write()
+                ii += 1
 
 if __name__ == '__main__':
     posfile = '/home/subha/src/sim/cortical/dataviz/cellpos.csv'
-    datafile = '/home/subha/src/sim/cortical/py/data/data_20101201_102647_8854.h5'
+    # datafile = '/home/subha/src/sim/cortical/py/data/data_20101201_102647_8854.h5'
+    datafile = '/home/subha/src/sim/cortical/py/data/data_20101218_204508_9317.h5'
     vis = TraubDataVis()
     vis.load_data(posfile, datafile)
     vis.setup_visualization()
