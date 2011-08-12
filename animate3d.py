@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 12 14:05:12 2011 (+0530)
+# Last-Updated: Fri Aug 12 14:42:18 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 280
+#     Update #: 287
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -61,6 +61,7 @@ class TraubDataHandler(object):
 
     def read_celldata(self,filename):
         """Read the Vm data from the hdf5 file"""
+        print 'Start read_celldata'
         self.datafile = h5py.File(filename, 'r')            
         self.vm_node = self.datafile['/Vm']
         for cellname in self.vm_node.keys():
@@ -69,7 +70,13 @@ class TraubDataHandler(object):
             self.class_cell[cellclass].append(cellname)
         for cellclass in self.cellclass:
             self.cellname.extend(self.class_cell[cellclass])
-        self.vm = numpy.array([self.vm_node[cellname] for cellname in self.cellname])
+        for cellname in self.cellname:
+            if self.vm is None:
+                self.vm = numpy.array(self.vm_node[cellname], order='C')
+            else:
+                self.vm = numpy.vstack((self.vm, numpy.array(self.vm_node[cellname], order='C')))
+        print 'Finished read_celldata'
+        
 
     def generate_cellpos(self):
         """Create random positions based on depth and diameter data
@@ -113,6 +120,7 @@ class TraubDataHandler(object):
     def get_vm(self, step):
         """Get the Vm for all cells at step ordered in the same
         sequence as cellname."""
+        print get_vm
         return numpy.array(self.vm[:][step], copy=True, order='C')
 
     def get_range(self, cellclass):
