@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Aug 17 20:18:11 2011 (+0530)
+# Last-Updated: Thu Aug 18 15:52:38 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 588
+#     Update #: 592
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -247,12 +247,13 @@ class TraubDataVis(object):
             
             self.positionSource[classname] = polydata
             source = None
-            if classname.find('SpinyStellate') >= 0:
+            if classname.find('Pyr') >= 0:
                 print 'Cone for', classname
                 source = vtk.vtkConeSource()
                 source.SetRadius(1)
                 source.SetResolution(20)
                 source.SetHeight(2)
+                source.SetDirection(0, 0, 1)
             else:                
                 source = vtk.vtkSphereSource()
                 source.SetRadius(1)
@@ -300,6 +301,7 @@ class TraubDataVis(object):
             self.interactor.Initialize()
             self.interactor.Start()
         else:
+            self.renwin.SetOffScreenRendering(True)
             self.win2image = vtk.vtkWindowToImageFilter()
             self.win2image.SetInput(self.renwin)
             self.imwriter = vtk.vtkPNGWriter()
