@@ -287,7 +287,7 @@ class TraubDataVis(object):
         #     break            
         print 'End setup_visualization'
 
-    def display(self, animate=True, filename='traub_animated.avi'):
+    def display(self, animate=True, movie=False, filename='traub_animated.avi'):
         print 'TraubDataVis.display::Start'
         self.camera = vtk.vtkCamera() #self.renderer.GetActiveCamera()
         self.camera.SetPosition(0.0, 500.0, -1200.0)
@@ -304,14 +304,16 @@ class TraubDataVis(object):
             self.renwin.SetOffScreenRendering(True)
             self.win2image = vtk.vtkWindowToImageFilter()
             self.win2image.SetInput(self.renwin)
-            self.moviewriter = vtk.vtkFFMPEGWriter()
-            self.moviewriter.SetQuality(2)
-            self.moviewriter.SetRate(10)
-            self.moviewriter.SetInputConnection(self.win2image.GetOutputPort())
-            self.moviewriter.SetFileName(filename)
-            self.moviewriter.Start()
-            # self.imwriter = vtk.vtkPNGWriter()
-            # self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
+	    if movie:
+                self.moviewriter = vtk.vtkFFMPEGWriter()
+                self.moviewriter.SetQuality(2)
+                self.moviewriter.SetRate(10)
+                self.moviewriter.SetInputConnection(self.win2image.GetOutputPort())
+                self.moviewriter.SetFileName(filename)
+                self.moviewriter.Start()
+            else:
+                self.imwriter = vtk.vtkPNGWriter()
+                self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
             time = 0.0
             for ii in range(self.datahandler.num_time):
                 time += self.datahandler.plotdt
@@ -324,23 +326,31 @@ class TraubDataVis(object):
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
                 self.renwin.Render()
                 self.win2image.Modified()
-                self.moviewriter.Write()
-                # self.imwriter.SetFileName('frame_%05d.png' % (ii))
-                # self.imwriter.Write()
-            self.moviewriter.End()
+                if movie:
+                    self.moviewriter.Write()
+                else:
+                    self.imwriter.SetFileName('frame_%05d.png' % (ii))
+                    self.imwriter.Write()
+            if movie:
+                self.moviewriter.End()
         print 'TraubDataVis.display::End'
 
 if __name__ == '__main__':
     args = sys.argv
     posfile = None
     datafile = None
-    animate = True
+    animate = False
+    movie = False
+    filename = 'traub_animated.avi'
     print 'Args', args, len(args)
     if len(args) >= 3:
         posfile = args[1]
         datafile = args[2]
         if len(args) > 3:
-            animate = False
+            animate = True
+        if len(args) > 4:
+            movie = True
+            filename = args[4]
     else:
         posfile = '/home/subha/src/sim/cortical/dataviz/cellpos.csv'
         datafile = '/home/subha/src/sim/cortical/py/data/data_20101201_102647_8854.h5'
@@ -348,7 +358,7 @@ if __name__ == '__main__':
     vis = TraubDataVis()
     vis.load_data(posfile, datafile)
     vis.setup_visualization(animate=animate)
-    vis.display(animate=animate)
+    vis.display(animate=animate, movie=movie, filename=filename)
         
 
 # 
