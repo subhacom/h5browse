@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Aug 16 18:26:23 2011 (+0530)
+# Last-Updated: Wed Aug 17 20:18:11 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 507
+#     Update #: 588
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -27,6 +27,8 @@
 # 
 
 # Code:
+
+import sys
 
 from collections import defaultdict
 import numpy
@@ -95,31 +97,34 @@ class TraubDataHandler(object):
     def generate_cellpos(self, diascale=1.0):
         """Create random positions based on depth and diameter data
         for the cells"""
-        maxr = 0.0
+        old_pos_len = 0
+        
         for cellclass in self.cellclass:
             start = float(self.class_pos[cellclass]['start'])
             end = float(self.class_pos[cellclass]['end'])
-            print cellclass, 'Start:', start, 'End:', end
+            # print cellclass, 'Start:', start, 'End:', end
             rad = float(self.class_pos[cellclass]['dia'])/2.0
             size = len(self.class_cell[cellclass])
             zpos = -numpy.random.uniform(low=start, high=end, size=size)
             rpos = rad * numpy.sqrt(numpy.random.uniform(low=0, high=1.0, size=size))
-            maxr_tmp = max(rpos)
-            if maxr_tmp > maxr:
-                maxr = maxr_tmp
             theta = numpy.random.uniform(low=0, high=2*numpy.pi, size=size)
             xpos = rpos * numpy.cos(theta)
             ypos = rpos * numpy.sin(theta)
             pos = numpy.column_stack((xpos, ypos, zpos))
+            print cellclass, 'Positions:'
+            print pos
             if pos.size == 0:
+                print 'Zero length position for', cellclass
                 continue
-            print '>>', cellclass, len(pos)
             if self.pos is None:
                 self.pos = pos
             else:
                 self.pos = numpy.concatenate((self.pos, pos))
+            print cellclass, 'start: %d, end: %d' % (old_pos_len, len(self.pos))
+            old_pos_len = len(self.pos)
         self.pos = numpy.array(self.pos, copy=True, order='C')
-        print 'Maximum radius:', maxr
+        print 'Position has shape:', self.pos.shape
+        
         
 
     def update_times(self):
@@ -155,7 +160,10 @@ class TraubDataHandler(object):
     def get_range(self, cellclass):
         start = 0
         end = 0
-        for classname, celllist in self.class_cell.items():
+        ii = 0
+
+        for classname in self.cellclass:
+            celllist = self.class_cell[classname]
             if classname == cellclass:
                 end = start + len(celllist)
                 break
@@ -164,7 +172,8 @@ class TraubDataHandler(object):
         return (start, end)
             
     def __del__(self):
-        self.datafile.close()
+	if self.datafile:
+	    self.datafile.close()
     
 class TraubDataVis(object):
     """Visualizer for Traub model data"""
@@ -188,23 +197,37 @@ class TraubDataVis(object):
                      'TCR': cmp_bone_matrix,
                      'nRT': cmp_hot_matrix
                      }
-
+        self.static_colors = {'SupPyrRS': (0.0, 0.0, 1.0),
+                     'SupPyrFRB': (0.0, 1.0, 0.0),
+                     'SupLTS': (1.0, 0.0, 0.0),
+                     'SupAxoaxonic': (1.0, 0.0, 1.0),
+                     'SupBasket': (1.0, 1.0, 0.0),
+                     'SpinyStellate': (0.0, 1.0, 1.0),
+                     'TuftedIB': (1.0, 0.5, 0.5),
+                     'TuftedRS': (0.5, 0.5, 1.0),
+                     'NontuftedRS': (0.5, 1.0, 0.5),
+                     'DeepBasket': (0.2, 0.5, 1.0),
+                     'DeepAxoaxonic': (1.0, 0.5, 0.2),
+                     'DeepLTS': (0.5, 1.0, 0.2),
+                     'TCR': (0.5, 0.2, 1.0),
+                     'nRT': (1.0, 0.2, 0.5)
+                     }
     def load_data(self, posfilename, datafilename):
         self.datahandler.read_posdata(posfilename)
         self.datahandler.read_celldata(datafilename)
         self.datahandler.generate_cellpos()
         self.datahandler.update_times()
 
-    def setup_visualization(self):
+    def setup_visualization(self, animate=True):
         self.positionSource = {}
-        self.sphereSource = {}
+        self.glyphSource = {}
         self.mapper = {}
         self.glyph = {}
         self.actor = {}
         self.colorXfun = {}
         self.renderer = vtk.vtkRenderer()
         self.renwin = vtk.vtkRenderWindow()
-        # self.renwin.SetFullScreen(1)
+        self.renwin.SetFullScreen(1)
         self.renwin.AddRenderer(self.renderer)
         for classname in self.datahandler.cellclass:
             cellrange = self.datahandler.get_range(classname)
@@ -212,7 +235,8 @@ class TraubDataVis(object):
                 continue
             # print cellrange, 
             pos = self.datahandler.pos[cellrange[0]: cellrange[1]]
-            print classname, 'Pos', len(pos)
+            print classname, 'strat-->end', cellrange
+            print classname, 'Z-range', min(pos[:,2]),max(pos[:,2])
             # print pos, pos.size
             pos_array = vtknp.numpy_to_vtk(pos, deep=True)
             points = vtk.vtkPoints()
@@ -220,15 +244,23 @@ class TraubDataVis(object):
             polydata = vtk.vtkPolyData()
             polydata.SetPoints(points)
             # polydata.GlobalReleaseDataFlagOn()            # data = self.datahandler.get_vm(0)
-            # polydata.GetPointData().SetScalars(vtknp.numpy_to_vtk(data))
-            self.positionSource[classname] = polydata 
-            sphere = vtk.vtkSphereSource()
-            sphere.SetRadius(1)
-            sphere.SetThetaResolution(20)
-            sphere.SetPhiResolution(20)
-            self.sphereSource[classname] = sphere
+            
+            self.positionSource[classname] = polydata
+            source = None
+            if classname.find('SpinyStellate') >= 0:
+                print 'Cone for', classname
+                source = vtk.vtkConeSource()
+                source.SetRadius(1)
+                source.SetResolution(20)
+                source.SetHeight(2)
+            else:                
+                source = vtk.vtkSphereSource()
+                source.SetRadius(1)
+                source.SetThetaResolution(20)
+                source.SetPhiResolution(20)
+            self.glyphSource[classname] = source
             glyph = vtk.vtkGlyph3D()
-            glyph.SetSource(sphere.GetOutput())
+            glyph.SetSource(source.GetOutput())
             glyph.SetInput(polydata)
             glyph.SetScaleModeToDataScalingOff()
             glyph.SetScaleFactor(10)
@@ -278,7 +310,8 @@ class TraubDataVis(object):
                 print 'Time:', time
                 for cellclass in self.datahandler.cellclass:
                     vm = self.datahandler.get_vm(cellclass, ii)
-                    if len(vm == 0):
+                    if (vm is None) or len(vm) == 0:
+                        print 'Error:', cellclass, vm
                         continue
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
                 self.renwin.Render()
@@ -288,13 +321,24 @@ class TraubDataVis(object):
         print 'TraubDataVis.display::End'
 
 if __name__ == '__main__':
-    posfile = '/home/subha/src/sim/cortical/dataviz/cellpos.csv'
-    # datafile = '/home/subha/src/sim/cortical/py/data/data_20101201_102647_8854.h5'
-    datafile = '/home/subha/src/sim/cortical/py/data/data_20101218_204508_9317.h5'
+    args = sys.argv
+    posfile = None
+    datafile = None
+    animate = True
+    print 'Args', args, len(args)
+    if len(args) >= 3:
+        posfile = args[1]
+        datafile = args[2]
+        if len(args) > 3:
+            animate = False
+    else:
+        posfile = '/home/subha/src/sim/cortical/dataviz/cellpos.csv'
+        datafile = '/home/subha/src/sim/cortical/py/data/data_20101201_102647_8854.h5'
+    print 'Visualizing: positions from %s and data from %s' % (posfile, datafile)
     vis = TraubDataVis()
     vis.load_data(posfile, datafile)
-    vis.setup_visualization()
-    vis.display(animate=True)
+    vis.setup_visualization(animate=animate)
+    vis.display(animate=animate)
         
 
 # 
