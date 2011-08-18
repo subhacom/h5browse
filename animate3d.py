@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Aug 18 15:52:38 2011 (+0530)
+# Last-Updated: Thu Aug 18 16:51:53 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 592
+#     Update #: 601
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -287,7 +287,7 @@ class TraubDataVis(object):
         #     break            
         print 'End setup_visualization'
 
-    def display(self, animate=True):
+    def display(self, animate=True, filename='traub_animated.avi'):
         print 'TraubDataVis.display::Start'
         self.camera = vtk.vtkCamera() #self.renderer.GetActiveCamera()
         self.camera.SetPosition(0.0, 500.0, -1200.0)
@@ -304,8 +304,14 @@ class TraubDataVis(object):
             self.renwin.SetOffScreenRendering(True)
             self.win2image = vtk.vtkWindowToImageFilter()
             self.win2image.SetInput(self.renwin)
-            self.imwriter = vtk.vtkPNGWriter()
-            self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
+            self.moviewriter = vtk.vtkFFMPEGWriter()
+            self.moviewriter.SetQuality(2)
+            self.moviewriter.SetRate(10)
+            self.moviewriter.SetInputConnection(self.win2image.GetOutputPort())
+            self.moviewriter.SetFileName(filename)
+            self.moviewriter.Start()
+            # self.imwriter = vtk.vtkPNGWriter()
+            # self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
             time = 0.0
             for ii in range(self.datahandler.num_time):
                 time += self.datahandler.plotdt
@@ -318,8 +324,10 @@ class TraubDataVis(object):
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
                 self.renwin.Render()
                 self.win2image.Modified()
-                self.imwriter.SetFileName('frame_%05d.png' % (ii))
-                self.imwriter.Write()
+                self.moviewriter.Write()
+                # self.imwriter.SetFileName('frame_%05d.png' % (ii))
+                # self.imwriter.Write()
+            self.moviewriter.End()
         print 'TraubDataVis.display::End'
 
 if __name__ == '__main__':
