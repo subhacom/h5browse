@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 19 10:58:29 2011 (+0530)
+# Last-Updated: Fri Aug 19 11:30:27 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 612
+#     Update #: 632
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -212,6 +212,25 @@ class TraubDataVis(object):
                      'TCR': (0.5, 0.2, 1.0),
                      'nRT': (1.0, 0.2, 0.5)
                      }
+
+        # scalarbar_pos: (x_top_left, y_top_left)
+        self.scalarbar_pos = {
+            'SupPyrRS':         (10,   10),
+            'SupPyrFRB':        (50,   10),
+            'SupLTS':           (90,   10),
+            'SupAxoaxonic':     (130,  10),
+            'SupBasket':        (170,  10),
+            'SpinyStellate':    (210,  10),
+            'TuftedIB':         (250,  10),
+            'TuftedRS':         (290,  10),
+            'NontuftedRS':      (930,  10),
+            'DeepBasket':       (970,  10),
+            'DeepAxoaxonic':    (1010, 10),
+            'DeepLTS':          (1050, 10),
+            'TCR':              (1090, 10),
+            'nRT':              (1130, 10)
+            }
+
     def load_data(self, posfilename, datafilename):
         self.datahandler.read_posdata(posfilename)
         self.datahandler.read_celldata(datafilename)
@@ -288,6 +307,9 @@ class TraubDataVis(object):
             scalarBar.SetLookupTable(colorXfun)
             scalarBar.SetTitle(classname)
             scalarBar.SetNumberOfLabels(4)
+            scalarBar.SetPosition(*self.scalarbar_pos[classname])
+            scalarBar.SetHeight(800)
+            scalarBar.SetWidth(20)
             self.scalarBar[classname] = scalarBar
             self.renderer.AddActor2D(scalarBar)
         # for key, value in self.mapper.items():
