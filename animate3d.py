@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 19 11:30:27 2011 (+0530)
+# Last-Updated: Fri Aug 19 23:55:39 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 632
+#     Update #: 715
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -111,8 +111,8 @@ class TraubDataHandler(object):
             xpos = rpos * numpy.cos(theta)
             ypos = rpos * numpy.sin(theta)
             pos = numpy.column_stack((xpos, ypos, zpos))
-            print cellclass, 'Positions:'
-            print pos
+            # print cellclass, 'Positions:'
+            # print pos
             if pos.size == 0:
                 print 'Zero length position for', cellclass
                 continue
@@ -214,22 +214,6 @@ class TraubDataVis(object):
                      }
 
         # scalarbar_pos: (x_top_left, y_top_left)
-        self.scalarbar_pos = {
-            'SupPyrRS':         (10,   10),
-            'SupPyrFRB':        (50,   10),
-            'SupLTS':           (90,   10),
-            'SupAxoaxonic':     (130,  10),
-            'SupBasket':        (170,  10),
-            'SpinyStellate':    (210,  10),
-            'TuftedIB':         (250,  10),
-            'TuftedRS':         (290,  10),
-            'NontuftedRS':      (930,  10),
-            'DeepBasket':       (970,  10),
-            'DeepAxoaxonic':    (1010, 10),
-            'DeepLTS':          (1050, 10),
-            'TCR':              (1090, 10),
-            'nRT':              (1130, 10)
-            }
 
     def load_data(self, posfilename, datafilename):
         self.datahandler.read_posdata(posfilename)
@@ -250,6 +234,8 @@ class TraubDataVis(object):
         self.renwin.SetSize(1280, 900)
         # self.renwin.SetFullScreen(1)
         self.renwin.AddRenderer(self.renderer)
+        scalarbarX = 0.01
+        scalarbarY = 0.95
         for classname in self.datahandler.cellclass:
             cellrange = self.datahandler.get_range(classname)
             if cellrange[0] == cellrange[1]:
@@ -267,6 +253,7 @@ class TraubDataVis(object):
             # polydata.GlobalReleaseDataFlagOn()            # data = self.datahandler.get_vm(0)
             
             self.positionSource[classname] = polydata
+            print 'Position size:', polydata.GetPointData().GetNumberOfTuples()
             source = None
             if classname.find('Pyr') >= 0:
                 print 'Cone for', classname
@@ -306,19 +293,23 @@ class TraubDataVis(object):
             scalarBar = vtk.vtkScalarBarActor()
             scalarBar.SetLookupTable(colorXfun)
             scalarBar.SetTitle(classname)
-            scalarBar.SetNumberOfLabels(4)
-            scalarBar.SetPosition(*self.scalarbar_pos[classname])
-            scalarBar.SetHeight(800)
-            scalarBar.SetWidth(20)
+            # scalarBar.SetNumberOfLabels(4)
+            scalarBar.SetPosition(scalarbarX, scalarbarY)
+            scalarbarY -= 0.07
+            scalarBar.SetHeight(0.05)
+            scalarBar.SetWidth(0.30)
+            scalarBar.SetOrientationToHorizontal()
+            scalarBar.GetTitleTextProperty().SetOrientation(90.0)
             self.scalarBar[classname] = scalarBar
             self.renderer.AddActor2D(scalarBar)
+            
         # for key, value in self.mapper.items():
         #     value.GlobalImmediateModeRenderingOn()
         #     break            
         print 'End setup_visualization'
 
-    def display(self, animate=True, movie=False, filename='traub_animated.avi'):
-        print 'TraubDataVis.display::Start'
+    def display(self, animate=True, movie=False, filename=None):
+        print 'TraubDataVis.display::Start: animate: %d, movie: %d, filename: %s' % (animate, movie, filename)
         self.camera = vtk.vtkCamera() #self.renderer.GetActiveCamera()
         self.camera.SetPosition(0.0, 500.0, -1200.0)
         self.camera.SetFocalPoint(0, 0, -1200)
@@ -350,17 +341,23 @@ class TraubDataVis(object):
                 print 'Time:', time
                 for cellclass in self.datahandler.cellclass:
                     vm = self.datahandler.get_vm(cellclass, ii)
+                    print cellclass, ': Length of vm: ', vm.size
                     if (vm is None) or len(vm) == 0:
                         print 'Error:', cellclass, vm
                         continue
+                    print 'Size of positions:', self.positionSource[cellclass].GetPointData().GetNumberOfTuples()
+                    print vm
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
+                    print 'Here'
                 self.renwin.Render()
+                print '--1'
                 self.win2image.Modified()
                 if movie:
                     self.moviewriter.Write()
                 else:
                     self.imwriter.SetFileName('frame_%05d.png' % (ii))
                     self.imwriter.Write()
+                    print 'Here'
             if movie:
                 self.moviewriter.End()
         print 'TraubDataVis.display::End'
