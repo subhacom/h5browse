@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Aug 18 16:51:53 2011 (+0530)
+# Last-Updated: Fri Aug 19 10:58:29 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 601
+#     Update #: 612
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -225,9 +225,11 @@ class TraubDataVis(object):
         self.glyph = {}
         self.actor = {}
         self.colorXfun = {}
+        self.scalarBar = {}
         self.renderer = vtk.vtkRenderer()
         self.renwin = vtk.vtkRenderWindow()
-        self.renwin.SetFullScreen(1)
+        self.renwin.SetSize(1280, 900)
+        # self.renwin.SetFullScreen(1)
         self.renwin.AddRenderer(self.renderer)
         for classname in self.datahandler.cellclass:
             cellrange = self.datahandler.get_range(classname)
@@ -282,6 +284,12 @@ class TraubDataVis(object):
             actor.GetProperty().SetOpacity(0.5)
             self.actor[classname] = actor
             self.renderer.AddActor(actor)
+            scalarBar = vtk.vtkScalarBarActor()
+            scalarBar.SetLookupTable(colorXfun)
+            scalarBar.SetTitle(classname)
+            scalarBar.SetNumberOfLabels(4)
+            self.scalarBar[classname] = scalarBar
+            self.renderer.AddActor2D(scalarBar)
         # for key, value in self.mapper.items():
         #     value.GlobalImmediateModeRenderingOn()
         #     break            
