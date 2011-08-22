@@ -243,7 +243,6 @@ class TraubDataVis(object):
             # print cellrange, 
             pos = self.datahandler.pos[cellrange[0]: cellrange[1]]
             print classname, 'strat-->end', cellrange
-            print classname, 'Z-range', min(pos[:,2]),max(pos[:,2])
             # print pos, pos.size
             pos_array = vtknp.numpy_to_vtk(pos, deep=True)
             points = vtk.vtkPoints()
@@ -253,7 +252,6 @@ class TraubDataVis(object):
             # polydata.GlobalReleaseDataFlagOn()            # data = self.datahandler.get_vm(0)
             
             self.positionSource[classname] = polydata
-            print 'Position size:', polydata.GetPointData().GetNumberOfTuples()
             source = None
             if classname.find('Pyr') >= 0:
                 print 'Cone for', classname
@@ -341,23 +339,17 @@ class TraubDataVis(object):
                 print 'Time:', time
                 for cellclass in self.datahandler.cellclass:
                     vm = self.datahandler.get_vm(cellclass, ii)
-                    print cellclass, ': Length of vm: ', vm.size
                     if (vm is None) or len(vm) == 0:
                         print 'Error:', cellclass, vm
                         continue
-                    print 'Size of positions:', self.positionSource[cellclass].GetPointData().GetNumberOfTuples()
-                    print vm
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
-                    print 'Here'
                 self.renwin.Render()
-                print '--1'
                 self.win2image.Modified()
                 if movie:
                     self.moviewriter.Write()
                 else:
                     self.imwriter.SetFileName('frame_%05d.png' % (ii))
                     self.imwriter.Write()
-                    print 'Here'
             if movie:
                 self.moviewriter.End()
         print 'TraubDataVis.display::End'
