@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Aug 19 23:55:39 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 715
+# Last-Updated: Tue Aug 30 12:13:53 2011 (+0530)
+#           By: subha
+#     Update #: 722
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -87,10 +87,12 @@ class TraubDataHandler(object):
             print cellclass, len(self.class_cell[cellclass])
             self.cellname.extend(self.class_cell[cellclass])
         for cellname in self.cellname:
+            tmp = numpy.zeros(shape=self.vm_node[cellname].shapem dtype=self.vm_node[cellname].dtype)
+            tmp[:] = self.vm_node[cellname][:]
             if self.vm is None:
-                self.vm = numpy.array(self.vm_node[cellname], order='C')
+                self.vm = tmp
             else:
-                self.vm = numpy.vstack((self.vm, numpy.array(self.vm_node[cellname], order='C')))
+                self.vm = numpy.vstack((self.vm, tmp))
         print 'Finished read_celldata'
         
 
