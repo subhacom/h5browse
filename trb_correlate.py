@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sun Aug 28 14:12:44 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Aug 30 15:23:38 2011 (+0530)
+# Last-Updated: Tue Aug 30 17:36:27 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 80
+#     Update #: 93
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,6 +36,7 @@ from datetime import datetime
 
 def find_xcorr(inputfilename, outputfilename):
     datafile = h5py.File(inputfilename, 'r')
+    outfile =  h5py.File(outputfilename, 'w-')
     vmnode = datafile['/Vm']
     vmdata = []
     cellname = []
@@ -48,10 +49,9 @@ def find_xcorr(inputfilename, outputfilename):
         # print 'Added Vm of %s' % (cell)
     end = datetime.now()    
     dt = end - start
-    print 'Fnished reading Vm data in :', (dt.days*86400 + dt.seconds + 1e-6 * dt.microseconds), 'seconds'
+    print 'Finished reading Vm data in :', (dt.days*86400 + dt.seconds + 1e-6 * dt.microseconds), 'seconds'
     datafile.close()
-    datafile = h5py.File(outputfilename, 'w-')
-    corrnode = datafile.create_group('correlations')
+    corrnode = outfile.create_group('correlations')
     start = datetime.now()
     for ii in range(len(cellname)):
         _start = datetime.now()
@@ -63,8 +63,8 @@ def find_xcorr(inputfilename, outputfilename):
         for jj in range(ii+1):
             second = vmdata[jj] - vmdata[jj].mean()
             second /= second.std()
-            corr = correlate(first, second)
-            corrdset = corrnode.create_dataset('%s-%s' % (cellname[ii], cellname[jj]), data=corr, compression='gzip')
+            corr = correlate(first, second, 'same')
+            corrdset = corrnode.create_dataset('%s-%s' % (cellname[ii], cellname[jj]), data=corr)
             # print 'Saved correlation of Vm [%s -> %s]' % (cellname[ii], cellname[jj])
         _end = datetime.now()
         dt = _end - _start
@@ -72,7 +72,7 @@ def find_xcorr(inputfilename, outputfilename):
     end = datetime.now()
     dt = end - start
     print 'Finished correlation computation and saving in :', dt.days * 86400 + dt.seconds + dt.microseconds, 'seconds'
-    datafile.close()
+    outfile.close()
     
 
 import sys
