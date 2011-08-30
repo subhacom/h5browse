@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sun Aug 28 14:12:44 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Aug 29 11:37:12 2011 (+0530)
-#           By: subha
-#     Update #: 70
+# Last-Updated: Tue Aug 30 15:23:38 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 80
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -31,6 +31,7 @@
 
 import h5py
 import numpy
+from scipy.signal import correlate
 from datetime import datetime
 
 def find_xcorr(inputfilename, outputfilename):
@@ -54,8 +55,15 @@ def find_xcorr(inputfilename, outputfilename):
     start = datetime.now()
     for ii in range(len(cellname)):
         _start = datetime.now()
-        for jj in range(ii):
-            corr = numpy.correlate(vmdata[ii], vmdata[jj])
+        # First subtract mean and divide by standard deviation to
+        # regularize the data:
+        # http://stackoverflow.com/questions/6157791/find-phase-difference-between-two-inharmonic-waves
+        first = vmdata[ii] - vmdata[ii].mean()
+        first /= first.std()
+        for jj in range(ii+1):
+            second = vmdata[jj] - vmdata[jj].mean()
+            second /= second.std()
+            corr = correlate(first, second)
             corrdset = corrnode.create_dataset('%s-%s' % (cellname[ii], cellname[jj]), data=corr, compression='gzip')
             # print 'Saved correlation of Vm [%s -> %s]' % (cellname[ii], cellname[jj])
         _end = datetime.now()
