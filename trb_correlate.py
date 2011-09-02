@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sun Aug 28 14:12:44 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Aug 30 17:36:27 2011 (+0530)
+# Last-Updated: Wed Aug 31 10:27:23 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 93
+#     Update #: 108
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,7 +36,6 @@ from datetime import datetime
 
 def find_xcorr(inputfilename, outputfilename):
     datafile = h5py.File(inputfilename, 'r')
-    outfile =  h5py.File(outputfilename, 'w-')
     vmnode = datafile['/Vm']
     vmdata = []
     cellname = []
@@ -51,23 +50,27 @@ def find_xcorr(inputfilename, outputfilename):
     dt = end - start
     print 'Finished reading Vm data in :', (dt.days*86400 + dt.seconds + 1e-6 * dt.microseconds), 'seconds'
     datafile.close()
-    corrnode = outfile.create_group('correlations')
     start = datetime.now()
     for ii in range(len(cellname)):
         _start = datetime.now()
+        filename = '%s_%s.h5' % (outputfilename, cellname[ii])
+        print 'Creating:', filename
+        outfile = h5py.File(filename, 'w-')
+        corrnode = outfile.create_group('correlations_%s' % cellname[ii])
         # First subtract mean and divide by standard deviation to
         # regularize the data:
         # http://stackoverflow.com/questions/6157791/find-phase-difference-between-two-inharmonic-waves
         first = vmdata[ii] - vmdata[ii].mean()
         first /= first.std()
-        for jj in range(ii+1):
+        for jj in range(ii, len(cellname)):
             second = vmdata[jj] - vmdata[jj].mean()
             second /= second.std()
             corr = correlate(first, second, 'same')
-            corrdset = corrnode.create_dataset('%s-%s' % (cellname[ii], cellname[jj]), data=corr)
+            corrdset = corrnode.create_dataset('%s' % (cellname[jj]), data=corr)
             # print 'Saved correlation of Vm [%s -> %s]' % (cellname[ii], cellname[jj])
         _end = datetime.now()
         dt = _end - _start
+        outfile.close()
         print 'Finished saving correlations for:', cellname[ii], 'in', dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds, 'seconds'
     end = datetime.now()
     dt = end - start
