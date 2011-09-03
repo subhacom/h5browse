@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sun Aug 28 14:12:44 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Sep  3 12:23:58 2011 (+0530)
+# Last-Updated: Sat Sep  3 13:43:30 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 286
+#     Update #: 298
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -129,13 +129,13 @@ def save_xcorr_h5py(datafilename, netfilename, outfilename, node='Vm', numcells=
     lags = 2 * int(simtime/plotdt) - 1
     time = numpy.fft.fftshift(numpy.fft.fftfreq(lags, 1/(plotdt*lags)))
     corrgroup = outfile.create_group('/%s' % (node))
-    timearray = corrgroup.create_dataset('t', data=time, compression='gzip', compression_opts=9)
+    timearray = corrgroup.create_dataset('t', data=time, compression='gzip')
     for ii in range(len(cell)):
         left = vmdata[ii]
         for jj in range(len(cell)):
             right = vmdata[jj]
             corr = ncc(left, right)
-            corrarray = corrgroup.create_dataset('%s-%s' % (cell[ii], cell[jj]), data=corr)
+            corrarray = corrgroup.create_dataset('%s-%s' % (cell[ii], cell[jj]), data=corr, chunks=corr.shape)
     outfile.close()
     datafile.close()
     netfile.close()
@@ -164,7 +164,7 @@ def save_xcorr_pytables(datafilename, netfilename, outfilename, node='Vm', numce
     t_start = datetime.now()
     datafile = tables.openFile(datafilename, mode='r')
     netfile = tables.openFile(netfilename, mode='r')
-    outfilter = tables.Filters(complevel=9, complib='bzip2', fletcher32=True)
+    outfilter = tables.Filters(complevel=4, complib='zlib', fletcher32=True)
     outfile = tables.openFile(outfilename, mode='w', filters=outfilter)
     simtime = None
     plotdt = None
