@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Apr 12 16:52:41 2011 (+0530)
+# Last-Updated: Mon Sep 26 20:51:18 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1634
+#     Update #: 1663
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -63,6 +63,7 @@ from PyQt4 import QtCore, QtGui, Qt
 from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
+from plotconfig import PlotConfig
             
 class DataVizWidget(QtGui.QMainWindow):
     def __init__(self, *args):
@@ -89,11 +90,23 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.windowMapper, QtCore.SIGNAL('mapped(QWidget*)'),
                      self.__setActiveSubWindow)
 
+        self.plotConfig = PlotConfig(self)
+        self.plotConfig.setVisible(False)        
         self.__setupActions()
         self.__setupMenuBar()
 
     def __setupActions(self):
-        self.quitAction = QtGui.QAction('&Quit', self)
+        self.editLegendTextAction = QtGui.QAction(self.tr('Edit plot label'), self)
+        self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
+        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
+	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
+
+        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Hide selected plots'), self)
+        self.togglePlotVisibilityAction.setCheckable(True)
+        self.togglePlotVisibilityAction.setChecked(False)        
+        self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
+
+        self.quitAction = QtGui.QAction('&Quit', self)        
         self.quitAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+Q')))
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), QtGui.qApp.quit)
 
@@ -146,6 +159,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editMenu.addAction(self.selectForPlotAction)
         self.editMenu.addAction(self.selectByRegexAction)
         self.editMenu.addAction(self.clearPlotListAction)
+        self.editMenu.addAction(self.editLegendTextAction)
+        self.editMenu.addAction(self.configurePlotAction)
+        self.editMenu.addAction(self.togglePlotVisibilityAction)
 
         self.toolsMenu = self.menuBar().addMenu('&Tools')
         self.toolsMenu.addAction(self.plotAction)
@@ -188,7 +204,8 @@ class DataVizWidget(QtGui.QMainWindow):
         datalist = []
         for item in self.dataList.model().stringList():
             path = str(item)
-            datalist.append(numpy.array(self.h5tree.getData(path)))
+            tseries = self.h5tree.getTimeSeries(path)
+            datalist.append((tseries, numpy.array(self.h5tree.getData(path))))
             namelist.append(path)
         plotWidget.addPlotCurveList(namelist, datalist, mode='raster')
         mdiChild.showMaximized()
@@ -280,6 +297,32 @@ class DataVizWidget(QtGui.QMainWindow):
     def __setActiveSubWindow(self, window):
         if window:
             self.mdiArea.setActiveSubWindow(window)
+
+    def __editLegendText(self):
+        """Change the legend text."""
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.editLegendText()
+
+    def __configurePlots(self):
+        """Interactively allow the user to configure everything about
+        the plots."""
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        self.plotConfig.setVisible(True)
+        ret = self.plotConfig.exec_()
+        # print ret, QtGui.QDialog.Accepted
+        if ret == QtGui.QDialog.Accepted:
+            pen = self.plotConfig.getPen()
+            symbol = self.plotConfig.getSymbol()
+            style = self.plotConfig.getStyle()
+            attribute = self.plotConfig.getAttribute()
+            print 'Active plot', activePlot
+            activePlot.reconfigureSelectedCurves(pen, symbol, style, attribute)
+
+    def __togglePlotVisibility(self, hide):
+        print 'Currently selected to hide?', hide
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.toggleSelectedCurves()
+
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

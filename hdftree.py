@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Jun  2 06:56:43 2011 (+0530)
+# Last-Updated: Sat Sep 24 15:21:01 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 308
+#     Update #: 319
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -152,6 +152,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
             ret = node.attrs
         return ret
 
+
     def getOpenFileName(self, path):
         """Added this little function to avoid repetition."""
         for key, value in self.fhandles.items():
@@ -160,8 +161,16 @@ class H5TreeWidget(QtGui.QTreeWidget):
     
     def getTimeSeries(self, path):
         h5f = self.fhandles[self.getOpenFileName(path)]
-        simtime = h5f.attrs['simtime']
-        plotdt = h5f.attrs['plotdt']
+        scheduling = h5f.get('/runconfig/scheduling')
+        if scheduling is not None:
+            for item in scheduling:
+                if item[0] == 'simtime':
+                    simtime = float(item[1])
+                if item[0] == 'plotdt':
+                    plotdt = float(item[1])
+        else:
+            simtime = h5f.attrs['simtime']
+            plotdt = h5f.attrs['plotdt']
         return numpy.arange(0, simtime, plotdt)
 
     def __del__(self):

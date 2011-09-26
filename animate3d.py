@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Aug 30 12:13:53 2011 (+0530)
-#           By: subha
-#     Update #: 722
+# Last-Updated: Mon Sep 26 13:58:02 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 729
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -87,7 +87,7 @@ class TraubDataHandler(object):
             print cellclass, len(self.class_cell[cellclass])
             self.cellname.extend(self.class_cell[cellclass])
         for cellname in self.cellname:
-            tmp = numpy.zeros(shape=self.vm_node[cellname].shapem dtype=self.vm_node[cellname].dtype)
+            tmp = numpy.zeros(shape=self.vm_node[cellname].shape, dtype=self.vm_node[cellname].dtype)
             tmp[:] = self.vm_node[cellname][:]
             if self.vm is None:
                 self.vm = tmp
@@ -322,9 +322,9 @@ class TraubDataVis(object):
             self.interactor.Initialize()
             self.interactor.Start()
         else:
-            self.renwin.SetOffScreenRendering(True)
-            self.win2image = vtk.vtkWindowToImageFilter()
-            self.win2image.SetInput(self.renwin)
+            # self.renwin.SetOffScreenRendering(True)
+            # self.win2image = vtk.vtkWindowToImageFilter()
+            # self.win2image.SetInput(self.renwin)
 	    if movie:
                 self.moviewriter = vtk.vtkFFMPEGWriter()
                 self.moviewriter.SetQuality(2)
@@ -333,8 +333,9 @@ class TraubDataVis(object):
                 self.moviewriter.SetFileName(filename)
                 self.moviewriter.Start()
             else:
-                self.imwriter = vtk.vtkPNGWriter()
-                self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
+                pass
+                # self.imwriter = vtk.vtkPNGWriter()
+                # self.imwriter.SetInputConnection(self.win2image.GetOutputPort())
             time = 0.0
             for ii in range(self.datahandler.num_time):
                 time += self.datahandler.plotdt
@@ -342,16 +343,17 @@ class TraubDataVis(object):
                 for cellclass in self.datahandler.cellclass:
                     vm = self.datahandler.get_vm(cellclass, ii)
                     if (vm is None) or len(vm) == 0:
-                        print 'Error:', cellclass, vm
+                        # print 'Error:', cellclass, vm
                         continue
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
                 self.renwin.Render()
-                self.win2image.Modified()
+                # self.win2image.Modified()
                 if movie:
                     self.moviewriter.Write()
                 else:
-                    self.imwriter.SetFileName('frame_%05d.png' % (ii))
-                    self.imwriter.Write()
+                    pass
+                    # self.imwriter.SetFileName('frame_%05d.png' % (ii))
+                    # self.imwriter.Write()
             if movie:
                 self.moviewriter.End()
         print 'TraubDataVis.display::End'
