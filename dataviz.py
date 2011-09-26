@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Sep 26 20:51:18 2011 (+0530)
+# Last-Updated: Mon Sep 26 21:01:13 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1663
+#     Update #: 1665
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -101,9 +101,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
 	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
 
-        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Hide selected plots'), self)
-        self.togglePlotVisibilityAction.setCheckable(True)
-        self.togglePlotVisibilityAction.setChecked(False)        
+        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
+        # self.togglePlotVisibilityAction.setCheckable(True)
+        # self.togglePlotVisibilityAction.setChecked(False)        
         self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
 
         self.quitAction = QtGui.QAction('&Quit', self)        

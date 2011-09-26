@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Sep 26 20:52:55 2011 (+0530)
+# Last-Updated: Mon Sep 26 21:02:54 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 109
+#     Update #: 111
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,7 +71,6 @@ class PlotWidget(Qwt.QwtPlot):
     def clearZoomStack(self):
         """Auto scale and clear the zoom stack
         """
-        print 'Here'
         self.setAxisAutoScale(Qwt.QwtPlot.xBottom)
         self.setAxisAutoScale(Qwt.QwtPlot.yLeft)
         self.replot()
@@ -98,7 +97,7 @@ class PlotWidget(Qwt.QwtPlot):
                 if editDialog.exec_() == QtGui.QDialog.Accepted:
                     widget.setText(Qwt.QwtText(editDialog.textValue()))
                     item.setTitle(Qwt.QwtText(editDialog.textValue()))
-                
+                    widget.setChecked(False)
         
     def reconfigureSelectedCurves(self, pen, symbol, style, attribute):
         """Reconfigure the selected curves to use pen for line and
