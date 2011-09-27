@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Sep 26 13:58:02 2011 (+0530)
+# Last-Updated: Tue Sep 27 20:51:36 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 729
+#     Update #: 730
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -251,7 +251,8 @@ class TraubDataVis(object):
             points.SetData(pos_array)
             polydata = vtk.vtkPolyData()
             polydata.SetPoints(points)
-            # polydata.GlobalReleaseDataFlagOn()            # data = self.datahandler.get_vm(0)
+            # polydata.GlobalReleaseDataFlagOn()
+            # data = self.datahandler.get_vm(0)
             
             self.positionSource[classname] = polydata
             source = None
