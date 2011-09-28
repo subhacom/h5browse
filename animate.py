@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Sep 27 09:51:03 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Sep 27 18:35:19 2011 (+0530)
+# Last-Updated: Wed Sep 28 11:04:23 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 421
+#     Update #: 448
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -96,8 +96,7 @@ class TraubDataHandler(object):
         except KeyError:
             self.simtime = float(self.num_data_points)
             self.plotdt = 1.0
-        # Note: vm is column major
-        self.vm = numpy.zeros((self.cellcount, self.num_data_points), order='C')
+        self.vm = numpy.zeros((self.cellcount, self.num_data_points))
         index = 0
         for cellname, vm_array in self.vm_node.items():
             self.cell_list.append(cellname)
@@ -156,14 +155,13 @@ class AnimationTimer(object):
         """Update the colours according to Vm."""
         print 'Updating .....', self.current_index
         vm = self.datahandler.vm[:, self.current_index]
-        print vm.shape
-        pyramidal_vm = vm[self.datahandler.pyramidal_indices]
-        nonpyramidal_vm = vm[self.datahandler.nonpyramidal_indices]
-        print pyramidal_vm.shape, nonpyramidal_vm.shape
-        print self.pyramidal_points.GetPoints().GetNumberOfPoints(), self.nonpyramidal_points.GetPoints().GetNumberOfPoints()
-        print pyramidal_vm, nonpyramidal_vm
-        self.pyramidal_points.GetPointData().SetScalars(vtknp.numpy_to_vtk(pyramidal_vm))
-        self.nonpyramidal_points.GetPointData().SetScalars(vtknp.numpy_to_vtk(nonpyramidal_vm))
+        print 'Shape of Vm array:', vm.shape
+        pyramidal_vm = numpy.array(vm[self.datahandler.pyramidal_indices])
+        nonpyramidal_vm = numpy.array(vm[self.datahandler.nonpyramidal_indices])        
+        pyramidal_vm = vtknp.numpy_to_vtk(pyramidal_vm, deep=True)
+        nonpyramidal_vm = vtknp.numpy_to_vtk(nonpyramidal_vm, deep=True)
+        self.pyramidal_points.GetPointData().SetScalars(pyramidal_vm)
+        self.nonpyramidal_points.GetPointData().SetScalars(nonpyramidal_vm)
         self.current_time += self.datahandler.plotdt
         self.current_index += 1
         obj.GetRenderWindow().Render()
@@ -216,7 +214,7 @@ class TraubVmDisplay(object):
         """Create the pipeline for cells positioned at position_array
         with glyph of geometry glyphtype"""
         print 'Number if cells of', glyphtype, 'kind:', len(position_array)
-        position_array = vtknp.numpy_to_vtk(position_array)        
+        position_array = vtknp.numpy_to_vtk(position_array, deep=True) # deep=True is important otherwise the data gets deallocated at update
         points = vtk.vtkPoints()
         points.SetData(position_array)
         polydata = vtk.vtkPolyData()
@@ -259,7 +257,7 @@ class TraubVmDisplay(object):
         self.interactor.Initialize()
         self.timer = AnimationTimer(self.datahandler, self.pyramidal_pipeline['positionSource'], self.nonpyramidal_pipeline['positionSource'])
         self.interactor.AddObserver('TimerEvent', self.timer.update)
-        self.timerId = self.interactor.CreateRepeatingTimer(1000)
+        self.timerId = self.interactor.CreateRepeatingTimer(10)
         self.interactor.Start()
 
         
