@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Sep 27 09:51:03 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Sep 28 10:59:49 2011 (+0530)
+# Last-Updated: Wed Sep 28 11:04:23 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 447
+#     Update #: 448
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -257,7 +257,7 @@ class TraubVmDisplay(object):
         self.interactor.Initialize()
         self.timer = AnimationTimer(self.datahandler, self.pyramidal_pipeline['positionSource'], self.nonpyramidal_pipeline['positionSource'])
         self.interactor.AddObserver('TimerEvent', self.timer.update)
-        self.timerId = self.interactor.CreateRepeatingTimer(1000)
+        self.timerId = self.interactor.CreateRepeatingTimer(10)
         self.interactor.Start()
 
         
