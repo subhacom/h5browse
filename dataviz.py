@@ -222,6 +222,8 @@ class DataVizWidget(QtGui.QMainWindow):
             filename = self.h5tree.getOpenFileName(path)
             simtime = self.h5tree.getAttribute(filename, 'simtime')
             data = numpy.array(self.h5tree.getData(path))
+	    if simtime is None:
+		simtime = 1.0 * len(data)
             tseries = numpy.linspace(0, simtime, len(data))
             datalist.append((tseries, data))
         plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
