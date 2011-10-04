@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Sep 26 21:01:13 2011 (+0530)
+# Last-Updated: Tue Oct  4 14:58:06 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1665
+#     Update #: 1754
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -89,6 +89,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.windowMapper = QtCore.QSignalMapper(self)
         self.connect(self.windowMapper, QtCore.SIGNAL('mapped(QWidget*)'),
                      self.__setActiveSubWindow)
+        self.connect(self.h5tree, QtCore.SIGNAL('itemDoubleClicked(QTreeWidgetItem *, int )'), self.__displayData)
 
         self.plotConfig = PlotConfig(self)
         self.plotConfig.setVisible(False)        
@@ -136,6 +137,12 @@ class DataVizWidget(QtGui.QMainWindow):
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
 
+        self.displayPropertiesAction = QtGui.QAction('Properties', self)
+        self.connect(self.displayPropertiesAction, QtCore.SIGNAL('triggered()'), self.__displayH5NodeProperties)
+
+        self.displayDataAction = QtGui.QAction('Display data', self)
+        self.connect(self.displayDataAction, QtCore.SIGNAL('triggered()'), self.__displayCurrentlySelectedItemData)
+        
         self.switchMdiViewAction = QtGui.QAction('Subwindow view', self)
         self.connect(self.switchMdiViewAction, QtCore.SIGNAL('triggered()'), self.__switchMdiView)
         self.cascadeAction = QtGui.QAction('&Cascade', self)
@@ -170,7 +177,10 @@ class DataVizWidget(QtGui.QMainWindow):
         self.h5treeMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
         self.h5treeMenu.addAction(self.selectForPlotAction)
         self.h5treeMenu.addAction(self.selectByRegexAction)
+        self.h5treeMenu.addAction(self.displayPropertiesAction)
+        self.h5treeMenu.addAction(self.displayDataAction)
         self.connect(self.h5tree, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__popupH5TreeMenu)
+        
         self.dataListMenu = QtGui.QMenu(self.tr('Selected Data'), self.dataList)
         self.dataListMenu.addAction(self.removeSelectedAction)
         self.dataListMenu.addAction(self.clearPlotListAction)
@@ -254,6 +264,50 @@ class DataVizWidget(QtGui.QMainWindow):
         self.dataList.model().clear()
         for key in self.data_dict.keys():
             self.dataList.model().insertItem(key)
+
+    def __displayH5NodeProperties(self):
+        attributes = self.h5tree.currentItem().getAttributes()
+        displayWidget = QtGui.QTableWidget(self)
+        displayWidget.setRowCount(len(attributes))
+        displayWidget.setColumnCount(2)
+        displayWidget.setHorizontalHeaderLabels(QtCore.QStringList(['Attribute', 'Value']))
+        row = 0
+        for key, value in attributes.items():
+            newItem = QtGui.QTableWidgetItem(self.tr(str(key)))
+            displayWidget.setItem(row, 0, newItem)
+            newItem = QtGui.QTableWidgetItem(self.tr(str(value)))
+            displayWidget.setItem(row, 1, newItem)
+            row += 1
+        mdiChild = self.mdiArea.addSubWindow(displayWidget)
+        mdiChild.setWindowTitle(str(self.h5tree.currentItem().h5node.name))
+        mdiChild.showMaximized()
+
+    def __displayData(self, node, column):
+        data = node.getHDF5Data()
+        if data is None:
+            return
+        tableWidget = QtGui.QTableWidget()
+        tableWidget.setRowCount(len(data))
+        tableWidget.horizontalHeader().hide()
+        if data.dtype.type == numpy.void:            
+            tableWidget.setColumnCount(len(data.dtype.names))
+            for row in range(len(data)):
+                for column in range(len(data.dtype.names)):
+                    item = QtGui.QTableWidgetItem(self.tr(str(data[row][column])))
+                    tableWidget.setItem(row, column, item)
+        else:
+            tableWidget.setColumnCount(1)
+            for row in range(len(data)):
+                item = QtGui.QTableWidgetItem(self.tr(str(data[row])))
+                tableWidget.setItem(row, 0, item)
+        mdiChild = self.mdiArea.addSubWindow(tableWidget)
+        mdiChild.showMaximized()
+        mdiChild.setWindowTitle(str(node.h5node.name))
+            
+    def __displayCurrentlySelectedItemData(self):
+        node = self.h5tree.currentItem().h5node
+        self.__displayData(node, 0)
+
 
     def __switchMdiView(self):
         if self.mdiArea.viewMode() == self.mdiArea.TabbedView:

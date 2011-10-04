@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Sep 24 15:21:01 2011 (+0530)
+# Last-Updated: Tue Oct  4 14:37:04 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 319
+#     Update #: 356
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,6 +52,17 @@ class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
             path = str(parent.data(0, Qt.Qt.DisplayRole).toString()) + "/" + path
             parent = parent.parent()
         return str(path)
+
+    def getAttributes(self):
+        return self.h5node.attrs
+
+        
+    def getHDF5Data(self):
+        if isinstance(self.h5node, h5py.Dataset):
+            return self.h5node
+        else:
+            return None
+            
 
 class H5TreeWidget(QtGui.QTreeWidget):
     def __init__(self, *args):
