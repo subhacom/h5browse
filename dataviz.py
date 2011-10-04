@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  4 16:26:45 2011 (+0530)
+# Last-Updated: Tue Oct  4 16:46:05 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1793
+#     Update #: 1794
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -97,7 +97,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.__setupMenuBar()
 
     def __setupActions(self):
-        self.editLegendTextAction = QtGui.QAction(self.tr('Edit plot label'), self)
+        self.editLegendTextAction = QtGui.QAction(self.tr('Edit legend text'), self)
         self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
         self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
 	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
