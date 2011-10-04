@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Apr  8 15:12:58 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 1457
+# Last-Updated: Tue Oct  4 15:33:02 2011 (+0530)
+#           By: subha
+#     Update #: 1461
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -176,11 +176,11 @@ class UniqueListModel(QtGui.QStringListModel):
         return data
 
     def insertItem(self, data):
-        
-        if (not isinstance(data, QtCore.QString)) and isinstance(data, str):
+        try:
             data = Qt.QString(data)
-        else:
-            raise TypeError('data should be of type str or QString.')
+        except Exception, e:
+            print 'Offending data:', data, type(data)
+            raise e
         if data in self.stringList():
             print 'Data %s exists.' % (data)
             return
