@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Sep 26 21:02:54 2011 (+0530)
+# Last-Updated: Tue Oct  4 16:33:42 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 111
+#     Update #: 121
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -39,6 +39,9 @@ class PlotWidget(Qwt.QwtPlot):
         self.path_curve_dict = {}
         self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue, Qt.Qt.magenta, Qt.Qt.darkCyan, Qt.Qt.black]
         self.__nextColor = 0
+        self.enableAxis(2)
+        self.enableAxis(0)
+        self.setAxisTitle(2, 'Time (second)')
         legend = Qwt.QwtLegend()
         legend.setItemMode(Qwt.QwtLegend.CheckableItem)
         self.insertLegend(legend, Qwt.QwtPlot.TopLegend)
@@ -98,7 +101,7 @@ class PlotWidget(Qwt.QwtPlot):
                     widget.setText(Qwt.QwtText(editDialog.textValue()))
                     item.setTitle(Qwt.QwtText(editDialog.textValue()))
                     widget.setChecked(False)
-        
+
     def reconfigureSelectedCurves(self, pen, symbol, style, attribute):
         """Reconfigure the selected curves to use pen for line and
         symbol for marking the data points."""

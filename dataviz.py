@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  4 14:58:06 2011 (+0530)
+# Last-Updated: Tue Oct  4 16:26:45 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1754
+#     Update #: 1793
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -130,9 +130,14 @@ class DataVizWidget(QtGui.QMainWindow):
         self.selectForPlotAction = QtGui.QAction(self.tr('Select for plotting'), self.h5tree)
         self.connect(self.selectForPlotAction, QtCore.SIGNAL('triggered()'), self.__selectForPlot)
 
-        
-        
+        self.editXLabelAction = QtGui.QAction(self.tr('Edit X axis label'), self)
+        self.connect(self.editXLabelAction, QtCore.SIGNAL('triggered()'), self.__editXAxisLabel)
 
+        self.editYLabelAction = QtGui.QAction(self.tr('Edit Y axis label'), self)
+        self.connect(self.editYLabelAction, QtCore.SIGNAL('triggered()'), self.__editYAxisLabel)
+
+        self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
+        self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
@@ -169,7 +174,10 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editMenu.addAction(self.editLegendTextAction)
         self.editMenu.addAction(self.configurePlotAction)
         self.editMenu.addAction(self.togglePlotVisibilityAction)
-
+        self.editMenu.addAction(self.editXLabelAction)
+        self.editMenu.addAction(self.editYLabelAction)
+        self.editMenu.addAction(self.editPlotTitleAction)
+        
         self.toolsMenu = self.menuBar().addMenu('&Tools')
         self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
@@ -238,7 +246,20 @@ class DataVizWidget(QtGui.QMainWindow):
             datalist.append((tseries, data))
         plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
         mdiChild.showMaximized()
+
+    def __editXAxisLabel(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        xlabel, ok, = QtGui.QInputDialog.getText(self, self.tr('Change X Axis Label'), self.tr('X axis label:'), QtGui.QLineEdit.Normal, activePlot.axisTitle(activePlot.xBottom).text())
+        print xlabel
+        if ok:
+            print 'setting xlabel', xlabel
+            activePlot.setAxisTitle(2, xlabel)
         
+    def __editYAxisLabel(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        ylabel, ok, = QtGui.QInputDialog.getText(self, self.tr('Change Y Axis Label'), self.tr('Y axis label:'), QtGui.QLineEdit.Normal, activePlot.axisTitle(0).text())
+        if ok:
+            activePlot.setAxisTitle(0, ylabel)
 
     def __popupRegexTool(self):
         self.regexDialog = QtGui.QDialog(self)
@@ -358,6 +379,13 @@ class DataVizWidget(QtGui.QMainWindow):
         """Change the legend text."""
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.editLegendText()
+
+    def __editPlotTitle(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        title, ok, = QtGui.QInputDialog.getText(self, self.tr('Change Plot Title'), self.tr('Plot title:'), QtGui.QLineEdit.Normal, activePlot.title().text())
+        if ok:
+            activePlot.setTitle(title)
+        
 
     def __configurePlots(self):
         """Interactively allow the user to configure everything about
