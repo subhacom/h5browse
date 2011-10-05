@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  4 14:37:04 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 356
+# Last-Updated: Wed Oct  5 15:42:34 2011 (+0530)
+#           By: subha
+#     Update #: 359
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -68,6 +68,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
     def __init__(self, *args):
         QtGui.QTreeWidget.__init__(self, *args)
         self.fhandles = {}
+        self.header().hide()
         
     def addH5Handle(self, filename):
         if not filename.startswith('/'):
