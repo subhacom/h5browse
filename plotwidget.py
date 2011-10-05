@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 11:52:53 2011 (+0530)
+# Last-Updated: Wed Oct  5 14:09:38 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 137
+#     Update #: 147
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -37,6 +37,7 @@ class PlotWidget(Qwt.QwtPlot):
     def __init__(self, *args):
         Qwt.QwtPlot.__init__(self, *args)
         self.path_curve_dict = {}
+        self.curve_path_dict = {}
         self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue, Qt.Qt.magenta, Qt.Qt.darkCyan, Qt.Qt.black]
         self.__nextColor = 0
         self.enableAxis(2)
@@ -122,6 +123,13 @@ class PlotWidget(Qwt.QwtPlot):
                 item.setVisible(not item.isVisible())
         self.replot()
 
+    def getSelectedCurves(self):
+        ret = []
+        for item in self.itemList():
+            if item.legendItem().isChecked():
+                ret.append(item)
+        return ret
+
     def showAllCurves(self):
         for item in self.itemList():
             if isinstance(item, Qwt.QwtPlotCurve):
@@ -136,6 +144,13 @@ class PlotWidget(Qwt.QwtPlot):
                 item.setStyle(style)
         self.replot()
 
+    def fitSelectedCurves(self):
+        for item in self.itemList():
+            if item.legendItem().isChecked():
+                item.setCurveAttribute(item.Fitted)
+                item.setCurveFitter(Qwt.QwtSplineCurveFitter())
+        self.replot()
+                
     def setSymbol(self, 
                        symbolStyle=None, 
                        brushColor=None, brushStyle=None, 
@@ -216,6 +231,7 @@ class PlotWidget(Qwt.QwtPlot):
                 curve = Qwt.QwtPlotCurve(path)
                 curve.attach(self)
                 self.path_curve_dict[path] = curve
+                self.curve_path_dict[curve] = path
             pen = Qt.QPen(color, 1)
             curve.setPen(pen)
             curve.setTitle(path)

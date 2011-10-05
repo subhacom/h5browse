@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 11:16:12 2011 (+0530)
+# Last-Updated: Wed Oct  5 14:12:50 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1846
+#     Update #: 1856
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -142,6 +142,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
         self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
+        self.fitSelectedCurvesAction = QtGui.QAction(self.tr('Fit selected curves'), self)
+        self.connect(self.fitSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__fitSelectedPlots)
+
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
 
@@ -190,7 +193,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.editYLabelAction)
         self.plotMenu.addAction(self.editPlotTitleAction)
         self.plotMenu.addAction(self.displayLegendAction)
-
+        self.plotMenu.addAction(self.fitSelectedCurvesAction)
+        
         self.toolsMenu = self.menuBar().addMenu('&Tools')
         self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
@@ -457,6 +461,12 @@ class DataVizWidget(QtGui.QMainWindow):
                                                      '%s.png' % (str(self.mdiArea.activeSubWindow().windowTitle())),
                                                      'Images (*.png *.jpg *.gif);; All files (*.*)')
         pixmap.save(filename)
+
+
+    def __fitSelectedPlots(self):
+        """Do curve fitting on the selected plots."""
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.fitSelectedCurves()
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
