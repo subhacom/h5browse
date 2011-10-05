@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 14:09:38 2011 (+0530)
+# Last-Updated: Wed Oct  5 14:26:55 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 147
+#     Update #: 149
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -148,7 +148,9 @@ class PlotWidget(Qwt.QwtPlot):
         for item in self.itemList():
             if item.legendItem().isChecked():
                 item.setCurveAttribute(item.Fitted)
-                item.setCurveFitter(Qwt.QwtSplineCurveFitter())
+                fitter = Qwt.QwtSplineCurveFitter()
+                fitter.setSplineSize(10)
+                item.setCurveFitter(fitter)
         self.replot()
                 
     def setSymbol(self, 
