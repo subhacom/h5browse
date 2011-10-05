@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 11:21:45 2011 (+0530)
+# Last-Updated: Wed Oct  5 11:52:53 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 136
+#     Update #: 137
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -198,9 +198,9 @@ class PlotWidget(Qwt.QwtPlot):
         pixmap.save(filename)
                 
     def addPlotCurveList(self, pathlist, datalist, simtime=1.0, colorlist=None, mode='curve'):
-        """mode is either curve or raster. just for the defaults for continuous/spiketrain data.
-
-        will give tools for finer manipulations."""
+        """mode is either curve or raster. just for the defaults for
+        continuous/spiketrain data.  will give tools for finer
+        manipulations."""
         if len(datalist) != len(pathlist):
             raise Exception('datalist and pathlist must have same length.')
         for ii in range(len(datalist)):
