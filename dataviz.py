@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 14:12:50 2011 (+0530)
+# Last-Updated: Wed Oct  5 16:45:42 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1856
+#     Update #: 1882
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -72,6 +72,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.data_dict = {}
         self.mdiArea = QtGui.QMdiArea(self)
         self.mdiArea.setViewMode(self.mdiArea.TabbedView)
+        self.connect(self.mdiArea, QtCore.SIGNAL('subWindowActivated(QMdiSubWindow*)'), self.__subwindowActivatedSlot)
         self.leftDock = QtGui.QDockWidget(self)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.leftDock)
         self.rightDock = QtGui.QDockWidget(self)
@@ -155,6 +156,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.displayDataAction, QtCore.SIGNAL('triggered()'), self.__displayCurrentlySelectedItemData)
 
         self.displayLegendAction = QtGui.QAction('Display legend', self)
+        self.displayLegendAction.setCheckable(True)
         self.displayLegendAction.setChecked(True)
         self.displayLegendAction.setEnabled(False)
         self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
@@ -357,11 +359,8 @@ class DataVizWidget(QtGui.QMainWindow):
 
     def __displayLegend(self, checked):
         activePlot = self.mdiArea.activeSubWindow().widget()
-        if checked:
-            activePlot.legend().show()
-        else:
-            activePlot.legend().hide()
-
+        activePlot.showLegend(checked)
+        
     def __popupH5TreeMenu(self, point):
         if self.h5tree.model().rowCount() == 0:
             return
@@ -398,14 +397,25 @@ class DataVizWidget(QtGui.QMainWindow):
             self.windowMapper.setMapping(action, window)
 
     def __setActiveSubWindow(self, window):
+        print 'Setting active subwindow.'
         if window:
             self.mdiArea.setActiveSubWindow(window)
             if isinstance(window.widget(), PlotWidget):
                 self.displayLegendAction.setEnabled(True)
-                self.displayLegendAction.setChecked(window.widget().legend().isVisible())
+                print window.widget().legend()
+                self.displayLegendAction.setChecked(window.widget().legend() is not None)
             else:
                 self.displayLegendAction.setEnabled(False)
-                
+
+    def __subwindowActivatedSlot(self, window):
+        if window is None:
+            return
+        widget = window.widget()
+        if isinstance(widget, PlotWidget):
+            legend = widget.legend()
+            self.displayLegendAction.setChecked(legend is not None)
+        else:
+            self.plotMenu.setEnabled(False)
 
     def __editLegendText(self):
         """Change the legend text."""

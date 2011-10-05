@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 14:26:55 2011 (+0530)
+# Last-Updated: Wed Oct  5 16:30:37 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 149
+#     Update #: 151
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -90,6 +90,15 @@ class PlotWidget(Qwt.QwtPlot):
         self.__colors = colorList
         self.__nextColor = 0
 
+    def showLegend(self, show):
+        if show:
+            legend = Qwt.QwtLegend()
+            legend.setItemMode(Qwt.QwtLegend.CheckableItem)
+            self.insertLegend(legend, Qwt.QwtPlot.TopLegend)
+        else:
+            self.insertLegend(None)
+        self.replot()
+            
     def editLegendText(self):
         for item in self.itemList():
             widget = self.legend().find(item)
