@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  4 16:46:05 2011 (+0530)
+# Last-Updated: Wed Oct  5 11:16:12 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1794
+#     Update #: 1846
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -103,8 +103,6 @@ class DataVizWidget(QtGui.QMainWindow):
 	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
 
         self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
-        # self.togglePlotVisibilityAction.setCheckable(True)
-        # self.togglePlotVisibilityAction.setChecked(False)        
         self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
 
         self.quitAction = QtGui.QAction('&Quit', self)        
@@ -115,6 +113,11 @@ class DataVizWidget(QtGui.QMainWindow):
         self.openAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+O')))
         self.connect(self.openAction, QtCore.SIGNAL('triggered()'), self.__openFileDialog)
 
+        self.savePlotAction = QtGui.QAction('&Save plot', self)
+        self.connect(self.savePlotAction, QtCore.SIGNAL('triggered()'), self.__savePlot)
+
+        self.saveScreenshotAction = QtGui.QAction('Save screenshot', self)
+        self.connect(self.saveScreenshotAction, QtCore.SIGNAL('triggered()'), self.__saveScreenshot)
 
         self.plotAction = QtGui.QAction('&Plot', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
@@ -147,6 +150,11 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.displayDataAction = QtGui.QAction('Display data', self)
         self.connect(self.displayDataAction, QtCore.SIGNAL('triggered()'), self.__displayCurrentlySelectedItemData)
+
+        self.displayLegendAction = QtGui.QAction('Display legend', self)
+        self.displayLegendAction.setChecked(True)
+        self.displayLegendAction.setEnabled(False)
+        self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
         
         self.switchMdiViewAction = QtGui.QAction('Subwindow view', self)
         self.connect(self.switchMdiViewAction, QtCore.SIGNAL('triggered()'), self.__switchMdiView)
@@ -160,6 +168,8 @@ class DataVizWidget(QtGui.QMainWindow):
     def __setupMenuBar(self):
         self.fileMenu = self.menuBar().addMenu('&File')
         self.fileMenu.addAction(self.openAction)
+        self.fileMenu.addAction(self.savePlotAction)
+        self.fileMenu.addAction(self.saveScreenshotAction)
         self.fileMenu.addAction(self.quitAction)
         self.windowMenu = self.menuBar().addMenu('&Window')
         self.connect(self.windowMenu, QtCore.SIGNAL('aboutToShow()'), self.__updateWindowMenu)
@@ -171,13 +181,16 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editMenu.addAction(self.selectForPlotAction)
         self.editMenu.addAction(self.selectByRegexAction)
         self.editMenu.addAction(self.clearPlotListAction)
-        self.editMenu.addAction(self.editLegendTextAction)
-        self.editMenu.addAction(self.configurePlotAction)
-        self.editMenu.addAction(self.togglePlotVisibilityAction)
-        self.editMenu.addAction(self.editXLabelAction)
-        self.editMenu.addAction(self.editYLabelAction)
-        self.editMenu.addAction(self.editPlotTitleAction)
-        
+
+        self.plotMenu = self.menuBar().addMenu('&Plot')
+        self.plotMenu.addAction(self.editLegendTextAction)
+        self.plotMenu.addAction(self.configurePlotAction)
+        self.plotMenu.addAction(self.togglePlotVisibilityAction)
+        self.plotMenu.addAction(self.editXLabelAction)
+        self.plotMenu.addAction(self.editYLabelAction)
+        self.plotMenu.addAction(self.editPlotTitleAction)
+        self.plotMenu.addAction(self.displayLegendAction)
+
         self.toolsMenu = self.menuBar().addMenu('&Tools')
         self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
@@ -216,6 +229,7 @@ class DataVizWidget(QtGui.QMainWindow):
         
     def __makeRasterPlot(self):
         plotWidget = PlotWidget()
+        self.displayLegendAction.setEnabled(True)
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
         mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         namelist = []
@@ -231,6 +245,7 @@ class DataVizWidget(QtGui.QMainWindow):
     def __makeLinePlot(self):
         plotWidget = PlotWidget()
         mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        self.displayLegendAction.setEnabled(True)
         mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         datalist = []
         pathlist = []
@@ -336,6 +351,13 @@ class DataVizWidget(QtGui.QMainWindow):
         else:
             self.mdiArea.setViewMode(self.mdiArea.TabbedView)
 
+    def __displayLegend(self, checked):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        if checked:
+            activePlot.legend().show()
+        else:
+            activePlot.legend().hide()
+
     def __popupH5TreeMenu(self, point):
         if self.h5tree.model().rowCount() == 0:
             return
@@ -374,6 +396,12 @@ class DataVizWidget(QtGui.QMainWindow):
     def __setActiveSubWindow(self, window):
         if window:
             self.mdiArea.setActiveSubWindow(window)
+            if isinstance(window.widget(), PlotWidget):
+                self.displayLegendAction.setEnabled(True)
+                self.displayLegendAction.setChecked(window.widget().legend().isVisible())
+            else:
+                self.displayLegendAction.setEnabled(False)
+                
 
     def __editLegendText(self):
         """Change the legend text."""
@@ -407,6 +435,28 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.toggleSelectedCurves()
 
+    def __savePlot(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        if isinstance(activePlot, PlotWidget):
+            filename = QtGui.QFileDialog.getSaveFileName(self,
+                                                     'Save plot as',
+                                                     '%s.png' % (str(self.mdiArea.activeSubWindow().windowTitle())),
+                                                     'Images (*.png *.jpg *.gif);; All files (*.*)')
+            activePlot.savePlotImage(filename)
+
+
+    def __saveScreenshot(self):
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        if activeSubWindow is None:
+            print 'Active subwindow is empty!'
+            return
+        activePlot = activeSubWindow.widget()
+        pixmap = QtGui.QPixmap.grabWidget(activePlot)
+        filename = QtGui.QFileDialog.getSaveFileName(self,
+                                                     'Save plot as',
+                                                     '%s.png' % (str(self.mdiArea.activeSubWindow().windowTitle())),
+                                                     'Images (*.png *.jpg *.gif);; All files (*.*)')
+        pixmap.save(filename)
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Oct  4 16:33:42 2011 (+0530)
+# Last-Updated: Wed Oct  5 11:21:45 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 121
+#     Update #: 136
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -188,6 +188,15 @@ class PlotWidget(Qwt.QwtPlot):
             if scaleDraw:
                 scaleDraw.enableComponent(Qwt.QwtAbstractScaleDraw.Backbone, False)
 
+    def savePlotImage(self, filename):
+        pixmap = QtGui.QPixmap(1024, 768)
+        pixmap.fill(Qt.Qt.white)
+        prnfilter = Qwt.QwtPlotPrintFilter()
+        options = prnfilter.PrintAll
+        prnfilter.setOptions(options)
+        self.print_(pixmap, prnfilter)
+        pixmap.save(filename)
+                
     def addPlotCurveList(self, pathlist, datalist, simtime=1.0, colorlist=None, mode='curve'):
         """mode is either curve or raster. just for the defaults for continuous/spiketrain data.
 
