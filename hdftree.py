@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 15:42:34 2011 (+0530)
-#           By: subha
-#     Update #: 359
+# Last-Updated: Wed Oct  5 17:28:51 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 360
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -33,6 +33,7 @@ import sys
 import os
 import re
 import h5py
+import numpy
 from PyQt4 import Qt, QtCore, QtGui
 
 class H5TreeWidgetItem(QtGui.QTreeWidgetItem):

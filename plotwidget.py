@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 16:30:37 2011 (+0530)
+# Last-Updated: Wed Oct  5 16:56:38 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 151
+#     Update #: 155
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -100,6 +100,8 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
             
     def editLegendText(self):
+        if self.legend() is None:
+            return
         for item in self.itemList():
             widget = self.legend().find(item)
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
@@ -116,6 +118,8 @@ class PlotWidget(Qwt.QwtPlot):
         """Reconfigure the selected curves to use pen for line and
         symbol for marking the data points."""
         print 'Reconfiguring slected plots'
+        if self.legend() is None:
+            return
         for item in self.itemList():
             widget = self.legend().find(item)
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
@@ -126,6 +130,8 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
         
     def toggleSelectedCurves(self):
+        if self.legend() is None:
+            return
         for item in self.itemList():
             widget = self.legend().find(item)
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
@@ -147,6 +153,8 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
 
     def setLineStyleSelectedCurves(self, style=Qwt.QwtPlotCurve.NoCurve):        
+        if self.legend() is None:
+            return
         for item in self.itemList():
             widget = self.legend().find(item)
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
