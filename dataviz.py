@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 16:45:42 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 1882
+# Last-Updated: Fri Oct  7 19:27:12 2011 (+0530)
+#           By: subha
+#     Update #: 1908
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -88,8 +88,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.rightDock.setWidget(self.dataList)
         self.setCentralWidget(self.mdiArea)
         self.windowMapper = QtCore.QSignalMapper(self)
-        self.connect(self.windowMapper, QtCore.SIGNAL('mapped(QWidget*)'),
-                     self.__setActiveSubWindow)
+        # self.connect(self.windowMapper, QtCore.SIGNAL('mapped(QWidget*)'),
+        #              self.__setActiveSubWindow)
         self.connect(self.h5tree, QtCore.SIGNAL('itemDoubleClicked(QTreeWidgetItem *, int )'), self.__displayData)
 
         self.plotConfig = PlotConfig(self)
@@ -330,15 +330,16 @@ class DataVizWidget(QtGui.QMainWindow):
             return
         tableWidget = QtGui.QTableWidget()
         tableWidget.setRowCount(len(data))
-        tableWidget.horizontalHeader().hide()
         if data.dtype.type == numpy.void:            
             tableWidget.setColumnCount(len(data.dtype.names))
+            tableWidget.setHorizontalHeaderLabels(QtCore.QStringList(data.dtype.names))
             for row in range(len(data)):
                 for column in range(len(data.dtype.names)):
                     item = QtGui.QTableWidgetItem(self.tr(str(data[row][column])))
                     tableWidget.setItem(row, column, item)
         else:
             tableWidget.setColumnCount(1)
+            tableWidget.setHorizontalHeaderLabels(QtCore.QStringList(['value',]))
             for row in range(len(data)):
                 item = QtGui.QTableWidgetItem(self.tr(str(data[row])))
                 tableWidget.setItem(row, 0, item)
@@ -396,16 +397,6 @@ class DataVizWidget(QtGui.QMainWindow):
             self.connect(action, QtCore.SIGNAL('triggered()'), self.windowMapper, QtCore.SLOT('map()'))
             self.windowMapper.setMapping(action, window)
 
-    def __setActiveSubWindow(self, window):
-        print 'Setting active subwindow.'
-        if window:
-            self.mdiArea.setActiveSubWindow(window)
-            if isinstance(window.widget(), PlotWidget):
-                self.displayLegendAction.setEnabled(True)
-                print window.widget().legend()
-                self.displayLegendAction.setChecked(window.widget().legend() is not None)
-            else:
-                self.displayLegendAction.setEnabled(False)
 
     def __subwindowActivatedSlot(self, window):
         if window is None:
@@ -414,6 +405,7 @@ class DataVizWidget(QtGui.QMainWindow):
         if isinstance(widget, PlotWidget):
             legend = widget.legend()
             self.displayLegendAction.setChecked(legend is not None)
+            self.plotMenu.setEnabled(True)
         else:
             self.plotMenu.setEnabled(False)
 
