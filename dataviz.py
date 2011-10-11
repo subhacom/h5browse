@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Oct  7 19:27:12 2011 (+0530)
+# Last-Updated: Tue Oct 11 08:18:30 2011 (+0530)
 #           By: subha
-#     Update #: 1908
+#     Update #: 1909
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -320,6 +320,7 @@ class DataVizWidget(QtGui.QMainWindow):
             newItem = QtGui.QTableWidgetItem(self.tr(str(value)))
             displayWidget.setItem(row, 1, newItem)
             row += 1
+        displayWidget.setSortingEnabled(True)
         mdiChild = self.mdiArea.addSubWindow(displayWidget)
         mdiChild.setWindowTitle(str(self.h5tree.currentItem().h5node.name))
         mdiChild.showMaximized()
