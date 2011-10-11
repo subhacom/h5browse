@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 11:26:22 2011 (+0530)
+# Last-Updated: Tue Oct 11 14:13:32 2011 (+0530)
 #           By: subha
-#     Update #: 2010
+#     Update #: 2035
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -146,6 +146,12 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.fitSelectedCurvesAction = QtGui.QAction(self.tr('Fit selected curves'), self)
         self.connect(self.fitSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__fitSelectedPlots)
+        
+        self.shiftSelectedCurvesAction = QtGui.QAction('Shift selected curves vertically', self)
+        self.connect(self.shiftSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vShiftSelectedPlots)
+
+        self.scaleSelectedCurvesAction = QtGui.QAction('Scale selected curves vertically', self)
+        self.connect(self.scaleSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vScaleSelectedPlots)
 
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
@@ -200,7 +206,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.editPlotTitleAction)
         self.plotMenu.addAction(self.displayLegendAction)
         self.plotMenu.addAction(self.fitSelectedCurvesAction)
-        
+        self.plotMenu.addAction(self.shiftSelectedCurvesAction)
+        self.plotMenu.addAction(self.scaleSelectedCurvesAction)
+
         self.toolsMenu = self.menuBar().addMenu('&Tools')
         self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
@@ -477,11 +485,17 @@ class DataVizWidget(QtGui.QMainWindow):
 
     def __vShiftSelectedPlots(self):
         """Shift the selected plots vertically"""
-        shift, ok, = QtGui.QInputDialog.getDouble(self, 'Shift plot vertically', 'Enter y-shift')
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        shift, ok, = QtGui.QInputDialog.getText(self, 'Shift plot vertically', 'Enter y-shift')
         if ok:
-            activePlot = self.mdiArea.activeSubWindow().widget()
+            activePlot.vShiftSelectedPlots(float(shift))
             
-            
+    def __vScaleSelectedPlots(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        scale, ok, = QtGui.QInputDialog.getText(self, 'Scale plots', 'Enter scale factor')
+        if ok:
+            activePlot.vScaleSelectedPlots(float(scale))
+
         
     def __savePlot(self):
         activePlot = self.mdiArea.activeSubWindow().widget()

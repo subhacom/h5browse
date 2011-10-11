@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 11:21:44 2011 (+0530)
+# Last-Updated: Tue Oct 11 14:11:29 2011 (+0530)
 #           By: subha
-#     Update #: 174
+#     Update #: 195
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -280,6 +280,33 @@ class PlotWidget(Qwt.QwtPlot):
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
                 ret.append(self.curve_path_dict[item])
         return ret
+
+    
+    def vShiftSelectedPlots(self, shift):
+        for item in self.itemList():
+            widget = self.legend().find(item)
+            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
+                data = item.data()
+                ydata = numpy.array(data.yData()) + shift
+                item.setData(numpy.array(data.xData()), ydata)
+        self.replot()
+
+    def vScaleSelectedPlots(self, scale):
+        for item in self.itemList():
+            widget = self.legend().find(item)
+            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
+                data = item.data()
+                ydata = numpy.array(data.yData()) * scale
+                item.setData(numpy.array(data.xData()), ydata)
+        self.replot()
+        
+
+    def updatePlots(self, curve_list, data_list):
+        for curve, data in zip(curve_list, data_list):
+            curve.setData(data[0], data[1])
+        self.replot()
+
+                                     
         
 # 
 # plotwidget.py ends here
