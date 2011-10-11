@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 08:18:30 2011 (+0530)
+# Last-Updated: Tue Oct 11 09:30:56 2011 (+0530)
 #           By: subha
-#     Update #: 1909
+#     Update #: 1925
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -344,6 +344,7 @@ class DataVizWidget(QtGui.QMainWindow):
             for row in range(len(data)):
                 item = QtGui.QTableWidgetItem(self.tr(str(data[row])))
                 tableWidget.setItem(row, 0, item)
+        tableWidget.setSortingEnabled(True)
         mdiChild = self.mdiArea.addSubWindow(tableWidget)
         mdiChild.showMaximized()
         mdiChild.setWindowTitle(str(node.h5node.name))
