@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 09:30:56 2011 (+0530)
+# Last-Updated: Tue Oct 11 11:26:22 2011 (+0530)
 #           By: subha
-#     Update #: 1925
+#     Update #: 2010
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -70,6 +70,7 @@ class DataVizWidget(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self, *args)
         self.mdi_data_map = {}
         self.data_dict = {}
+        self.data_model_dict = {} # dict containing association between data file and corresponding model file.
         self.mdiArea = QtGui.QMdiArea(self)
         self.mdiArea.setViewMode(self.mdiArea.TabbedView)
         self.connect(self.mdiArea, QtCore.SIGNAL('subWindowActivated(QMdiSubWindow*)'), self.__subwindowActivatedSlot)
@@ -101,7 +102,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editLegendTextAction = QtGui.QAction(self.tr('Edit legend text'), self)
         self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
         self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
-	self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
+        self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
 
         self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
         self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
@@ -160,6 +161,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.displayLegendAction.setChecked(True)
         self.displayLegendAction.setEnabled(False)
         self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
+
+        self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
+        self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
         
         self.switchMdiViewAction = QtGui.QAction('Subwindow view', self)
         self.connect(self.switchMdiViewAction, QtCore.SIGNAL('triggered()'), self.__switchMdiView)
@@ -200,6 +204,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.toolsMenu = self.menuBar().addMenu('&Tools')
         self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
+        self.toolsMenu.addAction(self.plotPresynapticVmAction)
+
         # These are custom context menus
         self.h5treeMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
         self.h5treeMenu.addAction(self.selectForPlotAction)
@@ -220,6 +226,9 @@ class DataVizWidget(QtGui.QMainWindow):
         name = last_dir
         for name in file_names:
             self.h5tree.addH5Handle(str(name))
+            model_file = os.path.basename(str(name)).replace('data', 'network') + '.new'
+            model_file = os.path.join(os.path.dirname(str(name)), model_file)
+            self.data_model_dict[str(name)] = model_file            
         settings.setValue('lastVisitedDir', QtCore.QString(os.path.dirname(str(name))))
 
 
@@ -261,8 +270,8 @@ class DataVizWidget(QtGui.QMainWindow):
             filename = self.h5tree.getOpenFileName(path)
             simtime = self.h5tree.getAttribute(filename, 'simtime')
             data = numpy.array(self.h5tree.getData(path))
-	    if simtime is None:
-		simtime = 1.0 * len(data)
+            if simtime is None:
+                simtime = 1.0 * len(data)
             tseries = numpy.linspace(0, simtime, len(data))
             datalist.append((tseries, data))
         plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
@@ -353,7 +362,6 @@ class DataVizWidget(QtGui.QMainWindow):
         node = self.h5tree.currentItem().h5node
         self.__displayData(node, 0)
 
-
     def __switchMdiView(self):
         if self.mdiArea.viewMode() == self.mdiArea.TabbedView:
             self.mdiArea.setViewMode(self.mdiArea.SubWindowView)
@@ -422,7 +430,6 @@ class DataVizWidget(QtGui.QMainWindow):
         if ok:
             activePlot.setTitle(title)
         
-
     def __configurePlots(self):
         """Interactively allow the user to configure everything about
         the plots."""
@@ -443,6 +450,39 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.toggleSelectedCurves()
 
+    def __plotPresynapticVm(self):
+        """This is for easily displaying the data for presynaptic
+        cells of the current cell. Depends on my specific file
+        structure."""
+        print 'Plotting Vm of presynaptic cell'
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        paths = activePlot.getDataPathsForSelectedCurves()
+        files = []
+        for path in paths:
+            filepath = self.h5tree.getOpenFileName(path)
+            print filepath
+            net_file_name = self.data_model_dict[filepath]
+            print net_file_name
+            self.h5tree.addH5Handle(net_file_name)
+            data = self.h5tree.getData(net_file_name + '/network/synapse')
+            cell_name = path.rpartition('/')[-1]
+            presyn_vm_paths = []
+            presyn_vm = []
+            for row in data:
+                if row[1].startswith(cell_name):
+                    print 'Presynaptic cell for', cell_name, 'is', row[0]
+                    presyn_vm_paths.append('%s/Vm/%s' % (filepath, row[0].partition('/')[0]))
+                    presyn_vm.append((self.h5tree.getTimeSeries(presyn_vm_paths[-1]), numpy.array(self.h5tree.getData(presyn_vm_paths[-1]))))
+            activePlot.addPlotCurveList(presyn_vm_paths, presyn_vm, mode='curve')
+
+    def __vShiftSelectedPlots(self):
+        """Shift the selected plots vertically"""
+        shift, ok, = QtGui.QInputDialog.getDouble(self, 'Shift plot vertically', 'Enter y-shift')
+        if ok:
+            activePlot = self.mdiArea.activeSubWindow().widget()
+            
+            
+        
     def __savePlot(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
         if isinstance(activePlot, PlotWidget):

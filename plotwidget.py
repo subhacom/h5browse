@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 16:56:38 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 155
+# Last-Updated: Tue Oct 11 11:21:44 2011 (+0530)
+#           By: subha
+#     Update #: 174
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -141,7 +141,8 @@ class PlotWidget(Qwt.QwtPlot):
     def getSelectedCurves(self):
         ret = []
         for item in self.itemList():
-            if item.legendItem().isChecked():
+            widget = self.legend().find(item)
+            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
                 ret.append(item)
         return ret
 
@@ -163,7 +164,8 @@ class PlotWidget(Qwt.QwtPlot):
 
     def fitSelectedCurves(self):
         for item in self.itemList():
-            if item.legendItem().isChecked():
+            widget = self.legend().find(item)
+            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
                 item.setCurveAttribute(item.Fitted)
                 fitter = Qwt.QwtSplineCurveFitter()
                 fitter.setSplineSize(10)
@@ -269,5 +271,15 @@ class PlotWidget(Qwt.QwtPlot):
                     xdata = numpy.linspace(0, simtime, len(data))
                     curve.setData(xdata, data)
         self.clearZoomStack()
+
+    def getDataPathsForSelectedCurves(self):
+        """Get the HDF5 paths for the selected curves"""
+        ret = []
+        for item in self.itemList():
+            widget = self.legend().find(item)
+            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
+                ret.append(self.curve_path_dict[item])
+        return ret
+        
 # 
 # plotwidget.py ends here

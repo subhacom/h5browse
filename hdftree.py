@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct  5 17:28:51 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 360
+# Last-Updated: Tue Oct 11 10:13:19 2011 (+0530)
+#           By: subha
+#     Update #: 361
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -167,7 +167,9 @@ class H5TreeWidget(QtGui.QTreeWidget):
 
 
     def getOpenFileName(self, path):
-        """Added this little function to avoid repetition."""
+        """Added this little function to avoid repetition.  It returns
+        the filename part of a selected HDF5 path.
+        """
         for key, value in self.fhandles.items():
             if path.startswith(key):
                 return key
