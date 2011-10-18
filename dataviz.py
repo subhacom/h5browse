@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 14:13:32 2011 (+0530)
+# Last-Updated: Tue Oct 18 12:00:19 2011 (+0530)
 #           By: subha
-#     Update #: 2035
+#     Update #: 2047
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -480,7 +480,14 @@ class DataVizWidget(QtGui.QMainWindow):
                 if row[1].startswith(cell_name):
                     print 'Presynaptic cell for', cell_name, 'is', row[0]
                     presyn_vm_paths.append('%s/Vm/%s' % (filepath, row[0].partition('/')[0]))
-                    presyn_vm.append((self.h5tree.getTimeSeries(presyn_vm_paths[-1]), numpy.array(self.h5tree.getData(presyn_vm_paths[-1]))))
+                    tmp = self.h5tree.getData(presyn_vm_paths[-1])
+                    ts = self.h5tree.getTimeSeries(presyn_vm_paths[-1])
+                    print len(tmp), len(ts)
+                    vm = numpy.zeros(len(tmp))
+                    vm[:] = tmp[:]
+                    time = numpy.zeros(len(ts))
+                    time[:] = ts[:]
+                    presyn_vm.append((time, vm))
             activePlot.addPlotCurveList(presyn_vm_paths, presyn_vm, mode='curve')
 
     def __vShiftSelectedPlots(self):

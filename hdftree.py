@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 10:13:19 2011 (+0530)
+# Last-Updated: Tue Oct 18 14:35:14 2011 (+0530)
 #           By: subha
-#     Update #: 361
+#     Update #: 371
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -186,7 +186,8 @@ class H5TreeWidget(QtGui.QTreeWidget):
         else:
             simtime = h5f.attrs['simtime']
             plotdt = h5f.attrs['plotdt']
-        return numpy.arange(0, simtime, plotdt)
+        ret = numpy.linspace(0, simtime, int(simtime/plotdt+0.5))
+        return ret
 
     def __del__(self):
         for filename, fhandle in self.fhandles.items():
