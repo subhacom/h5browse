@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 18 14:35:14 2011 (+0530)
+# Last-Updated: Wed Oct 19 12:02:05 2011 (+0530)
 #           By: subha
-#     Update #: 371
+#     Update #: 394
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -149,7 +149,10 @@ class H5TreeWidget(QtGui.QTreeWidget):
         h5f = None
         ret = None
         filename = self.getOpenFileName(path)
-        h5f = self.fhandles[filename]
+        try:
+            h5f = self.fhandles[filename]
+        except KeyError:
+            return None
         if path != filename:
             path = path[len(filename)+1:] # 1 for '/'
             node = h5f[path]        
@@ -173,6 +176,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
         for key, value in self.fhandles.items():
             if path.startswith(key):
                 return key
+        return None
     
     def getTimeSeries(self, path):
         h5f = self.fhandles[self.getOpenFileName(path)]
@@ -188,6 +192,28 @@ class H5TreeWidget(QtGui.QTreeWidget):
             plotdt = h5f.attrs['plotdt']
         ret = numpy.linspace(0, simtime, int(simtime/plotdt+0.5))
         return ret
+
+    def closeCurrentFile(self):
+        to_delete = {}
+        for item in self.selectedItems():
+            print item.path()
+            filename = self.getOpenFileName(item.path())
+            try:
+                fhandle = self.fhandles[filename]
+                fhandle.close()
+                del self.fhandles[filename]
+            except KeyError:
+                print 'File not open:', filename
+            current = item
+            parent = current.parent()
+            while current.parent() != None:
+                current = parent
+                parent = current.parent()
+            to_delete[current] = 1
+        for item in to_delete.keys():
+            index = self.indexOfTopLevelItem(item)
+            self.takeTopLevelItem(index)
+            del item
 
     def __del__(self):
         for filename, fhandle in self.fhandles.items():

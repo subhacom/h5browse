@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 18 12:00:19 2011 (+0530)
+# Last-Updated: Wed Oct 19 12:04:38 2011 (+0530)
 #           By: subha
-#     Update #: 2047
+#     Update #: 2055
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -114,6 +114,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.openAction = QtGui.QAction('&Open', self)
         self.openAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+O')))
         self.connect(self.openAction, QtCore.SIGNAL('triggered()'), self.__openFileDialog)
+        self.closeAction = QtGui.QAction('Close', self)
+        self.connect(self.closeAction, QtCore.SIGNAL('triggered()'), self.__closeFile)
 
         self.savePlotAction = QtGui.QAction('&Save plot', self)
         self.connect(self.savePlotAction, QtCore.SIGNAL('triggered()'), self.__savePlot)
@@ -183,6 +185,7 @@ class DataVizWidget(QtGui.QMainWindow):
     def __setupMenuBar(self):
         self.fileMenu = self.menuBar().addMenu('&File')
         self.fileMenu.addAction(self.openAction)
+        self.fileMenu.addAction(self.closeAction)
         self.fileMenu.addAction(self.savePlotAction)
         self.fileMenu.addAction(self.saveScreenshotAction)
         self.fileMenu.addAction(self.quitAction)
@@ -239,6 +242,9 @@ class DataVizWidget(QtGui.QMainWindow):
             self.data_model_dict[str(name)] = model_file            
         settings.setValue('lastVisitedDir', QtCore.QString(os.path.dirname(str(name))))
 
+    def __closeFile(self):
+        self.h5tree.closeCurrentFile()
+
 
     def __selectForPlot(self):
         items = self.h5tree.selectedItems()
@@ -276,6 +282,11 @@ class DataVizWidget(QtGui.QMainWindow):
             path = str(item)
             pathlist.append(path)
             filename = self.h5tree.getOpenFileName(path)
+            if filename is None:
+                mdiChild.close()
+                del plotWidget
+                del mdiChild
+                return
             simtime = self.h5tree.getAttribute(filename, 'simtime')
             data = numpy.array(self.h5tree.getData(path))
             if simtime is None:
