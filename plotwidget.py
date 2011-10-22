@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Oct 11 14:11:29 2011 (+0530)
+# Last-Updated: Sat Oct 22 16:39:47 2011 (+0530)
 #           By: subha
-#     Update #: 195
+#     Update #: 291
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -55,6 +55,18 @@ class PlotWidget(Qwt.QwtPlot):
         self.zoomer.setTrackerPen(QtGui.QPen(Qt.Qt.black))
         self.zoomer.initKeyPattern()        
         self.zoomer.initMousePattern(2)
+        # self.zoomer.setEnabled(False)
+        self.canvas().installEventFilter(self)
+        # self.picker = Qwt.QwtPlotPicker(Qwt.QwtPlot.xBottom,
+        #                                 Qwt.QwtPlot.yLeft,
+        #                                 Qwt.QwtPicker.PointSelection | Qwt.QwtPicker.DragSelection,                                        
+        #                                 Qwt.QwtPlotPicker.CrossRubberBand,
+        #                                 Qwt.QwtPicker.AlwaysOn,
+        #                                 self.canvas())
+        # self.picker.setRubberBandPen(QtGui.QPen(Qt.Qt.green))
+        # self.picker.setTrackerPen(QtGui.QPen(Qt.Qt.cyan))
+        # self.connect(self.picker, QtCore.SIGNAL('selected(const QPolygon&)'), self.selectPlot)
+        
         pattern = [
             Qwt.QwtEventPattern.MousePattern(Qt.Qt.LeftButton,
                                              Qt.Qt.NoModifier),
@@ -80,6 +92,10 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
         self.zoomer.setZoomBase()
         
+    def eventFilter(self, obj, event):
+        if event.type() == Qt.QEvent.MouseButtonPress:
+            self.selectPlot(event.pos())
+        return Qwt.QwtPlot.eventFilter(self, obj, event)
 
     def nextColor(self):
         ret = self.__colors[self.__nextColor]
@@ -306,7 +322,24 @@ class PlotWidget(Qwt.QwtPlot):
             curve.setData(data[0], data[1])
         self.replot()
 
-                                     
+    def selectPlot(self, point):
+        dist = 1e100
+        selected = None
+        closest = -1
+        for item in self.itemList():
+            if isinstance(item, Qwt.QwtPlotCurve):
+                p, d = item.closestPoint(Qt.QPoint(point.x(), point.y()))
+                if p > -1 and d < dist:
+                    dist = d
+                    closest = p
+                    selected = item        
+        if (selected is not None):
+            widget = self.legend().find(selected)
+            print widget
+            if isinstance(widget, Qwt.QwtLegendItem):
+                widget.setChecked(True)
+                print widget.text().text()
+                    
         
 # 
 # plotwidget.py ends here
