@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Oct 24 11:06:54 2011 (+0530)
+# Last-Updated: Mon Oct 24 14:24:59 2011 (+0530)
 #           By: subha
-#     Update #: 2061
+#     Update #: 2112
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -99,14 +99,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.__setupMenuBar()
 
     def __setupActions(self):
-        self.editLegendTextAction = QtGui.QAction(self.tr('Edit legend text'), self)
-        self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
-        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
-        self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
-
-        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
-        self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
-
+        # Actions for File menu
         self.quitAction = QtGui.QAction('&Quit', self)        
         self.quitAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+Q')))
         self.connect(self.quitAction, QtCore.SIGNAL('triggered()'), QtGui.qApp.quit)
@@ -114,8 +107,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.openAction = QtGui.QAction('&Open', self)
         self.openAction.setShortcut(QtGui.QKeySequence(self.tr('Ctrl+O')))
         self.connect(self.openAction, QtCore.SIGNAL('triggered()'), self.__openFileDialog)
-        self.closeAction = QtGui.QAction('Close', self)
-        self.connect(self.closeAction, QtCore.SIGNAL('triggered()'), self.__closeFile)
+        self.closeFileAction = QtGui.QAction('Close', self)
+        self.connect(self.closeFileAction, QtCore.SIGNAL('triggered()'), self.__closeFile)
 
         self.savePlotAction = QtGui.QAction('&Save plot', self)
         self.connect(self.savePlotAction, QtCore.SIGNAL('triggered()'), self.__savePlot)
@@ -123,28 +116,31 @@ class DataVizWidget(QtGui.QMainWindow):
         self.saveScreenshotAction = QtGui.QAction('Save screenshot', self)
         self.connect(self.saveScreenshotAction, QtCore.SIGNAL('triggered()'), self.__saveScreenshot)
 
+        # Actions for Tools menu
         self.plotAction = QtGui.QAction('&Plot', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
+
         self.rasterPlotAction = QtGui.QAction('&Raster plot', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
+        
+        self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
+        self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
 
-        self.removeSelectedAction = QtGui.QAction('Remove selected items', self)
-        self.connect(self.removeSelectedAction, QtCore.SIGNAL('triggered()'), self.dataList.removeSelected)
+        self.plotPresynapticSpikesAction = QtGui.QAction('Plot presynaptic spikes', self)
+        self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
+        
+        # Actions for Plot menu
+        self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
+        self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
-        self.clearPlotListAction = QtGui.QAction('&Clear data list', self)
-        self.connect(self.clearPlotListAction, QtCore.SIGNAL('triggered()'), self.dataList.model().clear)
-
-        self.selectForPlotAction = QtGui.QAction(self.tr('Select for plotting'), self.h5tree)
-        self.connect(self.selectForPlotAction, QtCore.SIGNAL('triggered()'), self.__selectForPlot)
+        self.editLegendTextAction = QtGui.QAction(self.tr('Edit legend text'), self)
+        self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
 
         self.editXLabelAction = QtGui.QAction(self.tr('Edit X axis label'), self)
         self.connect(self.editXLabelAction, QtCore.SIGNAL('triggered()'), self.__editXAxisLabel)
 
         self.editYLabelAction = QtGui.QAction(self.tr('Edit Y axis label'), self)
         self.connect(self.editYLabelAction, QtCore.SIGNAL('triggered()'), self.__editYAxisLabel)
-
-        self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
-        self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
         self.fitSelectedCurvesAction = QtGui.QAction(self.tr('Fit selected curves'), self)
         self.connect(self.fitSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__fitSelectedPlots)
@@ -158,6 +154,28 @@ class DataVizWidget(QtGui.QMainWindow):
         self.deselectAllCurvesAction = QtGui.QAction('Deselect all curves', self)
         self.connect(self.deselectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__deselectAllCurves)
 
+        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
+        self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
+
+        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
+        self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
+        
+        self.displayLegendAction = QtGui.QAction('Display legend', self)
+        self.displayLegendAction.setCheckable(True)
+        self.displayLegendAction.setChecked(True)
+        self.displayLegendAction.setEnabled(False)
+        self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
+
+        # Actions for Edit menu - works on HDFTree and DataList.
+        self.removeSelectedAction = QtGui.QAction('Remove selected items', self)
+        self.connect(self.removeSelectedAction, QtCore.SIGNAL('triggered()'), self.dataList.removeSelected)
+
+        self.clearPlotListAction = QtGui.QAction('&Clear data list', self)
+        self.connect(self.clearPlotListAction, QtCore.SIGNAL('triggered()'), self.dataList.model().clear)
+
+        self.selectForPlotAction = QtGui.QAction(self.tr('Select for plotting'), self.h5tree)
+        self.connect(self.selectForPlotAction, QtCore.SIGNAL('triggered()'), self.__selectForPlot)
+
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
 
@@ -167,15 +185,11 @@ class DataVizWidget(QtGui.QMainWindow):
         self.displayDataAction = QtGui.QAction('Display data', self)
         self.connect(self.displayDataAction, QtCore.SIGNAL('triggered()'), self.__displayCurrentlySelectedItemData)
 
-        self.displayLegendAction = QtGui.QAction('Display legend', self)
-        self.displayLegendAction.setCheckable(True)
-        self.displayLegendAction.setChecked(True)
-        self.displayLegendAction.setEnabled(False)
-        self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
-
-        self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
-        self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
-        
+        # Actions for Window menu
+        self.closeActiveSubwindowAction = QtGui.QAction('Close current Window', self)
+        self.connect(self.closeActiveSubwindowAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeActiveSubWindow)
+        self.closeAllAction = QtGui.QAction('Close All Windows', self)
+        self.connect(self.closeAllAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeAllSubWindows)
         self.switchMdiViewAction = QtGui.QAction('Subwindow view', self)
         self.connect(self.switchMdiViewAction, QtCore.SIGNAL('triggered()'), self.__switchMdiView)
         self.cascadeAction = QtGui.QAction('&Cascade', self)
@@ -188,19 +202,22 @@ class DataVizWidget(QtGui.QMainWindow):
     def __setupMenuBar(self):
         self.fileMenu = self.menuBar().addMenu('&File')
         self.fileMenu.addAction(self.openAction)
-        self.fileMenu.addAction(self.closeAction)
+        self.fileMenu.addAction(self.closeFileAction)
         self.fileMenu.addAction(self.savePlotAction)
         self.fileMenu.addAction(self.saveScreenshotAction)
         self.fileMenu.addAction(self.quitAction)
         self.windowMenu = self.menuBar().addMenu('&Window')
+        self.windowMenu.addAction(self.closeActiveSubwindowAction)
+        self.windowMenu.addAction(self.closeAllAction)
+        self.windowMenu.addAction(self.switchMdiViewAction)
+        self.windowMenu.addAction(self.cascadeAction)
+        self.windowMenu.addAction(self.tileAction)
+        
         self.connect(self.windowMenu, QtCore.SIGNAL('aboutToShow()'), self.__updateWindowMenu)
-        self.closeAction = QtGui.QAction('Close Current Window', self)
-        self.connect(self.closeAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeActiveSubWindow)
-        self.closeAllAction = QtGui.QAction('Close All Windows', self)
-        self.connect(self.closeAllAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeAllSubWindows)
         self.editMenu = self.menuBar().addMenu('&Edit')
         self.editMenu.addAction(self.selectForPlotAction)
         self.editMenu.addAction(self.selectByRegexAction)
+        self.editMenu.addAction(self.removeSelectedAction)
         self.editMenu.addAction(self.clearPlotListAction)
 
         self.plotMenu = self.menuBar().addMenu('&Plot')
@@ -220,6 +237,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.toolsMenu.addAction(self.plotAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
         self.toolsMenu.addAction(self.plotPresynapticVmAction)
+        self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
 
         # These are custom context menus
         self.h5treeMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
@@ -498,16 +516,55 @@ class DataVizWidget(QtGui.QMainWindow):
             for row in data:
                 if row[1].startswith(cell_name):
                     print 'Presynaptic cell for', cell_name, 'is', row[0]
-                    presyn_vm_paths.append('%s/Vm/%s' % (filepath, row[0].partition('/')[0]))
-                    tmp = self.h5tree.getData(presyn_vm_paths[-1])
-                    ts = self.h5tree.getTimeSeries(presyn_vm_paths[-1])
-                    print len(tmp), len(ts)
-                    vm = numpy.zeros(len(tmp))
-                    vm[:] = tmp[:]
-                    time = numpy.zeros(len(ts))
-                    time[:] = ts[:]
-                    presyn_vm.append((time, vm))
+                    tmp_path = '%s/Vm/%s' % (filepath, row[0].partition('/')[0])
+                    try:
+                        tmp = self.h5tree.getData(tmp_path)
+                        ts = self.h5tree.getTimeSeries(tmp_path)
+                        presyn_vm_paths.append(tmp_path)
+                        vm = numpy.zeros(len(tmp))
+                        vm[:] = tmp[:]
+                        time = numpy.zeros(len(ts))
+                        time[:] = ts[:]
+                        presyn_vm.append((time, vm))
+                    except KeyError:
+                        print tmp_path, ': not available in Vm data'
             activePlot.addPlotCurveList(presyn_vm_paths, presyn_vm, mode='curve')
+
+    def __plotPresynapticSpikes(self):
+        """This is for easily displaying the data for presynaptic
+        cells of the current cell. Depends on my specific file
+        structure."""
+        print 'Plotting Spike rasters of presynaptic cell'
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        paths = activePlot.getDataPathsForSelectedCurves()
+        files = []
+        # self.dataList.clear()
+        for path in paths:
+            filepath = self.h5tree.getOpenFileName(path)
+            print filepath
+            net_file_name = self.data_model_dict[filepath]
+            print net_file_name
+            self.h5tree.addH5Handle(net_file_name)
+            data = self.h5tree.getData(net_file_name + '/network/synapse')
+            cell_name = path.rpartition('/')[-1]
+            presyn_spike_paths = []
+            presyn_spike = []
+            for row in data:
+                if row[1].startswith(cell_name):
+                    print 'Presynaptic cell for', cell_name, 'is', row[0]
+                    tmp_path = '%s/spikes/%s' % (filepath, row[0].partition('/')[0])
+                    try:
+                        tmp = self.h5tree.getData(tmp_path)
+                        ts = self.h5tree.getTimeSeries(tmp_path)
+                        presyn_spike_paths.append(tmp_path)
+                        vm = numpy.zeros(len(tmp))
+                        vm[:] = tmp[:]
+                        time = numpy.zeros(len(ts))
+                        time[:] = ts[:]
+                        presyn_spike.append((time, vm))
+                    except KeyError:
+                        print tmp_path, ': not available in Vm data'
+            activePlot.addPlotCurveList(presyn_spike_paths, presyn_spike, mode='raster')
 
     def __vShiftSelectedPlots(self):
         """Shift the selected plots vertically"""
