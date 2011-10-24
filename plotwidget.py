@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Oct 22 16:39:47 2011 (+0530)
+# Last-Updated: Mon Oct 24 11:54:20 2011 (+0530)
 #           By: subha
-#     Update #: 291
+#     Update #: 294
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -339,7 +339,10 @@ class PlotWidget(Qwt.QwtPlot):
             if isinstance(widget, Qwt.QwtLegendItem):
                 widget.setChecked(True)
                 print widget.text().text()
-                    
+
+    def deselectAllCurves(self):
+        for item in self.legend().legendItems():
+            item.setChecked(False)
         
 # 
 # plotwidget.py ends here

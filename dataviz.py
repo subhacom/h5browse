@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Oct 19 12:04:38 2011 (+0530)
+# Last-Updated: Mon Oct 24 11:06:54 2011 (+0530)
 #           By: subha
-#     Update #: 2055
+#     Update #: 2061
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -155,6 +155,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.scaleSelectedCurvesAction = QtGui.QAction('Scale selected curves vertically', self)
         self.connect(self.scaleSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vScaleSelectedPlots)
 
+        self.deselectAllCurvesAction = QtGui.QAction('Deselect all curves', self)
+        self.connect(self.deselectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__deselectAllCurves)
+
         self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
         self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
 
@@ -201,12 +204,13 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editMenu.addAction(self.clearPlotListAction)
 
         self.plotMenu = self.menuBar().addMenu('&Plot')
+        self.plotMenu.addAction(self.editPlotTitleAction)
         self.plotMenu.addAction(self.editLegendTextAction)
         self.plotMenu.addAction(self.configurePlotAction)
+        self.plotMenu.addAction(self.deselectAllCurvesAction)
         self.plotMenu.addAction(self.togglePlotVisibilityAction)
         self.plotMenu.addAction(self.editXLabelAction)
         self.plotMenu.addAction(self.editYLabelAction)
-        self.plotMenu.addAction(self.editPlotTitleAction)
         self.plotMenu.addAction(self.displayLegendAction)
         self.plotMenu.addAction(self.fitSelectedCurvesAction)
         self.plotMenu.addAction(self.shiftSelectedCurvesAction)
@@ -468,6 +472,10 @@ class DataVizWidget(QtGui.QMainWindow):
         print 'Currently selected to hide?', hide
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.toggleSelectedCurves()
+
+    def __deselectAllCurves(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.deselectAllCurves()
 
     def __plotPresynapticVm(self):
         """This is for easily displaying the data for presynaptic
