@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Oct 24 11:54:20 2011 (+0530)
+# Last-Updated: Fri Oct 28 10:41:40 2011 (+0530)
 #           By: subha
-#     Update #: 294
+#     Update #: 299
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -335,10 +335,10 @@ class PlotWidget(Qwt.QwtPlot):
                     selected = item        
         if (selected is not None):
             widget = self.legend().find(selected)
-            print widget
             if isinstance(widget, Qwt.QwtLegendItem):
                 widget.setChecked(True)
-                print widget.text().text()
+                print 'Emitting:',widget.text().text()
+                self.emit(QtCore.SIGNAL('curveSelected'), widget.text().text())
 
     def deselectAllCurves(self):
         for item in self.legend().legendItems():

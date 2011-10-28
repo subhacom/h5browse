@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Oct 24 14:24:59 2011 (+0530)
+# Last-Updated: Fri Oct 28 11:23:33 2011 (+0530)
 #           By: subha
-#     Update #: 2112
+#     Update #: 2192
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -82,12 +82,13 @@ class DataVizWidget(QtGui.QMainWindow):
         self.h5tree.setSelectionMode(self.h5tree.ExtendedSelection)
         self.h5tree.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
         self.leftDock.setWidget(self.h5tree)
-        self.dataList = UniqueListView()
+        self.dataList = UniqueListView()        
         self.dataList.setModel(UniqueListModel(QtCore.QStringList([])))
         self.dataList.setSelectionMode(self.dataList.ExtendedSelection)
         self.dataList.setContextMenuPolicy(Qt.Qt.CustomContextMenu)        
         self.rightDock.setWidget(self.dataList)
         self.setCentralWidget(self.mdiArea)
+        self.setStatusBar(QtGui.QStatusBar())
         self.windowMapper = QtCore.QSignalMapper(self)
         # self.connect(self.windowMapper, QtCore.SIGNAL('mapped(QWidget*)'),
         #              self.__setActiveSubWindow)
@@ -117,10 +118,22 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.saveScreenshotAction, QtCore.SIGNAL('triggered()'), self.__saveScreenshot)
 
         # Actions for Tools menu
-        self.plotAction = QtGui.QAction('&Plot', self)
+        self.newLinePlotAction = QtGui.QAction('&New line plot', self)
+        self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlot)
+
+        self.newLinePlotByRegexAction = QtGui.QAction('&New line plot by regex', self)
+        self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
+
+        self.plotAction = QtGui.QAction('&Line plot in current subwindow', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
 
-        self.rasterPlotAction = QtGui.QAction('&Raster plot', self)
+        self.newRasterPlotAction = QtGui.QAction('&New raster plot', self)
+        self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
+
+        self.newRasterPlotByRegexAction = QtGui.QAction('&New raster plot by regex', self)
+        self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
+
+        self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
         
         self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
@@ -234,8 +247,14 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.scaleSelectedCurvesAction)
 
         self.toolsMenu = self.menuBar().addMenu('&Tools')
+        self.toolsMenu.addAction(self.newLinePlotAction)
+        self.toolsMenu.addAction(self.newLinePlotByRegexAction)
         self.toolsMenu.addAction(self.plotAction)
+        
+        self.toolsMenu.addAction(self.newRasterPlotAction)
+        self.toolsMenu.addAction(self.newRasterPlotByRegexAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
+
         self.toolsMenu.addAction(self.plotPresynapticVmAction)
         self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
 
@@ -279,41 +298,43 @@ class DataVizWidget(QtGui.QMainWindow):
             self.dataList.model().insertItem(path)
         
     def __makeRasterPlot(self):
-        plotWidget = PlotWidget()
+        if self.mdiArea.activeSubWindow() is None or self.mdiArea.activeSubWindow().widget() is None:
+            plotWidget = PlotWidget()
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild = self.mdiArea.activeSubWindow().widget()
         self.displayLegendAction.setEnabled(True)
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         namelist = []
         datalist = []
-        for item in self.dataList.model().stringList():
-            path = str(item)
-            tseries = self.h5tree.getTimeSeries(path)
-            datalist.append((tseries, numpy.array(self.h5tree.getData(path))))
-            namelist.append(path)
+        for item in self.h5tree.selectedItems():
+            if item.childCount() == 0: # not a leaf node                
+                path = item.path()
+                tseries = self.h5tree.getTimeSeries(path)
+                datalist.append((tseries, numpy.array(self.h5tree.getData(path))))
+                namelist.append(path)
+                self.dataList.model().insertItem(path)
         plotWidget.addPlotCurveList(namelist, datalist, mode='raster')
         mdiChild.showMaximized()
-
+                                    
     def __makeLinePlot(self):
-        plotWidget = PlotWidget()
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        if self.mdiArea.activeSubWindow() is None or self.mdiArea.activeSubWindow().widget() is None:
+            plotWidget = PlotWidget()
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList())) 
+        else:
+            mdiChild = self.mdiArea.activeSubWindow()
+            plotWidget = mdiChild.widget()
         self.displayLegendAction.setEnabled(True)
-        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         datalist = []
         pathlist = []
-        for item in self.dataList.model().stringList():
-            path = str(item)
+        for item in self.h5tree.selectedItems():
+            path = item.path()
             pathlist.append(path)
-            filename = self.h5tree.getOpenFileName(path)
-            if filename is None:
-                mdiChild.close()
-                del plotWidget
-                del mdiChild
-                return
-            simtime = self.h5tree.getAttribute(filename, 'simtime')
+            tseries = self.h5tree.getTimeSeries(path)
             data = numpy.array(self.h5tree.getData(path))
-            if simtime is None:
-                simtime = 1.0 * len(data)
-            tseries = numpy.linspace(0, simtime, len(data))
             datalist.append((tseries, data))
         plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
         mdiChild.showMaximized()
@@ -608,6 +629,40 @@ class DataVizWidget(QtGui.QMainWindow):
         """Do curve fitting on the selected plots."""
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.fitSelectedCurves()
+        
+    def __showStatusMessage(self, message):
+        print 'Received', message
+        self.statusBar().showMessage(message)
+
+    def __makeNewLinePlot(self):
+        self.dataList.model().clear()
+        self.__selectForPlot()
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        self.__makeLinePlot()
+
+    def __makeNewRasterPlot(self):
+        self.dataList.model().clear()
+        self.__selectForPlot()
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        self.__makeRasterPlot()
+
+    def __makeNewLinePlotByRegex(self):
+        self.dataList.model().clear()
+        self.__popupRegexTool()
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        self.__makeLinePlot()
+
+    def __makeNewRasterPlotByRegex(self):
+        self.dataList.model().clear()
+        self.__popupRegexTool()
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        self.__makeRasterPlot()
+
+
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
