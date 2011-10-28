@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Oct 28 11:23:33 2011 (+0530)
+# Last-Updated: Fri Oct 28 17:02:47 2011 (+0530)
 #           By: subha
-#     Update #: 2192
+#     Update #: 2233
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -122,7 +122,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlot)
 
         self.newLinePlotByRegexAction = QtGui.QAction('&New line plot by regex', self)
-        self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
+        self.connect(self.newLinePlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
 
         self.plotAction = QtGui.QAction('&Line plot in current subwindow', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
@@ -131,7 +131,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
 
         self.newRasterPlotByRegexAction = QtGui.QAction('&New raster plot by regex', self)
-        self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
+        self.connect(self.newRasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
 
         self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
@@ -303,7 +303,8 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
             mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
         else:
-            mdiChild = self.mdiArea.activeSubWindow().widget()
+            mdiChild = self.mdiArea.activeSubWindow()
+            plotWidget = mdiChild.widget()
         self.displayLegendAction.setEnabled(True)
         self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         namelist = []
@@ -338,6 +339,56 @@ class DataVizWidget(QtGui.QMainWindow):
             datalist.append((tseries, data))
         plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
         mdiChild.showMaximized()
+
+    def __makeNewLinePlot(self):
+        self.dataList.model().clear()
+        self.__selectForPlot()
+        mdiChild = self.mdiArea.activeSubWindow()
+        if (mdiChild is None) or (mdiChild.widget() is not None):
+            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild.setWidget(PlotWidget())
+        mdiChild.showMaximized()
+        self.__makeLinePlot()
+
+    def __makeNewRasterPlot(self):
+        self.dataList.model().clear()
+        self.__selectForPlot()
+        mdiChild = self.mdiArea.activeSubWindow()
+        if (mdiChild is None) or (mdiChild.widget() is not None):
+            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+            mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild.setWidget(PlotWidget())
+        mdiChild.showMaximized()
+        self.__makeRasterPlot()
+
+    def __makeNewLinePlotByRegex(self):
+        self.dataList.model().clear()
+        self.__popupRegexTool()
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.activeSubWindow()
+        if (mdiChild is None) or (mdiChild.widget() is not None):
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild.setWidget(plotWidget)
+        mdiChild.showMaximized()
+        self.__makeLinePlot()
+
+    def __makeNewRasterPlotByRegex(self):
+        self.dataList.model().clear()
+        self.__popupRegexTool()
+        plotWidget = PlotWidget()
+        mdiChild = self.mdiArea.activeSubWindow()
+        if (mdiChild is None) or mdiChild.widget():
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild.setWidget(plotWidget)
+        mdiChild.showMaximized()
+        self.__makeRasterPlot()
 
     def __editXAxisLabel(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
@@ -634,33 +685,6 @@ class DataVizWidget(QtGui.QMainWindow):
         print 'Received', message
         self.statusBar().showMessage(message)
 
-    def __makeNewLinePlot(self):
-        self.dataList.model().clear()
-        self.__selectForPlot()
-        plotWidget = PlotWidget()
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        self.__makeLinePlot()
-
-    def __makeNewRasterPlot(self):
-        self.dataList.model().clear()
-        self.__selectForPlot()
-        plotWidget = PlotWidget()
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        self.__makeRasterPlot()
-
-    def __makeNewLinePlotByRegex(self):
-        self.dataList.model().clear()
-        self.__popupRegexTool()
-        plotWidget = PlotWidget()
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        self.__makeLinePlot()
-
-    def __makeNewRasterPlotByRegex(self):
-        self.dataList.model().clear()
-        self.__popupRegexTool()
-        plotWidget = PlotWidget()
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        self.__makeRasterPlot()
 
 
         
