@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Oct 19 12:02:05 2011 (+0530)
-#           By: subha
-#     Update #: 394
+# Last-Updated: Sat Oct 29 14:56:48 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 395
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -85,7 +85,6 @@ class H5TreeWidget(QtGui.QTreeWidget):
     def addTree(self, currentItem, node):
         if isinstance(node, h5py.Group) or isinstance(node, h5py.File):
             for child in node:
-                # print '## ', child, type(child)
                 item = H5TreeWidgetItem(currentItem, node[child])
                 self.addTree(item, node[child])
 
@@ -128,14 +127,11 @@ class H5TreeWidget(QtGui.QTreeWidget):
                 parent = current.parent()
             filename = str(current.text(0))
             filehandle = self.fhandles[filename]
-            print 'File: ', filename
             path = item.path()
-            print 'Path:', path
             if current != item:
                 current_node = filehandle[path[len(filename)+1:]]
             else:
                 current_node = filehandle
-            print 'Current node:', current_node, type(current_node), isinstance(current_node, h5py.Group)
             def check_n_select(name, obj):
                 if isinstance(obj, h5py.Dataset) and regex.match(obj.name):
                     table_path = path + '/' + name
@@ -196,7 +192,6 @@ class H5TreeWidget(QtGui.QTreeWidget):
     def closeCurrentFile(self):
         to_delete = {}
         for item in self.selectedItems():
-            print item.path()
             filename = self.getOpenFileName(item.path())
             try:
                 fhandle = self.fhandles[filename]

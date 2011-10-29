@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Oct 28 17:02:47 2011 (+0530)
-#           By: subha
-#     Update #: 2233
+# Last-Updated: Sat Oct 29 14:56:29 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2260
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -292,7 +292,6 @@ class DataVizWidget(QtGui.QMainWindow):
         self.data_dict = {}
         for item in items:
             if item.childCount() > 0: # not a leaf node                
-                print 'Ignoring non-leaf node:', item.text(0), 'childCount:', item.childCount()
                 continue
             path = item.path()
             self.dataList.model().insertItem(path)
@@ -374,8 +373,16 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         else:
             mdiChild.setWidget(plotWidget)
+        pathlist = []
+        datalist = []
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            pathlist.append(path)
+            tseries = self.h5tree.getTimeSeries(path)
+            data = numpy.array(self.h5tree.getData(path))
+            datalist.append((tseries, data))
+        plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
         mdiChild.showMaximized()
-        self.__makeLinePlot()
 
     def __makeNewRasterPlotByRegex(self):
         self.dataList.model().clear()
@@ -387,15 +394,21 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
         else:
             mdiChild.setWidget(plotWidget)
+        pathlist = []
+        datalist = []
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            pathlist.append(path)
+            tseries = self.h5tree.getTimeSeries(path)
+            data = numpy.array(self.h5tree.getData(path))
+            datalist.append((tseries, data))
+        plotWidget.addPlotCurveList(pathlist, datalist, mode='raster')
         mdiChild.showMaximized()
-        self.__makeRasterPlot()
 
     def __editXAxisLabel(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
         xlabel, ok, = QtGui.QInputDialog.getText(self, self.tr('Change X Axis Label'), self.tr('X axis label:'), QtGui.QLineEdit.Normal, activePlot.axisTitle(activePlot.xBottom).text())
-        print xlabel
         if ok:
-            print 'setting xlabel', xlabel
             activePlot.setAxisTitle(2, xlabel)
         
     def __editYAxisLabel(self):
@@ -549,17 +562,14 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot = self.mdiArea.activeSubWindow().widget()
         self.plotConfig.setVisible(True)
         ret = self.plotConfig.exec_()
-        # print ret, QtGui.QDialog.Accepted
         if ret == QtGui.QDialog.Accepted:
             pen = self.plotConfig.getPen()
             symbol = self.plotConfig.getSymbol()
             style = self.plotConfig.getStyle()
             attribute = self.plotConfig.getAttribute()
-            print 'Active plot', activePlot
             activePlot.reconfigureSelectedCurves(pen, symbol, style, attribute)
 
     def __togglePlotVisibility(self, hide):
-        print 'Currently selected to hide?', hide
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.toggleSelectedCurves()
 
@@ -571,15 +581,12 @@ class DataVizWidget(QtGui.QMainWindow):
         """This is for easily displaying the data for presynaptic
         cells of the current cell. Depends on my specific file
         structure."""
-        print 'Plotting Vm of presynaptic cell'
         activePlot = self.mdiArea.activeSubWindow().widget()
         paths = activePlot.getDataPathsForSelectedCurves()
         files = []
         for path in paths:
             filepath = self.h5tree.getOpenFileName(path)
-            print filepath
             net_file_name = self.data_model_dict[filepath]
-            print net_file_name
             self.h5tree.addH5Handle(net_file_name)
             data = self.h5tree.getData(net_file_name + '/network/synapse')
             cell_name = path.rpartition('/')[-1]
@@ -606,16 +613,13 @@ class DataVizWidget(QtGui.QMainWindow):
         """This is for easily displaying the data for presynaptic
         cells of the current cell. Depends on my specific file
         structure."""
-        print 'Plotting Spike rasters of presynaptic cell'
         activePlot = self.mdiArea.activeSubWindow().widget()
         paths = activePlot.getDataPathsForSelectedCurves()
         files = []
         # self.dataList.clear()
         for path in paths:
             filepath = self.h5tree.getOpenFileName(path)
-            print filepath
             net_file_name = self.data_model_dict[filepath]
-            print net_file_name
             self.h5tree.addH5Handle(net_file_name)
             data = self.h5tree.getData(net_file_name + '/network/synapse')
             cell_name = path.rpartition('/')[-1]
@@ -682,7 +686,6 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot.fitSelectedCurves()
         
     def __showStatusMessage(self, message):
-        print 'Received', message
         self.statusBar().showMessage(message)
 
 
