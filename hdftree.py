@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Oct 29 14:56:48 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 395
+# Last-Updated: Sat Oct 29 19:39:11 2011 (+0530)
+#           By: subha
+#     Update #: 402
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -188,6 +188,17 @@ class H5TreeWidget(QtGui.QTreeWidget):
             plotdt = h5f.attrs['plotdt']
         ret = numpy.linspace(0, simtime, int(simtime/plotdt+0.5))
         return ret
+
+    def get_plotdt(self, path):
+        h5f = self.fhandles[self.getOpenFileName(path)]
+        scheduling = h5f.get('/runconfig/scheduling')
+        if scheduling is not None:
+            for item in scheduling:
+                if item[0] == 'plotdt':
+                    return float(item[1])
+        else:
+            return h5f.attrs['plotdt']
+        
 
     def closeCurrentFile(self):
         to_delete = {}

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun  5 13:59:40 2009 (+0530)
 # Version: 
-# Last-Updated: Fri Sep  2 15:08:22 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 34
+# Last-Updated: Sat Oct 29 18:29:25 2011 (+0530)
+#           By: subha
+#     Update #: 35
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -77,6 +77,8 @@ def ncc(a, b):
     res = numpy.fft.ifft(ffta * numpy.conj(fftb)).real
     res = numpy.fft.fftshift(res)/(len(a) - 1)
     return res
+
+
 
 
 # 

@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Oct 29 14:56:29 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 2260
+# Last-Updated: Sat Oct 29 21:08:09 2011 (+0530)
+#           By: subha
+#     Update #: 2327
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -58,12 +58,13 @@
 import os
 import sys
 import numpy
-
+from collections import defaultdict
 from PyQt4 import QtCore, QtGui, Qt
 from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
 from plotconfig import PlotConfig
+import analyzer
             
 class DataVizWidget(QtGui.QMainWindow):
     def __init__(self, *args):
@@ -135,7 +136,11 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
-        
+
+        self.newFilteredPlotAction = QtGui.QAction('Plot filtered LFP in new window', self)
+        self.connect(self.newFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFPNewWin)
+        self.filteredPlotAction = QtGui.QAction('Plot filtered LFP in current window', self)
+        self.connect(self.filteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFPCurrentWin)
         self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
         self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
 
@@ -255,6 +260,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.toolsMenu.addAction(self.newRasterPlotByRegexAction)
         self.toolsMenu.addAction(self.rasterPlotAction)
 
+        self.toolsMenu.addAction(self.newFilteredPlotAction)
+        self.toolsMenu.addAction(self.filteredPlotAction)
         self.toolsMenu.addAction(self.plotPresynapticVmAction)
         self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
 
@@ -514,7 +521,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.windowMenu.clear()
         if  len(self.mdiArea.subWindowList()) == 0:
             return
-        self.windowMenu.addAction(self.closeAction)
+        self.windowMenu.addAction(self.closeActiveSubwindowAction)
         self.windowMenu.addAction(self.closeAllAction)
         self.windowMenu.addSeparator()
         self.windowMenu.addAction(self.switchMdiViewAction)
@@ -689,8 +696,42 @@ class DataVizWidget(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
 
 
-
+    def __plotFilteredLFP(self, newplot=True):
+        """Filter LFP at 400 Hz upper cutoff and plot"""
+        cutoff = 400.0
+        file_path_dict = defaultdict(list)
+        for item in self.h5tree.selectedItems():
+            path = item.path()
+            print 'Filtering:', path
+            file_path_dict[self.h5tree.getOpenFileName(path)].append(path)
+        data_dict = defaultdict(list)
+        mdiChild = self.mdiArea.activeSubWindow()
+        if newplot or (mdiChild is None) or (mdiChild.widget() is not None):
+            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild.setWidget(PlotWidget())
+        for filename in file_path_dict.keys():
+            path_list = file_path_dict[filename]
+            print path_list
+            data_list = []
+            for path in path_list:
+                data = self.h5tree.getData(path)
+                data_list.append(data)
+            sampling_interval = self.h5tree.get_plotdt(filename)
+            filtered_data_list = analyzer.filter_lfp(data_list, sampling_interval, cutoff)
+            print len(filtered_data_list)
+            path_list = [path + '_filtered' for path in path_list]
+            mdiChild.widget().addPlotCurveList(path_list, filtered_data_list)
+        mdiChild.showMaximized()
         
+    def __plotFilteredLFPNewWin(self):
+        self.__plotFilteredLFP(newplot=True)
+
+    def __plotFilteredLFPCurrentWin(self):
+        print 'Here'
+        self.__plotFilteredLFP(newplot=False)
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     QtGui.qApp = app
