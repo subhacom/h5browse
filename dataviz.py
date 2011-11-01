@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Oct 29 21:08:09 2011 (+0530)
-#           By: subha
-#     Update #: 2327
+# Last-Updated: Tue Nov  1 17:53:58 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2379
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -137,10 +137,16 @@ class DataVizWidget(QtGui.QMainWindow):
         self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
 
-        self.newFilteredPlotAction = QtGui.QAction('Plot filtered LFP in new window', self)
-        self.connect(self.newFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFPNewWin)
-        self.filteredPlotAction = QtGui.QAction('Plot filtered LFP in current window', self)
-        self.connect(self.filteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFPCurrentWin)
+        self.newFIRFilteredPlotAction = QtGui.QAction('Plot FIR filtered LFP in new window', self)
+        self.connect(self.newFIRFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFIRFilteredLFPNewWin)
+        self.firFilteredPlotAction = QtGui.QAction('Plot FIR filtered LFP in current window', self)    
+        self.connect(self.firFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFIRFilteredLFPCurrentWin)
+        self.newBlackmannFilteredPlotAction = QtGui.QAction('Plot Blackmann filtered LFP in new window', self)
+        self.connect(self.newBlackmannFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotBlackmannFilteredLFPNewWin)
+        self.blackmannFilteredPlotAction = QtGui.QAction('Plot Blackmann filtered LFP in current window', self)    
+        self.connect(self.blackmannFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotBlackmannFilteredLFPCurrentWin)
+
+
         self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
         self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
 
@@ -239,6 +245,14 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editMenu.addAction(self.clearPlotListAction)
 
         self.plotMenu = self.menuBar().addMenu('&Plot')
+        self.plotMenu.addAction(self.newLinePlotAction)
+        self.plotMenu.addAction(self.newLinePlotByRegexAction)
+        self.plotMenu.addAction(self.plotAction)
+
+        self.plotMenu.addAction(self.newRasterPlotAction)
+        self.plotMenu.addAction(self.newRasterPlotByRegexAction)
+        self.plotMenu.addAction(self.rasterPlotAction)
+
         self.plotMenu.addAction(self.editPlotTitleAction)
         self.plotMenu.addAction(self.editLegendTextAction)
         self.plotMenu.addAction(self.configurePlotAction)
@@ -252,16 +266,11 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.scaleSelectedCurvesAction)
 
         self.toolsMenu = self.menuBar().addMenu('&Tools')
-        self.toolsMenu.addAction(self.newLinePlotAction)
-        self.toolsMenu.addAction(self.newLinePlotByRegexAction)
-        self.toolsMenu.addAction(self.plotAction)
-        
-        self.toolsMenu.addAction(self.newRasterPlotAction)
-        self.toolsMenu.addAction(self.newRasterPlotByRegexAction)
-        self.toolsMenu.addAction(self.rasterPlotAction)
 
-        self.toolsMenu.addAction(self.newFilteredPlotAction)
-        self.toolsMenu.addAction(self.filteredPlotAction)
+        self.toolsMenu.addAction(self.newFIRFilteredPlotAction)
+        self.toolsMenu.addAction(self.firFilteredPlotAction)
+        self.toolsMenu.addAction(self.newBlackmannFilteredPlotAction)
+        self.toolsMenu.addAction(self.blackmannFilteredPlotAction)
         self.toolsMenu.addAction(self.plotPresynapticVmAction)
         self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
 
@@ -696,41 +705,64 @@ class DataVizWidget(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
 
 
-    def __plotFilteredLFP(self, newplot=True):
-        """Filter LFP at 400 Hz upper cutoff and plot"""
-        cutoff = 400.0
+    def __plotFilteredLFP(self, method=analyzer.blackmann_windowedsinc_filter, newplot=True):
+        """Filter LFP at 450 Hz upper cutoff and plot"""
+        print 'New window?', newplot
+        cutoff = 450.0
+        rolloff = 45.0
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
             print 'Filtering:', path
             file_path_dict[self.h5tree.getOpenFileName(path)].append(path)
+        if not file_path_dict:
+            return        
+        path_suffix = 'FIR_filtered'
+        if method == analyzer.blackmann_windowedsinc_filter:
+            path_suffix = 'Blackmann_filtered'
         data_dict = defaultdict(list)
         mdiChild = self.mdiArea.activeSubWindow()
-        if newplot or (mdiChild is None) or (mdiChild.widget() is not None):
+        print mdiChild, mdiChild.widget()
+        if newplot or (mdiChild is None) or (mdiChild.widget() is None):
+            print 'Creating new plot widget'
             mdiChild = self.mdiArea.addSubWindow(PlotWidget())
             mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
-        else:
-            mdiChild.setWidget(PlotWidget())
+        
         for filename in file_path_dict.keys():
             path_list = file_path_dict[filename]
-            print path_list
             data_list = []
             for path in path_list:
-                data = self.h5tree.getData(path)
+                tmp_data = self.h5tree.getData(path)
+                data = numpy.zeros(len(tmp_data))
+                data[:] = tmp_data[:]
                 data_list.append(data)
             sampling_interval = self.h5tree.get_plotdt(filename)
-            filtered_data_list = analyzer.filter_lfp(data_list, sampling_interval, cutoff)
-            print len(filtered_data_list)
-            path_list = [path + '_filtered' for path in path_list]
-            mdiChild.widget().addPlotCurveList(path_list, filtered_data_list)
+            filtered_data_list = method(data_list, sampling_interval, cutoff, rolloff)
+            ts = self.h5tree.getTimeSeries(path_list[0])
+            plot_data_list = [(ts, data) for data in filtered_data_list]
+            path_list = [path + path_suffix for path in path_list]
+            mdiChild.widget().addPlotCurveList(path_list, plot_data_list)
         mdiChild.showMaximized()
         
-    def __plotFilteredLFPNewWin(self):
-        self.__plotFilteredLFP(newplot=True)
+    # def __plotFilteredLFPNewWin(self):
+    #     self.__plotFilteredLFP(newplot=True)
 
-    def __plotFilteredLFPCurrentWin(self):
-        print 'Here'
-        self.__plotFilteredLFP(newplot=False)
+    # def __plotFilteredLFPCurrentWin(self):
+    #     print 'Here'
+    #     self.__plotFilteredLFP(newplot=False)
+
+    def __plotBlackmannFilteredLFPNewWin(self):
+        self.__plotFilteredLFP(method=analyzer.blackmann_windowedsinc_filter, newplot=True)
+
+    def __plotBlackmannFilteredLFPCurrentWin(self):
+        self.__plotFilteredLFP(method=analyzer.blackmann_windowedsinc_filter, newplot=False)
+        
+    def __plotFIRFilteredLFPNewWin(self):
+        self.__plotFilteredLFP(method=analyzer.fir_filter, newplot=True)
+
+    def __plotFIRFilteredLFPCurrentWin(self):
+        self.__plotFilteredLFP(method=analyzer.fir_filter, newplot=False)
+        
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
