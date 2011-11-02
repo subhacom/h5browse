@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  1 17:53:58 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 2379
+# Last-Updated: Wed Nov  2 11:03:48 2011 (+0530)
+#           By: subha
+#     Update #: 2380
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -722,7 +722,6 @@ class DataVizWidget(QtGui.QMainWindow):
             path_suffix = 'Blackmann_filtered'
         data_dict = defaultdict(list)
         mdiChild = self.mdiArea.activeSubWindow()
-        print mdiChild, mdiChild.widget()
         if newplot or (mdiChild is None) or (mdiChild.widget() is None):
             print 'Creating new plot widget'
             mdiChild = self.mdiArea.addSubWindow(PlotWidget())
