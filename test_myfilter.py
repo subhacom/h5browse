@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Nov  1 10:20:19 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  1 17:10:44 2011 (+0530)
+# Last-Updated: Tue Nov  1 22:44:42 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 362
+#     Update #: 384
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -34,6 +34,7 @@ import h5py
 from datetime import datetime
 from scipy import weave
 from scipy.weave import inline, converters
+from scipy import signal
 
 filename = '/media/sda6/cortical_data/2011_10_21/data_20111021_143831_21310.h5'
 fhandle = h5py.File(filename, 'r')
@@ -119,11 +120,24 @@ def c_blackmann_windowedsinc_filter(data, sampling_interval, cutoff, rolloff):
     # pylab.show()
     return result
 
+def scipy_fir(data, sampling_interval, cutoff, rolloff):
+    """Use scip.signal for filtering"""
+    start = datetime.now()
+    numtaps = int(4/(rolloff*sampling_interval) + 0.5)
+    nyq = 0.5/sampling_interval
+    lowpass = signal.firwin(numtaps, cutoff/nyq, width=rolloff/nyq)
+    result = signal.lfilter(lowpass, 1.0, data)
+    end = datetime.now()
+    delta = end - start
+    print 'scipy', '%g s for sample of length %d' % (delta.days * 86400 + delta.seconds + delta.microseconds * 1e-6, len(data))    
+    return result
+
 if __name__ == '__main__':
     cutoff = 450
     rolloff = 10
     filtered = blackmann_windowedsinc_filter(data, sampling_interval, cutoff, rolloff)
     c_filtered = c_blackmann_windowedsinc_filter(data, sampling_interval, cutoff, rolloff)
+    scipy_fir_filtered = scipy_fir(data, sampling_interval, cutoff, rolloff)
     ts = numpy.linspace(0, sampling_interval * len(data), len(data))
     m = int(4.0 / (rolloff * sampling_interval) - 0.5)
     if m%2 == 1:
@@ -131,6 +145,7 @@ if __name__ == '__main__':
     pylab.plot(ts, data, 'b-', label='raw')
     pylab.plot(ts[:len(data) - m/2], c_filtered[m/2:], 'r-.', label='c')
     pylab.plot(ts, filtered, 'g-', label='numpy filtered')
+    pylab.plot(ts, scipy_fir_filtered, 'k-', label='scipy filtered')
     pylab.legend()
     pylab.show()
 
