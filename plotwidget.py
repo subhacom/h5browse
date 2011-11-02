@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 13:49:03 2011 (+0530)
+# Last-Updated: Wed Nov  2 13:57:03 2011 (+0530)
 #           By: subha
-#     Update #: 307
+#     Update #: 308
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -345,7 +345,6 @@ class PlotWidget(Qwt.QwtPlot):
             widget = self.legend().find(selected)
             if isinstance(widget, Qwt.QwtLegendItem):
                 widget.setChecked(True)
-                print 'Emitting:',widget.text().text()
                 self.emit(QtCore.SIGNAL('curveSelected'), widget.text().text())
 
     def deselectAllCurves(self):

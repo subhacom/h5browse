@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 13:51:07 2011 (+0530)
+# Last-Updated: Wed Nov  2 13:55:02 2011 (+0530)
 #           By: subha
-#     Update #: 2384
+#     Update #: 2387
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -740,6 +740,7 @@ class DataVizWidget(QtGui.QMainWindow):
             plot_data_list = [(ts, data) for data in filtered_data_list]
             path_list = [path + path_suffix for path in path_list]
             mdiChild.widget().addPlotCurveList(path_list, plot_data_list)
+            self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         mdiChild.showMaximized()
         
     # def __plotFilteredLFPNewWin(self):
