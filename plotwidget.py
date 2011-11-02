@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 13:57:03 2011 (+0530)
+# Last-Updated: Wed Nov  2 19:01:00 2011 (+0530)
 #           By: subha
-#     Update #: 308
+#     Update #: 370
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -29,6 +29,7 @@
 
 # Code:
 
+from collections import defaultdict
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4 import Qwt5 as Qwt
 import numpy 
@@ -36,10 +37,11 @@ import numpy
 class PlotWidget(Qwt.QwtPlot):
     def __init__(self, *args):
         Qwt.QwtPlot.__init__(self, *args)
-        self.path_curve_dict = {}
+        self.path_curve_dict = defaultdict(list)
         self.curve_path_dict = {}
         self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue, Qt.Qt.magenta, Qt.Qt.darkCyan, Qt.Qt.black]
         self.__nextColor = 0
+        self.__overlay = True
         self.enableAxis(2)
         self.enableAxis(0)
         self.setAxisTitle(2, 'Time (second)')
@@ -84,6 +86,12 @@ class PlotWidget(Qwt.QwtPlot):
         self.zoomer.setMousePattern(pattern)
 
 
+    def overlay(self):
+        return self.__overlay
+
+    def setOverlay(self, value):
+        self.__overlay = value
+
     def clearZoomStack(self):
         """Auto scale and clear the zoom stack
         """
@@ -127,6 +135,7 @@ class PlotWidget(Qwt.QwtPlot):
                 editDialog.setTextValue(widget.text().text())
                 if editDialog.exec_() == QtGui.QDialog.Accepted:
                     widget.setText(Qwt.QwtText(editDialog.textValue()))
+                    print 'Current title', item.title().text()
                     item.setTitle(Qwt.QwtText(editDialog.textValue()))
                     widget.setChecked(False)
 
@@ -249,29 +258,37 @@ class PlotWidget(Qwt.QwtPlot):
         self.print_(pixmap, prnfilter)
         pixmap.save(filename)
                 
-    def addPlotCurveList(self, pathlist, datalist, simtime=1.0, colorlist=None, mode='curve'):
+    def addPlotCurveList(self, pathlist, datalist, curvenames=None, simtime=1.0, colorlist=None, mode='curve'):
         """mode is either curve or raster. just for the defaults for
         continuous/spiketrain data.  will give tools for finer
         manipulations."""
         if len(datalist) != len(pathlist):
             raise Exception('datalist and pathlist must have same length.')
+        if curvenames is None:
+            curvenames = pathlist
         for ii in range(len(datalist)):
             data = datalist[ii]
             path = pathlist[ii]
+            curvename = curvenames[ii]
+
             if colorlist is not None:
                 color = colorlist[ii % len(colorlist)]
             else:
                 color = self.nextColor()
-            try:
-                curve = self.path_curve_dict[path]
-            except KeyError:
-                curve = Qwt.QwtPlotCurve(path)
+            
+            curves = self.path_curve_dict[path]
+            if curves and not self.overlay():
+                curve = curves[0]
+            else:
+                if curves:
+                    curvename = '%s#%d' % (curvename, len(curves))
+                curve = Qwt.QwtPlotCurve(curvename)
+                self.path_curve_dict[path].append(curve)
                 curve.attach(self)
-                self.path_curve_dict[path] = curve
                 self.curve_path_dict[curve] = path
             pen = Qt.QPen(color, 1)
             curve.setPen(pen)
-            curve.setTitle(path)
+            curve.setTitle(curvename)
             if mode == 'raster':
                 curve.setStyle(curve.NoCurve)
                 curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.VLine, Qt.QBrush(), pen, Qt.QSize(7,7)))
@@ -308,7 +325,6 @@ class PlotWidget(Qwt.QwtPlot):
                 widget.setChecked(False)
         self.replot()
         self.clearZoomStack()
-        self.zoomer.setZoomBase()
 
     def vScaleSelectedPlots(self, scale):
         for item in self.itemList():
@@ -320,7 +336,6 @@ class PlotWidget(Qwt.QwtPlot):
                 widget.setChecked(False)
         self.replot()
         self.clearZoomStack()
-        self.zoomer.setZoomBase()
         
 
     def updatePlots(self, curve_list, data_list):
@@ -328,7 +343,6 @@ class PlotWidget(Qwt.QwtPlot):
             curve.setData(data[0], data[1])
         self.replot()
         self.clearZoomStack()
-        self.zoomer.setZoomBase()
 
     def selectPlot(self, point):
         dist = 10

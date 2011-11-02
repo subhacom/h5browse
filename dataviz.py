@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 13:55:02 2011 (+0530)
+# Last-Updated: Wed Nov  2 18:22:31 2011 (+0530)
 #           By: subha
-#     Update #: 2387
+#     Update #: 2476
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -65,10 +65,21 @@ from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
 from plotconfig import PlotConfig
 import analyzer
-            
+default_settings = {
+    'lfpfilter/cutoff': '450.0',
+    'lfpfilter/rolloff': '45.0'
+}
 class DataVizWidget(QtGui.QMainWindow):
     def __init__(self, *args):
         QtGui.QMainWindow.__init__(self, *args)
+        QtCore.QCoreApplication.setOrganizationName('NCBS')
+        QtCore.QCoreApplication.setOrganizationDomain('ncbs.res.in')
+        QtCore.QCoreApplication.setApplicationName('dataviz')        
+        self.settings = QtCore.QSettings()         
+        for key, value in default_settings.items():
+            s = self.settings.value(key)
+            if not s.isValid():
+                self.settings.setValue(key, value)
         self.mdi_data_map = {}
         self.data_dict = {}
         self.data_model_dict = {} # dict containing association between data file and corresponding model file.
@@ -118,24 +129,10 @@ class DataVizWidget(QtGui.QMainWindow):
         self.saveScreenshotAction = QtGui.QAction('Save screenshot', self)
         self.connect(self.saveScreenshotAction, QtCore.SIGNAL('triggered()'), self.__saveScreenshot)
 
+        self.editSettingsAction = QtGui.QAction('Preferences', self)
+        self.connect(self.editSettingsAction, QtCore.SIGNAL('triggered()'), self.__showPreferencesDialog)
+
         # Actions for Tools menu
-        self.newLinePlotAction = QtGui.QAction('&New line plot', self)
-        self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlot)
-
-        self.newLinePlotByRegexAction = QtGui.QAction('&New line plot by regex', self)
-        self.connect(self.newLinePlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
-
-        self.plotAction = QtGui.QAction('&Line plot in current subwindow', self)
-        self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
-
-        self.newRasterPlotAction = QtGui.QAction('&New raster plot', self)
-        self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
-
-        self.newRasterPlotByRegexAction = QtGui.QAction('&New raster plot by regex', self)
-        self.connect(self.newRasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
-
-        self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
-        self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
 
         self.newFIRFilteredPlotAction = QtGui.QAction('Plot FIR filtered LFP in new window', self)
         self.connect(self.newFIRFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFIRFilteredLFPNewWin)
@@ -154,6 +151,23 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
         
         # Actions for Plot menu
+        self.newLinePlotAction = QtGui.QAction('&New line plot', self)
+        self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlot)
+
+        self.newLinePlotByRegexAction = QtGui.QAction('&New line plot by regex', self)
+        self.connect(self.newLinePlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
+
+        self.plotAction = QtGui.QAction('&Line plot in current subwindow', self)
+        self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
+
+        self.newRasterPlotAction = QtGui.QAction('&New raster plot', self)
+        self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
+
+        self.newRasterPlotByRegexAction = QtGui.QAction('&New raster plot by regex', self)
+        self.connect(self.newRasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
+
+        self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
+        self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
         self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
         self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
@@ -189,6 +203,11 @@ class DataVizWidget(QtGui.QMainWindow):
         self.displayLegendAction.setChecked(True)
         self.displayLegendAction.setEnabled(False)
         self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
+
+        self.overlayAction = QtGui.QAction('Overlay plots', self)
+        self.overlayAction.setCheckable(True)
+        self.overlayAction.setChecked(True)
+        self.connect(self.overlayAction, QtCore.SIGNAL('triggered(bool)'), self.__overlayPlots)
 
         # Actions for Edit menu - works on HDFTree and DataList.
         self.removeSelectedAction = QtGui.QAction('Remove selected items', self)
@@ -243,6 +262,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editMenu.addAction(self.selectByRegexAction)
         self.editMenu.addAction(self.removeSelectedAction)
         self.editMenu.addAction(self.clearPlotListAction)
+        self.editMenu.addAction(self.editSettingsAction)
 
         self.plotMenu = self.menuBar().addMenu('&Plot')
         self.plotMenu.addAction(self.newLinePlotAction)
@@ -264,7 +284,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.fitSelectedCurvesAction)
         self.plotMenu.addAction(self.shiftSelectedCurvesAction)
         self.plotMenu.addAction(self.scaleSelectedCurvesAction)
-
+        self.plotMenu.addAction(self.overlayAction)
         self.toolsMenu = self.menuBar().addMenu('&Tools')
 
         self.toolsMenu.addAction(self.newFIRFilteredPlotAction)
@@ -288,8 +308,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.dataList, QtCore.SIGNAL('customContextMenuRequested(const QPoint&)'), self.__popupDataListMenu)
         
     def __openFileDialog(self):
-        settings = QtCore.QSettings()
-        last_dir = settings.value('lastVisitedDir').toString()
+        last_dir = self.settings.value('lastVisitedDir').toString()
         file_names = QtGui.QFileDialog.getOpenFileNames(self, self.tr('Open hdf5 file'), last_dir)
         name = last_dir
         for name in file_names:
@@ -297,7 +316,7 @@ class DataVizWidget(QtGui.QMainWindow):
             model_file = os.path.basename(str(name)).replace('data', 'network') + '.new'
             model_file = os.path.join(os.path.dirname(str(name)), model_file)
             self.data_model_dict[str(name)] = model_file            
-        settings.setValue('lastVisitedDir', QtCore.QString(os.path.dirname(str(name))))
+        self.settings.setValue('lastVisitedDir', QtCore.QString(os.path.dirname(str(name))))
 
     def __closeFile(self):
         self.h5tree.closeCurrentFile()
@@ -331,7 +350,7 @@ class DataVizWidget(QtGui.QMainWindow):
                 datalist.append((tseries, numpy.array(self.h5tree.getData(path))))
                 namelist.append(path)
                 self.dataList.model().insertItem(path)
-        plotWidget.addPlotCurveList(namelist, datalist, mode='raster')
+        plotWidget.addPlotCurveList(namelist, datalist, curvenames=namelist, mode='raster')
         mdiChild.showMaximized()
                                     
     def __makeLinePlot(self):
@@ -352,7 +371,7 @@ class DataVizWidget(QtGui.QMainWindow):
             tseries = self.h5tree.getTimeSeries(path)
             data = numpy.array(self.h5tree.getData(path))
             datalist.append((tseries, data))
-        plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
+        plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='curve')
         mdiChild.showMaximized()
 
     def __makeNewLinePlot(self):
@@ -558,6 +577,7 @@ class DataVizWidget(QtGui.QMainWindow):
             legend = widget.legend()
             self.displayLegendAction.setChecked(legend is not None)
             self.plotMenu.setEnabled(True)
+            self.overlayAction.setChecked(widget.overlay())
         else:
             self.plotMenu.setEnabled(False)
 
@@ -707,8 +727,12 @@ class DataVizWidget(QtGui.QMainWindow):
 
     def __plotFilteredLFP(self, method=analyzer.blackmann_windowedsinc_filter, newplot=True):
         """Filter LFP at 450 Hz upper cutoff and plot"""
-        cutoff = 450.0
-        rolloff = 10.0
+        cutoff, correct = self.settings.value('lfpfilter/cutoff').toFloat()
+        if not correct:
+            cutoff = 450.0
+        rolloff, correct = self.settings.value('lfpfilter/rolloff').toFloat()
+        if not correct:
+            rolloff = cutoff/50.0
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
@@ -716,9 +740,6 @@ class DataVizWidget(QtGui.QMainWindow):
             file_path_dict[self.h5tree.getOpenFileName(path)].append(path)
         if not file_path_dict:
             return        
-        path_suffix = 'FIR_filtered'
-        if method == analyzer.blackmann_windowedsinc_filter:
-            path_suffix = 'Blackmann_filtered'
         data_dict = defaultdict(list)
         mdiChild = self.mdiArea.activeSubWindow()
         if newplot or (mdiChild is None) or (mdiChild.widget() is None):
@@ -738,8 +759,7 @@ class DataVizWidget(QtGui.QMainWindow):
             filtered_data_list = method(data_list, sampling_interval, cutoff, rolloff)
             ts = self.h5tree.getTimeSeries(path_list[0])
             plot_data_list = [(ts, data) for data in filtered_data_list]
-            path_list = [path + path_suffix for path in path_list]
-            mdiChild.widget().addPlotCurveList(path_list, plot_data_list)
+            mdiChild.widget().addPlotCurveList(path_list, plot_data_list, curvenames=path_list)
             self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         mdiChild.showMaximized()
         
@@ -762,6 +782,38 @@ class DataVizWidget(QtGui.QMainWindow):
     def __plotFIRFilteredLFPCurrentWin(self):
         self.__plotFilteredLFP(method=analyzer.fir_filter, newplot=False)
         
+    def __showPreferencesDialog(self):
+        dialog = QtGui.QDialog(self)
+        layout = QtGui.QGridLayout()
+        row = 0
+        textboxes = {}
+        for key in self.settings.allKeys():
+            label = QtGui.QLabel(key)
+            textbox = QtGui.QLineEdit()            
+            textboxes[key] = textbox
+            textbox.setText(self.settings.value(key).toString())
+            layout.addWidget(label, row, 0)
+            layout.addWidget(textbox, row, 1)
+            row += 1
+        button = QtGui.QPushButton()
+        button.setText('Cancel')
+        self.connect(button, QtCore.SIGNAL('clicked()'), dialog.reject)
+        layout.addWidget(button, row, 0)
+        button = QtGui.QPushButton()
+        button.setText('OK')
+        self.connect(button, QtCore.SIGNAL('clicked()'), dialog.accept)
+        layout.addWidget(button, row, 1)
+        dialog.setLayout(layout)
+        dialog.exec_()
+        if dialog.result() == dialog.Accepted:
+            for key, textbox in textboxes.items():
+                print 'set', key, 'to', textbox.text()
+                self.settings.setValue(key, textbox.text())
+
+    def __overlayPlots(self, value):
+        mdiChild = self.mdiArea.activeSubWindow()
+        if mdiChild is not None and  mdiChild.widget() is not None:
+            mdiChild.widget().setOverlay(value)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
