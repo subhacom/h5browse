@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Oct 28 10:41:40 2011 (+0530)
+# Last-Updated: Wed Nov  2 13:49:03 2011 (+0530)
 #           By: subha
-#     Update #: 299
+#     Update #: 307
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -305,7 +305,10 @@ class PlotWidget(Qwt.QwtPlot):
                 data = item.data()
                 ydata = numpy.array(data.yData()) + shift
                 item.setData(numpy.array(data.xData()), ydata)
+                widget.setChecked(False)
         self.replot()
+        self.clearZoomStack()
+        self.zoomer.setZoomBase()
 
     def vScaleSelectedPlots(self, scale):
         for item in self.itemList():
@@ -314,16 +317,21 @@ class PlotWidget(Qwt.QwtPlot):
                 data = item.data()
                 ydata = numpy.array(data.yData()) * scale
                 item.setData(numpy.array(data.xData()), ydata)
+                widget.setChecked(False)
         self.replot()
+        self.clearZoomStack()
+        self.zoomer.setZoomBase()
         
 
     def updatePlots(self, curve_list, data_list):
         for curve, data in zip(curve_list, data_list):
             curve.setData(data[0], data[1])
         self.replot()
+        self.clearZoomStack()
+        self.zoomer.setZoomBase()
 
     def selectPlot(self, point):
-        dist = 1e100
+        dist = 10
         selected = None
         closest = -1
         for item in self.itemList():

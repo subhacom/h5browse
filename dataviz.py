@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 11:03:48 2011 (+0530)
+# Last-Updated: Wed Nov  2 13:51:07 2011 (+0530)
 #           By: subha
-#     Update #: 2380
+#     Update #: 2384
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -707,9 +707,8 @@ class DataVizWidget(QtGui.QMainWindow):
 
     def __plotFilteredLFP(self, method=analyzer.blackmann_windowedsinc_filter, newplot=True):
         """Filter LFP at 450 Hz upper cutoff and plot"""
-        print 'New window?', newplot
         cutoff = 450.0
-        rolloff = 45.0
+        rolloff = 10.0
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
