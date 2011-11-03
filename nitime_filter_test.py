@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 22:19:59 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 23:13:01 2011 (+0530)
+# Last-Updated: Thu Nov  3 16:09:48 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 115
+#     Update #: 121
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -53,26 +53,24 @@ def test_filtering(data, sampling_interval):
     S_original = SpectralAnalyzer(T)
     pylab.figure()
     print len(S_original.psd[0]), len(S_original.psd[1][0])
+    pylab.subplot(2, 3, 1)
     pylab.plot(S_original.psd[0], S_original.psd[1][0], 'r.', label='Welch PSD')
     pylab.legend()
-
-    pylab.figure()
+    pylab.subplot(2, 3, 2)
     pylab.plot(S_original.spectrum_fourier[0],
               S_original.spectrum_fourier[1][0], 'r.', label='FFT')
     pylab.legend()
-
-    pylab.figure()
+    pylab.subplot(2, 3, 3)
     pylab.plot(S_original.periodogram[0],
               S_original.periodogram[1][0], 'r.', label='Periodogram')
     pylab.legend()
-
-    pylab.figure()
+    pylab.subplot(2, 3, 4)
     pylab.plot(S_original.spectrum_multi_taper[0],
               S_original.spectrum_multi_taper[1][0], 'r.', label='Multi_taper')
     pylab.legend()
 
     F = FilterAnalyzer(T, ub=400, lb=1.0)
-    pylab.figure()
+    pylab.subplot(2, 3, 5)
     pylab.plot(F.data[0], label='Unfiltered')
     pylab.legend()
     # ax01.set_xlabel('Frequency (Hz)')
