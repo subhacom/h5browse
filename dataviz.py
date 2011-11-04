@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 18:22:31 2011 (+0530)
-#           By: subha
-#     Update #: 2476
+# Last-Updated: Fri Nov  4 11:24:23 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2492
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -122,6 +122,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.openAction, QtCore.SIGNAL('triggered()'), self.__openFileDialog)
         self.closeFileAction = QtGui.QAction('Close', self)
         self.connect(self.closeFileAction, QtCore.SIGNAL('triggered()'), self.__closeFile)
+
+        self.saveDataAction = QtGui.QAction('&Save selected data', self)
+        self.connect(self.saveDataAction, QtCore.SIGNAL('triggered()'), self.__saveSelectedDataToCsvFile)
 
         self.savePlotAction = QtGui.QAction('&Save plot', self)
         self.connect(self.savePlotAction, QtCore.SIGNAL('triggered()'), self.__savePlot)
@@ -246,6 +249,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.fileMenu = self.menuBar().addMenu('&File')
         self.fileMenu.addAction(self.openAction)
         self.fileMenu.addAction(self.closeFileAction)
+        self.fileMenu.addAction(self.saveDataAction)
         self.fileMenu.addAction(self.savePlotAction)
         self.fileMenu.addAction(self.saveScreenshotAction)
         self.fileMenu.addAction(self.quitAction)
@@ -814,6 +818,11 @@ class DataVizWidget(QtGui.QMainWindow):
         mdiChild = self.mdiArea.activeSubWindow()
         if mdiChild is not None and  mdiChild.widget() is not None:
             mdiChild.widget().setOverlay(value)
+
+    def __saveSelectedDataToCsvFile(self):
+        filename = QtGui.QFileDialog.getSaveFileName(self, 'Save data to file', 'Untitled.csv', self.tr('Comma separated values  (*.csv)'))
+        if filename:
+            self.h5tree.saveSelectedDataToCsvFile(str(filename))
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

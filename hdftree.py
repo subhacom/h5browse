@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Oct 29 19:39:11 2011 (+0530)
-#           By: subha
-#     Update #: 402
+# Last-Updated: Fri Nov  4 11:14:23 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 443
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -198,7 +198,29 @@ class H5TreeWidget(QtGui.QTreeWidget):
                     return float(item[1])
         else:
             return h5f.attrs['plotdt']
-        
+
+    def saveSelectedDataToCsvFile(self, filename):
+        """Save the data for selected nodes into text file"""
+        data_list = []
+        headers = []
+        paths = []
+        print 'Fields in file:'
+        for item in self.selectedItems():
+            if isinstance(item.h5node, h5py.Dataset):
+                data_list.append(numpy.zeros(len(item.h5node)))
+                data_list[-1][:] = item.h5node[:]
+                headers.append(item.h5node.name)
+                paths.append(item.path())
+                print paths[-1]
+        if data_list:
+            length = len(data_list[0])            
+            array_to_save = self.getTimeSeries(paths[0])
+            for data in data_list:
+                assert(len(data) == length)                
+                array_to_save = numpy.hstack((array_to_save, data))
+        numpy.savetxt(filename, array_to_save)
+        print 'Saved', paths, 'to', filename
+                
 
     def closeCurrentFile(self):
         to_delete = {}
