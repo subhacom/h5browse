@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Nov  7 17:39:56 2011 (+0530)
-#           By: subha
-#     Update #: 2516
+# Last-Updated: Tue Nov  8 01:01:50 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2579
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -145,7 +145,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.newBlackmannFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotBlackmannFilteredLFPNewWin)
         self.blackmannFilteredPlotAction = QtGui.QAction('Plot Blackmann filtered LFP in current window', self)    
         self.connect(self.blackmannFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotBlackmannFilteredLFPCurrentWin)
-
+        self.plotPowerSpectrumAction = QtGui.QAction('Plot power spectrum', self)
+        self.connect(self.plotPowerSpectrumAction, QtCore.SIGNAL('triggered()'), self.__plotPowerSpectrum)
 
         self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
         self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
@@ -295,6 +296,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.toolsMenu.addAction(self.firFilteredPlotAction)
         self.toolsMenu.addAction(self.newBlackmannFilteredPlotAction)
         self.toolsMenu.addAction(self.blackmannFilteredPlotAction)
+        self.toolsMenu.addAction(self.plotPowerSpectrumAction)
         self.toolsMenu.addAction(self.plotPresynapticVmAction)
         self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
 
@@ -824,7 +826,7 @@ class DataVizWidget(QtGui.QMainWindow):
         if filename:
             self.h5tree.saveSelectedDataToCsvFile(str(filename))
 
-    def __plotPowerSpectrumSelectedCurves(self, apply_filter=None, method='fft'):
+    def __plotPowerSpectrumSelectedCurves(self, apply_filter=None, method='fft', newplot=True):
         """Plot the power spectrum of the selected data after applying a filter."""
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
@@ -839,32 +841,74 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild = self.mdiArea.addSubWindow(PlotWidget())
             mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         for filename in file_path_dict.keys():
+            plotdts = []
             path_list = file_path_dict[filename]
             data_list = []
+            sampling_interval = self.h5tree.get_plotdt(filename)
             for path in path_list:
                 tmp_data = self.h5tree.getData(path)
                 data = numpy.zeros(len(tmp_data))
                 data[:] = tmp_data[:]
                 data_list.append(data)
-            sampling_interval = self.h5tree.get_plotdt(filename)
-            if apply_filter == 'blackmansinc':
-                filtered_data_list = analyzer.blackmann_windowedsinc_filter(data_list, sampling_interval, cutoff, rolloff)
-            elif apply_filter == '':
-                filtered_data_list = analyzer.fir_filter(data_list, sampling_interval, cutoff, rolloff)
+                plotdts.append(sampling_interval)
+            if apply_filter == 'blackman':
+                filtered_data_list = analyzer.blackmann_windowedsinc_filter(data_list, sampling_interval)
+            elif apply_filter == 'fir':
+                filtered_data_list = analyzer.fir_filter(data_list, sampling_interval)
             else:
                 filtered_data_list = data_list
             new_datalist = []
-            for data in filtered_data_list:
-                if method == 'fft':
-                    new_datalist.append(numpy.fft.rfft(data))
-            # To be finished
-            ts = self.h5tree.getTimeSeries(path_list[0])
-            plot_data_list = [(ts, data) for data in filtered_data_list]
-            mdiChild.widget().addPlotCurveList(path_list, plot_data_list, curvenames=path_list)
+            for ii in range(len(filtered_data_list)):
+                data = filtered_data_list[ii]
+                if method == 'fft':                    
+                    freq = numpy.fft.fftfreq(len(data), d=plotdts[ii])
+                    xform = numpy.fft.rfft(data)
+                    new_datalist.append((freq, 20 * numpy.log10(numpy.abs(xform))))
+            mdiChild.widget().addPlotCurveList(path_list, new_datalist, curvenames=path_list)
             self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        mdiChild.widget().setAxisTitle(0, 'Power (dB)')
+        mdiChild.widget().setAxisTitle(2, 'Frequency (Hz)')
         mdiChild.showMaximized()
         
-        
+    def __plotPowerSpectrum(self):
+        dialog = QtGui.QDialog(self)
+        filterLabel = QtGui.QLabel(dialog)
+        filterLabel.setText('Filter')
+        filterCombo = QtGui.QComboBox()
+        filterCombo.addItem('Blackmann-windowed sinc')
+        filterCombo.addItem('FIR')
+        filterCombo.addItem('None')
+        methodLabel = QtGui.QLabel('Transformation method')
+        methodCombo = QtGui.QComboBox()
+        methodCombo.addItem('FFT')
+        newplotButton = QtGui.QRadioButton('New plot window', dialog)
+        okButton = QtGui.QPushButton('OK')
+        cancelButton = QtGui.QPushButton('Cancel')
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), dialog.accept)
+        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(filterLabel, 0, 0)
+        layout.addWidget(filterCombo, 0, 1)
+        layout.addWidget(methodLabel, 1, 0)
+        layout.addWidget(methodCombo, 1, 1)
+        layout.addWidget(newplotButton, 2, 0, 1, 2)
+        layout.addWidget(okButton, 3, 0)
+        layout.addWidget(cancelButton, 3, 1)
+        dialog.setLayout(layout)
+        dialog.exec_()
+        if dialog.result() == dialog.Accepted:
+            filterName = None
+            if filterCombo.currentIndex() == 0:
+                filterName = 'blackman'
+            elif filterCombo.currentIndex() == 1:
+                filterCombo = 'fir'
+            method = None
+            if methodCombo.currentIndex() == 0:
+                method = 'fft'
+            else:
+                method = None
+            newplot = newplotButton.isChecked()
+            self.__plotPowerSpectrumSelectedCurves(apply_filter=filterName, method=method, newplot=newplot)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
