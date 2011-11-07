@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Nov  4 11:24:23 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 2492
+# Last-Updated: Mon Nov  7 17:39:56 2011 (+0530)
+#           By: subha
+#     Update #: 2516
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -823,6 +823,48 @@ class DataVizWidget(QtGui.QMainWindow):
         filename = QtGui.QFileDialog.getSaveFileName(self, 'Save data to file', 'Untitled.csv', self.tr('Comma separated values  (*.csv)'))
         if filename:
             self.h5tree.saveSelectedDataToCsvFile(str(filename))
+
+    def __plotPowerSpectrumSelectedCurves(self, apply_filter=None, method='fft'):
+        """Plot the power spectrum of the selected data after applying a filter."""
+        file_path_dict = defaultdict(list)
+        for item in self.h5tree.selectedItems():
+            path = item.path()
+            file_path_dict[self.h5tree.getOpenFileName(path)].append(path)
+        if not file_path_dict:
+            return        
+        data_dict = defaultdict(list)
+        mdiChild = self.mdiArea.activeSubWindow()
+        if newplot or (mdiChild is None) or (mdiChild.widget() is None):
+            print 'Creating new plot widget'
+            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        for filename in file_path_dict.keys():
+            path_list = file_path_dict[filename]
+            data_list = []
+            for path in path_list:
+                tmp_data = self.h5tree.getData(path)
+                data = numpy.zeros(len(tmp_data))
+                data[:] = tmp_data[:]
+                data_list.append(data)
+            sampling_interval = self.h5tree.get_plotdt(filename)
+            if apply_filter == 'blackmansinc':
+                filtered_data_list = analyzer.blackmann_windowedsinc_filter(data_list, sampling_interval, cutoff, rolloff)
+            elif apply_filter == '':
+                filtered_data_list = analyzer.fir_filter(data_list, sampling_interval, cutoff, rolloff)
+            else:
+                filtered_data_list = data_list
+            new_datalist = []
+            for data in filtered_data_list:
+                if method == 'fft':
+                    new_datalist.append(numpy.fft.rfft(data))
+            # To be finished
+            ts = self.h5tree.getTimeSeries(path_list[0])
+            plot_data_list = [(ts, data) for data in filtered_data_list]
+            mdiChild.widget().addPlotCurveList(path_list, plot_data_list, curvenames=path_list)
+            self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        mdiChild.showMaximized()
+        
+        
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
