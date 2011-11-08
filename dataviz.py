@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  8 01:01:50 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 2579
+# Last-Updated: Tue Nov  8 16:20:26 2011 (+0530)
+#           By: subha
+#     Update #: 2581
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -582,10 +582,7 @@ class DataVizWidget(QtGui.QMainWindow):
         if isinstance(widget, PlotWidget):
             legend = widget.legend()
             self.displayLegendAction.setChecked(legend is not None)
-            self.plotMenu.setEnabled(True)
             self.overlayAction.setChecked(widget.overlay())
-        else:
-            self.plotMenu.setEnabled(False)
 
     def __editLegendText(self):
         """Change the legend text."""
@@ -699,6 +696,8 @@ class DataVizWidget(QtGui.QMainWindow):
 
         
     def __savePlot(self):
+        if self.mdiArea.activeSubWindow() is None:
+            return
         activePlot = self.mdiArea.activeSubWindow().widget()
         if isinstance(activePlot, PlotWidget):
             filename = QtGui.QFileDialog.getSaveFileName(self,

@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Nov  4 11:14:23 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 443
+# Last-Updated: Tue Nov  8 16:18:49 2011 (+0530)
+#           By: subha
+#     Update #: 464
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -102,7 +102,8 @@ class H5TreeWidget(QtGui.QTreeWidget):
             raise Exception('No open file for path: %s', path)
         node = h5f[path]
         if isinstance(node, h5py.Dataset):
-            return node
+            print 'Warning - removing the 0 th element from data array as it is spurious in MOOSE table'
+            return node[1:]
 
     # I have a little problem here - how do we find nodes by regular
     # expression for arbitrary file structure?
@@ -207,17 +208,21 @@ class H5TreeWidget(QtGui.QTreeWidget):
         print 'Fields in file:'
         for item in self.selectedItems():
             if isinstance(item.h5node, h5py.Dataset):
-                data_list.append(numpy.zeros(len(item.h5node)))
-                data_list[-1][:] = item.h5node[:]
+                # Avoid the spurious 0-th entry in MOOSE table
+                data_list.append(numpy.zeros(len(item.h5node)-1))
+                data_list[-1][:] = item.h5node[1:]
                 headers.append(item.h5node.name)
                 paths.append(item.path())
                 print paths[-1]
         if data_list:
             length = len(data_list[0])            
-            array_to_save = self.getTimeSeries(paths[0])
-            for data in data_list:
-                assert(len(data) == length)                
-                array_to_save = numpy.hstack((array_to_save, data))
+            print 'Number of datapoints', length
+            array_to_save = numpy.zeros((length, len(data_list)+1))
+            array_to_save[:,0] = self.getTimeSeries(paths[0])[:]
+            for ii in range(len(data_list)): 
+                assert(len(data_list[ii]) == length)                
+                array_to_save[:, ii+1] = data_list[ii][:]
+            print 'Array shape:', array_to_save.shape
         numpy.savetxt(filename, array_to_save)
         print 'Saved', paths, 'to', filename
                 
