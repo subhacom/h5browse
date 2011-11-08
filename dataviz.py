@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  8 16:20:26 2011 (+0530)
+# Last-Updated: Tue Nov  8 20:43:36 2011 (+0530)
 #           By: subha
-#     Update #: 2581
+#     Update #: 2605
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -60,6 +60,7 @@ import sys
 import numpy
 from collections import defaultdict
 from PyQt4 import QtCore, QtGui, Qt
+from PyQt4 import Qwt5 as Qwt
 from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
@@ -839,6 +840,7 @@ class DataVizWidget(QtGui.QMainWindow):
             print 'Creating new plot widget'
             mdiChild = self.mdiArea.addSubWindow(PlotWidget())
             mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        plotWidget = mdiChild.widget()
         for filename in file_path_dict.keys():
             plotdts = []
             path_list = file_path_dict[filename]
@@ -860,13 +862,16 @@ class DataVizWidget(QtGui.QMainWindow):
             for ii in range(len(filtered_data_list)):
                 data = filtered_data_list[ii]
                 if method == 'fft':                    
-                    freq = numpy.fft.fftfreq(len(data), d=plotdts[ii])
                     xform = numpy.fft.rfft(data)
-                    new_datalist.append((freq, 20 * numpy.log10(numpy.abs(xform))))
-            mdiChild.widget().addPlotCurveList(path_list, new_datalist, curvenames=path_list)
-            self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
-        mdiChild.widget().setAxisTitle(0, 'Power (dB)')
-        mdiChild.widget().setAxisTitle(2, 'Frequency (Hz)')
+                    freq = numpy.linspace(0, 0.5/plotdts[ii], len(xform))
+                    new_datalist.append((freq, numpy.abs(xform)**2))
+            plotWidget.addPlotCurveList(path_list, new_datalist, curvenames=path_list)
+            self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        plotWidget.setAxisTitle(0, 'Power (dB)')
+        plotWidget.setAxisTitle(2, 'log10 Frequency (Hz)')
+        scaleEngine = Qwt.QwtLog10ScaleEngine()        
+        plotWidget.setAxisScaleEngine(plotWidget.xBottom, scale)
+        plotWidget.setAxisScaleEngine(plotWidget.yLeft, Qwt.QwtLog10ScaleEngine())
         mdiChild.showMaximized()
         
     def __plotPowerSpectrum(self):
