@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  8 22:11:30 2011 (+0530)
+# Last-Updated: Fri Nov 11 10:51:09 2011 (+0530)
 #           By: subha
-#     Update #: 2621
+#     Update #: 2662
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -826,7 +826,7 @@ class DataVizWidget(QtGui.QMainWindow):
         if filename:
             self.h5tree.saveSelectedDataToCsvFile(str(filename))
 
-    def __plotPowerSpectrumSelectedCurves(self, apply_filter=None, method='fft', newplot=True):
+    def __plotPowerSpectrumSelectedCurves(self, start=0, end=None, apply_filter=None, method='fft', newplot=True):
         """Plot the power spectrum of the selected data after applying a filter."""
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
@@ -846,10 +846,15 @@ class DataVizWidget(QtGui.QMainWindow):
             path_list = file_path_dict[filename]
             data_list = []
             sampling_interval = self.h5tree.get_plotdt(filename)
+            simtime = self.h5tree.get_simtime(filename)
+            if end is None or end > simtime:
+                end = simtime
+            end = int(end / sampling_interval + 0.5)
+            start = int(start/sampling_interval + 0.5)
             for path in path_list:
                 tmp_data = self.h5tree.getData(path)
-                data = numpy.zeros(len(tmp_data))
-                data[:] = tmp_data[:]
+                data = numpy.zeros(end-start)
+                data[:] = tmp_data[start:end+1]
                 data_list.append(data)
                 plotdts.append(sampling_interval)
             if apply_filter == 'blackman':
@@ -867,8 +872,8 @@ class DataVizWidget(QtGui.QMainWindow):
                     new_datalist.append((freq, numpy.abs(xform)**2))
             plotWidget.addPlotCurveList(path_list, new_datalist, curvenames=path_list)
             self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
-        plotWidget.setAxisTitle(0, 'Power (dB)')
-        plotWidget.setAxisTitle(2, 'log10 Frequency (Hz)')
+        plotWidget.setAxisTitle(0, 'Power')
+        plotWidget.setAxisTitle(2, 'Frequency (Hz)')
                 
         plotWidget.setAxisScaleEngine(plotWidget.xBottom, Qwt.QwtLog10ScaleEngine())
         plotWidget.setAxisScale(plotWidget.xBottom, 1, 1000)
@@ -887,6 +892,12 @@ class DataVizWidget(QtGui.QMainWindow):
         methodLabel = QtGui.QLabel('Transformation method')
         methodCombo = QtGui.QComboBox()
         methodCombo.addItem('FFT')
+        dataRangeLabel = QtGui.QLabel(dialog)
+        dataRangeLabel.setText('Data range:')
+        dataStartText = QtGui.QLineEdit(dialog)
+        dataStartText.setText('0.0')
+        dataEndText =  QtGui.QLineEdit(dialog)
+        dataEndText.setText('5.0')
         newplotButton = QtGui.QRadioButton('New plot window', dialog)
         okButton = QtGui.QPushButton('OK')
         cancelButton = QtGui.QPushButton('Cancel')
@@ -897,9 +908,12 @@ class DataVizWidget(QtGui.QMainWindow):
         layout.addWidget(filterCombo, 0, 1)
         layout.addWidget(methodLabel, 1, 0)
         layout.addWidget(methodCombo, 1, 1)
-        layout.addWidget(newplotButton, 2, 0, 1, 2)
-        layout.addWidget(okButton, 3, 0)
-        layout.addWidget(cancelButton, 3, 1)
+        layout.addWidget(dataRangeLabel, 2, 0)
+        layout.addWidget(dataStartText, 2, 1)
+        layout.addWidget(dataEndText, 2, 2)
+        layout.addWidget(newplotButton, 3, 0, 1, 2)
+        layout.addWidget(okButton, 4, 0)
+        layout.addWidget(cancelButton, 4, 1)
         dialog.setLayout(layout)
         dialog.exec_()
         if dialog.result() == dialog.Accepted:
@@ -914,7 +928,15 @@ class DataVizWidget(QtGui.QMainWindow):
             else:
                 method = None
             newplot = newplotButton.isChecked()
-            self.__plotPowerSpectrumSelectedCurves(apply_filter=filterName, method=method, newplot=newplot)
+            start, ok = dataStartText.text().toFloat()
+            if not ok:
+                print 'Need a number for data start time'
+                start = 0.0
+            end, ok = dataEndText.text().toFloat()
+            if not ok:
+                print 'Need a number for data end time'            
+                end = None
+            self.__plotPowerSpectrumSelectedCurves(start=start, end=end, apply_filter=filterName, method=method, newplot=newplot)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

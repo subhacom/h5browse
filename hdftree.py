@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  8 16:18:49 2011 (+0530)
+# Last-Updated: Fri Nov 11 10:39:35 2011 (+0530)
 #           By: subha
-#     Update #: 464
+#     Update #: 465
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -199,6 +199,17 @@ class H5TreeWidget(QtGui.QTreeWidget):
                     return float(item[1])
         else:
             return h5f.attrs['plotdt']
+
+    def get_simtime(self, path):
+        h5f = self.fhandles[self.getOpenFileName(path)]
+        scheduling = h5f.get('/runconfig/scheduling')
+        if scheduling is not None:
+            for item in scheduling:
+                if item[0] == 'simtime':
+                    return float(item[1])
+        else:
+            return h5f.attrs['simtime']
+        
 
     def saveSelectedDataToCsvFile(self, filename):
         """Save the data for selected nodes into text file"""
