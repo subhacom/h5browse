@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 11 11:12:30 2011 (+0530)
+# Last-Updated: Fri Nov 11 11:20:58 2011 (+0530)
 #           By: subha
-#     Update #: 2696
+#     Update #: 2701
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -828,7 +828,6 @@ class DataVizWidget(QtGui.QMainWindow):
 
     def __plotPowerSpectrumSelectedCurves(self, subwindow=None, start=0, end=None, apply_filter=None, method='fft', newplot=True):
         """Plot the power spectrum of the selected data after applying a filter."""
-        print 'newplot', newplot
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
@@ -852,7 +851,6 @@ class DataVizWidget(QtGui.QMainWindow):
                 end = simtime
             end = int(end / sampling_interval + 0.5)
             start = int(start/sampling_interval + 0.5)
-            print start, end
             for path in path_list:
                 tmp_data = self.h5tree.getData(path)
                 data = numpy.zeros(end-start)
@@ -932,6 +930,7 @@ class DataVizWidget(QtGui.QMainWindow):
                 method = None
             newplot = newplotButton.isChecked()
             start, ok = dataStartText.text().toFloat()
+            
             if not ok:
                 print 'Need a number for data start time'
                 start = 0.0
