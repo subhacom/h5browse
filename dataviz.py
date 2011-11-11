@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 11 10:51:09 2011 (+0530)
+# Last-Updated: Fri Nov 11 11:12:30 2011 (+0530)
 #           By: subha
-#     Update #: 2662
+#     Update #: 2696
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -826,8 +826,9 @@ class DataVizWidget(QtGui.QMainWindow):
         if filename:
             self.h5tree.saveSelectedDataToCsvFile(str(filename))
 
-    def __plotPowerSpectrumSelectedCurves(self, start=0, end=None, apply_filter=None, method='fft', newplot=True):
+    def __plotPowerSpectrumSelectedCurves(self, subwindow=None, start=0, end=None, apply_filter=None, method='fft', newplot=True):
         """Plot the power spectrum of the selected data after applying a filter."""
+        print 'newplot', newplot
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
@@ -835,7 +836,7 @@ class DataVizWidget(QtGui.QMainWindow):
         if not file_path_dict:
             return        
         data_dict = defaultdict(list)
-        mdiChild = self.mdiArea.activeSubWindow()
+        mdiChild = subwindow
         if newplot or (mdiChild is None) or (mdiChild.widget() is None):
             print 'Creating new plot widget'
             mdiChild = self.mdiArea.addSubWindow(PlotWidget())
@@ -851,10 +852,11 @@ class DataVizWidget(QtGui.QMainWindow):
                 end = simtime
             end = int(end / sampling_interval + 0.5)
             start = int(start/sampling_interval + 0.5)
+            print start, end
             for path in path_list:
                 tmp_data = self.h5tree.getData(path)
                 data = numpy.zeros(end-start)
-                data[:] = tmp_data[start:end+1]
+                data[:] = tmp_data[start:end]
                 data_list.append(data)
                 plotdts.append(sampling_interval)
             if apply_filter == 'blackman':
@@ -915,6 +917,7 @@ class DataVizWidget(QtGui.QMainWindow):
         layout.addWidget(okButton, 4, 0)
         layout.addWidget(cancelButton, 4, 1)
         dialog.setLayout(layout)
+        activeSubWindow = self.mdiArea.activeSubWindow()
         dialog.exec_()
         if dialog.result() == dialog.Accepted:
             filterName = None
@@ -936,7 +939,7 @@ class DataVizWidget(QtGui.QMainWindow):
             if not ok:
                 print 'Need a number for data end time'            
                 end = None
-            self.__plotPowerSpectrumSelectedCurves(start=start, end=end, apply_filter=filterName, method=method, newplot=newplot)
+            self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, newplot=newplot)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
