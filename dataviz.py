@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 17 13:45:55 2011 (+0530)
+# Last-Updated: Thu Nov 17 19:07:27 2011 (+0530)
 #           By: subha
-#     Update #: 2710
+#     Update #: 2712
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -875,7 +875,7 @@ class DataVizWidget(QtGui.QMainWindow):
             self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         plotWidget.setAxisTitle(0, 'Power')
         plotWidget.setAxisTitle(2, 'Frequency (Hz)')
-        plotWidget.setLogLogScale((1.0, 1000.0), None)
+        plotWidget.setLogLogScale((0.1, 500.0), None)
         mdiChild.showMaximized()
         
     def __plotPowerSpectrum(self):
