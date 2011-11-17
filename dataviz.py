@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 11 11:20:58 2011 (+0530)
+# Last-Updated: Thu Nov 17 13:39:45 2011 (+0530)
 #           By: subha
-#     Update #: 2701
+#     Update #: 2709
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -582,6 +582,7 @@ class DataVizWidget(QtGui.QMainWindow):
         widget = window.widget()
         if isinstance(widget, PlotWidget):
             legend = widget.legend()
+            self.displayLegendAction.setEnabled(True)
             self.displayLegendAction.setChecked(legend is not None)
             self.overlayAction.setChecked(widget.overlay())
 
@@ -874,11 +875,7 @@ class DataVizWidget(QtGui.QMainWindow):
             self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         plotWidget.setAxisTitle(0, 'Power')
         plotWidget.setAxisTitle(2, 'Frequency (Hz)')
-                
-        plotWidget.setAxisScaleEngine(plotWidget.xBottom, Qwt.QwtLog10ScaleEngine())
-        plotWidget.setAxisScale(plotWidget.xBottom, 1, 1000)
-        plotWidget.setAxisScaleEngine(plotWidget.yLeft, Qwt.QwtLog10ScaleEngine())
-        # plotWidget.setAxisScale(plotWidget.yLeft, 0, 1e10)
+        plotWidget.setLogLogScale((1.0, 1000.0), None)
         mdiChild.showMaximized()
         
     def __plotPowerSpectrum(self):

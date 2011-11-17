@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Nov  2 19:01:00 2011 (+0530)
+# Last-Updated: Thu Nov 17 13:30:25 2011 (+0530)
 #           By: subha
-#     Update #: 370
+#     Update #: 381
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -59,15 +59,15 @@ class PlotWidget(Qwt.QwtPlot):
         self.zoomer.initMousePattern(2)
         # self.zoomer.setEnabled(False)
         self.canvas().installEventFilter(self)
-        # self.picker = Qwt.QwtPlotPicker(Qwt.QwtPlot.xBottom,
-        #                                 Qwt.QwtPlot.yLeft,
-        #                                 Qwt.QwtPicker.PointSelection | Qwt.QwtPicker.DragSelection,                                        
-        #                                 Qwt.QwtPlotPicker.CrossRubberBand,
-        #                                 Qwt.QwtPicker.AlwaysOn,
-        #                                 self.canvas())
-        # self.picker.setRubberBandPen(QtGui.QPen(Qt.Qt.green))
-        # self.picker.setTrackerPen(QtGui.QPen(Qt.Qt.cyan))
-        # self.connect(self.picker, QtCore.SIGNAL('selected(const QPolygon&)'), self.selectPlot)
+        self.picker = Qwt.QwtPlotPicker(Qwt.QwtPlot.xBottom,
+                                        Qwt.QwtPlot.yLeft,
+                                        Qwt.QwtPicker.PointSelection | Qwt.QwtPicker.DragSelection,                                        
+                                        Qwt.QwtPlotPicker.CrossRubberBand,
+                                        Qwt.QwtPicker.AlwaysOn,
+                                        self.canvas())
+        self.picker.setRubberBandPen(QtGui.QPen(Qt.Qt.green))
+        self.picker.setTrackerPen(QtGui.QPen(Qt.Qt.cyan))
+        self.connect(self.picker, QtCore.SIGNAL('selected(const QPolygon&)'), self.selectPlot)
         
         pattern = [
             Qwt.QwtEventPattern.MousePattern(Qt.Qt.LeftButton,
@@ -248,6 +248,16 @@ class PlotWidget(Qwt.QwtPlot):
             scaleDraw = self.axisScaleDraw(ii)
             if scaleDraw:
                 scaleDraw.enableComponent(Qwt.QwtAbstractScaleDraw.Backbone, False)
+
+    def setLogLogScale(self, x_range, y_range):
+        self.setAxisScaleEngine(self.xBottom, Qwt.QwtLog10ScaleEngine())
+        if x_range is not None:
+            self.setAxisScale(self.xBottom, x_range[0], x_range[1])
+        self.setAxisScaleEngine(self.yLeft, Qwt.QwtLog10ScaleEngine())
+        if y_range is not None:
+            self.setAxisScale(self.yLeft, y_range[0], y_range[1])
+        self.replot()
+        self.zoomer.setZoomBase()
 
     def savePlotImage(self, filename):
         pixmap = QtGui.QPixmap(1024, 768)
