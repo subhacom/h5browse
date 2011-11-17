@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 17 19:48:27 2011 (+0530)
+# Last-Updated: Thu Nov 17 20:36:33 2011 (+0530)
 #           By: subha
-#     Update #: 2755
+#     Update #: 2771
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -823,24 +823,6 @@ class DataVizWidget(QtGui.QMainWindow):
             self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         mdiChild.showMaximized()
         
-    # def __plotFilteredLFPNewWin(self):
-    #     self.__plotFilteredLFP(newplot=True)
-
-    # def __plotFilteredLFPCurrentWin(self):
-    #     print 'Here'
-    #     self.__plotFilteredLFP(newplot=False)
-
-    def __plotBlackmannFilteredLFPNewWin(self):
-        self.__plotFilteredLFP(method=analyzer.blackmann_windowedsinc_filter, newplot=True)
-
-    def __plotBlackmannFilteredLFPCurrentWin(self):
-        self.__plotFilteredLFP(method=analyzer.blackmann_windowedsinc_filter, newplot=False)
-        
-    def __plotFIRFilteredLFPNewWin(self):
-        self.__plotFilteredLFP(method=analyzer.fir_filter, newplot=True)
-
-    def __plotFIRFilteredLFPCurrentWin(self):
-        self.__plotFilteredLFP(method=analyzer.fir_filter, newplot=False)
         
     def __showPreferencesDialog(self):
         dialog = QtGui.QDialog(self)
@@ -880,7 +862,7 @@ class DataVizWidget(QtGui.QMainWindow):
         if filename:
             self.h5tree.saveSelectedDataToCsvFile(str(filename))
 
-    def __plotPowerSpectrumSelectedCurves(self, subwindow=None, start=0, end=None, apply_filter=None, method='fft', newplot=True):
+    def __plotPowerSpectrumSelectedCurves(self, subwindow=None, start=0, end=None, apply_filter=None, method='fft', cutoff=450.0, rolloff=10.0, newplot=True):
         """Plot the power spectrum of the selected data after applying a filter."""
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
@@ -912,9 +894,9 @@ class DataVizWidget(QtGui.QMainWindow):
                 data_list.append(data)
                 plotdts.append(sampling_interval)
             if apply_filter == 'blackman':
-                filtered_data_list = analyzer.blackmann_windowedsinc_filter(data_list, sampling_interval)
+                filtered_data_list = analyzer.blackmann_windowedsinc_filter(data_list, sampling_interval, cutoff=cutoff, rolloff=rolloff)
             elif apply_filter == 'fir':
-                filtered_data_list = analyzer.fir_filter(data_list, sampling_interval)
+                filtered_data_list = analyzer.fir_filter(data_list, sampling_interval, cutoff=cutoff, rolloff=rolloff)
             else:
                 filtered_data_list = data_list
             new_datalist = []
@@ -942,6 +924,12 @@ class DataVizWidget(QtGui.QMainWindow):
         methodLabel = QtGui.QLabel('Transformation method')
         methodCombo = QtGui.QComboBox()
         methodCombo.addItem('FFT')
+        cutoffLabel = QtGui.QLabel('Cut-off', dialog)
+        cutoffText = QtGui.QLineEdit(dialog)
+        cutoffText.setText(self.settings.value('/lfpfilter/cutoff').toString())
+        rolloffLabel = QtGui.QLabel('Roll-off width', dialog)
+        rolloffText = QtGui.QLineEdit(dialog)
+        rolloffText.setText(self.settings.value('/lfpfilter/rolloff').toString())
         dataRangeLabel = QtGui.QLabel(dialog)
         dataRangeLabel.setText('Data range:')
         dataStartText = QtGui.QLineEdit(dialog)
@@ -956,6 +944,10 @@ class DataVizWidget(QtGui.QMainWindow):
         layout = QtGui.QGridLayout()
         layout.addWidget(filterLabel, 0, 0)
         layout.addWidget(filterCombo, 0, 1)
+        layout.addWidget(cutoffLabel, 0, 2)
+        layout.addWidget(cutoffText, 0, 3)
+        layout.addWidget(rolloffLabel, 0, 4)
+        layout.addWidget(rolloffText, 0, 5)
         layout.addWidget(methodLabel, 1, 0)
         layout.addWidget(methodCombo, 1, 1)
         layout.addWidget(dataRangeLabel, 2, 0)
@@ -978,6 +970,17 @@ class DataVizWidget(QtGui.QMainWindow):
                 method = 'fft'
             else:
                 method = None
+            cutoff, ok = cutoffText.text().toFloat()
+            if ok:
+                self.settings.setValue('/lfpfilter/cutoff', str(cutoff))
+            else:
+                cutoff = 450.0
+            rolloff, ok = rolloffText.text().toFloat()
+            if ok:
+                self.settings.setValue('/lfpfilter/rolloff', str(rolloff))
+            else:
+                rolloff = cutoff / 50.0
+                
             newplot = newplotButton.isChecked()
             start, ok = dataStartText.text().toFloat()
             
@@ -988,7 +991,7 @@ class DataVizWidget(QtGui.QMainWindow):
             if not ok:
                 print 'Need a number for data end time'            
                 end = None
-            self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, newplot=newplot)
+            self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
