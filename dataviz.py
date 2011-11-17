@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 17 19:07:27 2011 (+0530)
+# Last-Updated: Thu Nov 17 19:48:27 2011 (+0530)
 #           By: subha
-#     Update #: 2712
+#     Update #: 2755
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -137,15 +137,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.editSettingsAction, QtCore.SIGNAL('triggered()'), self.__showPreferencesDialog)
 
         # Actions for Tools menu
-
-        self.newFIRFilteredPlotAction = QtGui.QAction('Plot FIR filtered LFP in new window', self)
-        self.connect(self.newFIRFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFIRFilteredLFPNewWin)
-        self.firFilteredPlotAction = QtGui.QAction('Plot FIR filtered LFP in current window', self)    
-        self.connect(self.firFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotFIRFilteredLFPCurrentWin)
-        self.newBlackmannFilteredPlotAction = QtGui.QAction('Plot Blackmann filtered LFP in new window', self)
-        self.connect(self.newBlackmannFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotBlackmannFilteredLFPNewWin)
-        self.blackmannFilteredPlotAction = QtGui.QAction('Plot Blackmann filtered LFP in current window', self)    
-        self.connect(self.blackmannFilteredPlotAction, QtCore.SIGNAL('triggered()'), self.__plotBlackmannFilteredLFPCurrentWin)
+        self.filterAction = QtGui.QAction('Plot filtered data', self)
+        self.connect(self.filterAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFP)
         self.plotPowerSpectrumAction = QtGui.QAction('Plot power spectrum', self)
         self.connect(self.plotPowerSpectrumAction, QtCore.SIGNAL('triggered()'), self.__plotPowerSpectrum)
 
@@ -293,10 +286,11 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.overlayAction)
         self.toolsMenu = self.menuBar().addMenu('&Tools')
 
-        self.toolsMenu.addAction(self.newFIRFilteredPlotAction)
-        self.toolsMenu.addAction(self.firFilteredPlotAction)
-        self.toolsMenu.addAction(self.newBlackmannFilteredPlotAction)
-        self.toolsMenu.addAction(self.blackmannFilteredPlotAction)
+        # self.toolsMenu.addAction(self.newFIRFilteredPlotAction)
+        # self.toolsMenu.addAction(self.firFilteredPlotAction)
+        # self.toolsMenu.addAction(self.newBlackmannFilteredPlotAction)
+        # self.toolsMenu.addAction(self.blackmannFilteredPlotAction)
+        self.toolsMenu.addAction(self.filterAction)
         self.toolsMenu.addAction(self.plotPowerSpectrumAction)
         self.toolsMenu.addAction(self.plotPresynapticVmAction)
         self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
@@ -732,14 +726,74 @@ class DataVizWidget(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
 
 
-    def __plotFilteredLFP(self, method=analyzer.blackmann_windowedsinc_filter, newplot=True):
+    def __plotFilteredLFP(self):
         """Filter LFP at 450 Hz upper cutoff and plot"""
-        cutoff, correct = self.settings.value('lfpfilter/cutoff').toFloat()
-        if not correct:
-            cutoff = 450.0
-        rolloff, correct = self.settings.value('lfpfilter/rolloff').toFloat()
-        if not correct:
-            rolloff = cutoff/50.0
+        mdiChild = self.mdiArea.activeSubWindow()
+        dialog = QtGui.QDialog(self)
+        filterLabel = QtGui.QLabel(dialog)
+        filterLabel.setText('Filter')
+        filterCombo = QtGui.QComboBox()
+        filterCombo.addItem('Blackmann-windowed sinc')
+        filterCombo.addItem('FIR')
+        cutoffLabel = QtGui.QLabel('Cut-off frequency', dialog)
+        cutoffText = QtGui.QLineEdit(dialog)
+        cutoffText.setText(self.settings.value('lfpfilter/cutoff').toString())
+        rolloffLabel = QtGui.QLabel('Roll-off width', dialog)
+        rolloffText = QtGui.QLineEdit(dialog)
+        rolloffText.setText(self.settings.value('lfpfilter/rolloff').toString())
+        dataRangeLabel = QtGui.QLabel(dialog)
+        dataRangeLabel.setText('Data range:')
+        dataStartText = QtGui.QLineEdit(dialog)
+        dataStartText.setText('0.0')
+        dataEndText =  QtGui.QLineEdit(dialog)
+        dataEndText.setText('5.0')
+        newplotButton = QtGui.QRadioButton('New plot window', dialog)
+        okButton = QtGui.QPushButton('OK')
+        cancelButton = QtGui.QPushButton('Cancel')
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), dialog.accept)
+        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(filterLabel, 0, 0)
+        layout.addWidget(filterCombo, 0, 1)
+        layout.addWidget(cutoffLabel, 1, 0)
+        layout.addWidget(cutoffText, 1, 1)
+        layout.addWidget(rolloffLabel, 1, 2)
+        layout.addWidget(rolloffText, 1, 3)        
+        layout.addWidget(dataRangeLabel, 2, 0)
+        layout.addWidget(dataStartText, 2, 1)
+        layout.addWidget(dataEndText, 2, 2)
+        layout.addWidget(newplotButton, 3, 0, 1, 2)
+        layout.addWidget(okButton, 4, 0)
+        layout.addWidget(cancelButton, 4, 1)
+        dialog.setLayout(layout)
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        dialog.exec_()
+        if dialog.result() == dialog.Accepted:
+            filterName = None
+            if filterCombo.currentIndex() == 0:
+                method = analyzer.blackmann_windowedsinc_filter
+            elif filterCombo.currentIndex() == 1:
+                method = analyzer.fir_filter
+            cutoff, correct = cutoffText.text().toFloat()
+            if not correct:
+                cutoff = 450.0
+            rolloff, correct = rolloffText.text().toFloat()
+            if not correct:
+                rolloff = cutoff / 50.0
+            self.settings.setValue('/lfpfilter/cutoff', str(cutoff))
+            self.settings.setValue('/lfpfilter/rolloff', str(rolloff))            
+            newplot = newplotButton.isChecked()
+            start, ok = dataStartText.text().toFloat()
+            
+            if not ok:
+                print 'Need a number for data start time'
+                start = 0.0
+            end, ok = dataEndText.text().toFloat()
+            if not ok:
+                print 'Need a number for data end time'            
+                end = None
+        else:
+            return
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
@@ -748,7 +802,6 @@ class DataVizWidget(QtGui.QMainWindow):
         if not file_path_dict:
             return        
         data_dict = defaultdict(list)
-        mdiChild = self.mdiArea.activeSubWindow()
         if newplot or (mdiChild is None) or (mdiChild.widget() is None):
             print 'Creating new plot widget'
             mdiChild = self.mdiArea.addSubWindow(PlotWidget())
@@ -919,7 +972,7 @@ class DataVizWidget(QtGui.QMainWindow):
             if filterCombo.currentIndex() == 0:
                 filterName = 'blackman'
             elif filterCombo.currentIndex() == 1:
-                filterCombo = 'fir'
+                filterName = 'fir'
             method = None
             if methodCombo.currentIndex() == 0:
                 method = 'fft'
