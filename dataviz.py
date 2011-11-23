@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 17 20:36:33 2011 (+0530)
-#           By: subha
-#     Update #: 2771
+# Last-Updated: Thu Nov 24 00:12:11 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2784
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -810,14 +810,19 @@ class DataVizWidget(QtGui.QMainWindow):
         for filename in file_path_dict.keys():
             path_list = file_path_dict[filename]
             data_list = []
+            sampling_interval = self.h5tree.get_plotdt(filename)
+            start_index = int(start/sampling_interval)
+            end_index = int(end/sampling_interval)
             for path in path_list:
                 tmp_data = self.h5tree.getData(path)
-                data = numpy.zeros(len(tmp_data))
-                data[:] = tmp_data[:]
+                data = numpy.zeros(end_index-start_index)
+                # print len(data)
+                # print len(tmp_data[start_index:end_index])
+                data[:] = tmp_data[start_index:end_index]
                 data_list.append(data)
-            sampling_interval = self.h5tree.get_plotdt(filename)
+            
             filtered_data_list = method(data_list, sampling_interval, cutoff, rolloff)
-            ts = self.h5tree.getTimeSeries(path_list[0])
+            ts = self.h5tree.getTimeSeries(path_list[0])[start_index:end_index]
             plot_data_list = [(ts, data) for data in filtered_data_list]
             mdiChild.widget().addPlotCurveList(path_list, plot_data_list, curvenames=path_list)
             self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
