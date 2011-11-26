@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 17 13:30:25 2011 (+0530)
-#           By: subha
-#     Update #: 381
+# Last-Updated: Thu Nov 24 11:36:04 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 401
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -374,6 +374,19 @@ class PlotWidget(Qwt.QwtPlot):
     def deselectAllCurves(self):
         for item in self.legend().legendItems():
             item.setChecked(False)
-        
+
+    def makeSpectrogram(self, datalist):
+        """Display an array of time series data as spectrogram"""
+        maxx = 0
+        min_dx = 1e9
+        for (x, y) in datalist:
+            x[1] < min_dx:
+                min_dx = x[1]
+            if x[-1] > maxx:
+                maxx = x[-1]
+        new_list = []
+        new_x = numpy.arange(0, maxx, min_dx)
+        for (x, y) in datalist:
+            if 
 # 
 # plotwidget.py ends here

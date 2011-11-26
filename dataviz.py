@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 24 00:12:11 2011 (+0530)
+# Last-Updated: Thu Nov 24 02:09:07 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2784
+#     Update #: 2804
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -386,6 +386,28 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild.setWidget(PlotWidget())
         mdiChild.showMaximized()
         self.__makeLinePlot()
+
+    def __plotSelectionsAsRaster(self):
+        self.dataList.model().clear()
+        self.__selectForPlot()
+        mdiChild = self.mdiArea.activeSubWindow()
+        if (mdiChild is None) or (mdiChild.widget() is not None):
+            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        else:
+            mdiChild.setWidget(PlotWidget())
+        mdiChild.showMaximized()
+        plotWidget = mdiChild.widget()
+        datalist = []
+        pathlist = []
+        for item in self.h5tree.selectedItems():
+            path = item.path()
+            pathlist.append(path)
+            tseries = self.h5tree.getTimeSeries(path)
+            data = numpy.arra(self.h5tree.getData(path))
+            datalist.append((tseries, data))
+        plotWidget.makeSpectrogram(datalist)
+        
 
     def __makeNewRasterPlot(self):
         self.dataList.model().clear()
