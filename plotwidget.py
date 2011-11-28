@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Nov 26 19:16:22 2011 (+0530)
+# Last-Updated: Mon Nov 28 16:29:51 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 494
+#     Update #: 528
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,18 +36,19 @@ import numpy
 
 class SpectrogramData(Qwt.QwtRasterData):
     def __init__(self, datalist):
+        self.datalist = datalist
         maxx = 0
         min_dx = 1e9
         for (x, y) in datalist:
-            if x[1] < min_dx:
-                min_dx = x[1]
+            if (x[-1] -x[-2]) < min_dx:
+                min_dx = (x[-1] -x[-2])
             if x[-1] > maxx:
                 maxx = x[-1]
         new_list = []
         self.xvalues = numpy.arange(0, maxx, min_dx)        
         self.yvalues = numpy.zeros((len(datalist), len(self.xvalues)))
-        miny = 1e9
-        maxy = -1e9
+        self.ymin = 1e9
+        self.ymax = -1e9
         index = 0
         for (x, y) in datalist:
             if len(x) != len(self.xvalues):
@@ -56,28 +57,36 @@ class SpectrogramData(Qwt.QwtRasterData):
                 self.yvalues[index, :] = y[:]
             tmp_min = min(self.yvalues[index])
             tmp_max = max(self.yvalues[index])
-            if tmp_min < miny:
-                miny = tmp_min
-            if tmp_max > maxy:
-                maxy = tmp_max            
+            if tmp_min < self.ymin:
+                self.ymin = tmp_min
+            if tmp_max > self.ymax:
+                self.ymax = tmp_max            
             index += 1
-            
-        Qwt.QwtRasterData.__init__(self, Qt.QRectF(self.xvalues[0], 0, self.xvalues[-1], len(datalist)))        
+
+        Qwt.QwtRasterData.__init__(self, Qt.QRectF(self.xvalues[0], 0, self.xvalues[-1], len(datalist)))
 
     def copy(self):
         return self
     
     def range(self):
-        print self.xvalues[0], self.xvalues[-1]
-        return Qwt.QwtDoubleInterval(self.xvalues[0], self.xvalues[-1])
+        print 'Range', self.ymin, self.ymax
+        return Qwt.QwtDoubleInterval(self.ymin, self.ymax)
 
     def value(self, x, y):
-        index = numpy.nonzero(self.xvalues <= x)[0][-1]
+        if x < 0 or x > self.xvalues[-1] or y < 0 or y >= self.yvalues.shape[0]:
+            return 0
+        index = int(x/(self.xvalues[-1] - self.xvalues[-2]))
         ret = self.yvalues[int(y), index]
         return ret
 
     def numrows(self):
         return len(self.yvalues)
+
+    def interval(self, axis):
+        if axis == Qwt.QwtPlot.xBottom:
+            return Qwt.QwtInterval(self.xvalues[0], self.xvalues[-1])
+        elif axis == Qwt.QwtPlot.yLeft:
+            return Qwt.QwtInterval(self.ymin, self.ymax)
 
 class PlotWidget(Qwt.QwtPlot):
     def __init__(self, *args):
