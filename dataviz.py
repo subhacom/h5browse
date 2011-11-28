@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 24 02:09:07 2011 (+0530)
+# Last-Updated: Sat Nov 26 18:17:03 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2804
+#     Update #: 2808
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -161,6 +161,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.newRasterPlotAction = QtGui.QAction('&New raster plot', self)
         self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
 
+        self.newSpectrogramAction = QtGui.QAction('&New spectrogram', self)
+        self.connect(self.newSpectrogramAction, QtCore.SIGNAL('triggered()'), self.__plotSelectionsAsSpectrogram)
+
         self.newRasterPlotByRegexAction = QtGui.QAction('&New raster plot by regex', self)
         self.connect(self.newRasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
 
@@ -271,6 +274,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.newRasterPlotAction)
         self.plotMenu.addAction(self.newRasterPlotByRegexAction)
         self.plotMenu.addAction(self.rasterPlotAction)
+
+        self.plotMenu.addAction(self.newSpectrogramAction)
 
         self.plotMenu.addAction(self.editPlotTitleAction)
         self.plotMenu.addAction(self.editLegendTextAction)
@@ -387,7 +392,7 @@ class DataVizWidget(QtGui.QMainWindow):
         mdiChild.showMaximized()
         self.__makeLinePlot()
 
-    def __plotSelectionsAsRaster(self):
+    def __plotSelectionsAsSpectrogram(self):
         self.dataList.model().clear()
         self.__selectForPlot()
         mdiChild = self.mdiArea.activeSubWindow()
@@ -404,7 +409,7 @@ class DataVizWidget(QtGui.QMainWindow):
             path = item.path()
             pathlist.append(path)
             tseries = self.h5tree.getTimeSeries(path)
-            data = numpy.arra(self.h5tree.getData(path))
+            data = numpy.array(self.h5tree.getData(path))
             datalist.append((tseries, data))
         plotWidget.makeSpectrogram(datalist)
         

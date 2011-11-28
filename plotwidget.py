@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 24 11:36:04 2011 (+0530)
+# Last-Updated: Sat Nov 26 19:16:22 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 401
+#     Update #: 494
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -32,7 +32,52 @@
 from collections import defaultdict
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4 import Qwt5 as Qwt
-import numpy 
+import numpy
+
+class SpectrogramData(Qwt.QwtRasterData):
+    def __init__(self, datalist):
+        maxx = 0
+        min_dx = 1e9
+        for (x, y) in datalist:
+            if x[1] < min_dx:
+                min_dx = x[1]
+            if x[-1] > maxx:
+                maxx = x[-1]
+        new_list = []
+        self.xvalues = numpy.arange(0, maxx, min_dx)        
+        self.yvalues = numpy.zeros((len(datalist), len(self.xvalues)))
+        miny = 1e9
+        maxy = -1e9
+        index = 0
+        for (x, y) in datalist:
+            if len(x) != len(self.xvalues):
+                self.yvalues[index, :] = numpy.interp(self.xvalues, x, y, 0.0, 0.0)
+            else:
+                self.yvalues[index, :] = y[:]
+            tmp_min = min(self.yvalues[index])
+            tmp_max = max(self.yvalues[index])
+            if tmp_min < miny:
+                miny = tmp_min
+            if tmp_max > maxy:
+                maxy = tmp_max            
+            index += 1
+            
+        Qwt.QwtRasterData.__init__(self, Qt.QRectF(self.xvalues[0], 0, self.xvalues[-1], len(datalist)))        
+
+    def copy(self):
+        return self
+    
+    def range(self):
+        print self.xvalues[0], self.xvalues[-1]
+        return Qwt.QwtDoubleInterval(self.xvalues[0], self.xvalues[-1])
+
+    def value(self, x, y):
+        index = numpy.nonzero(self.xvalues <= x)[0][-1]
+        ret = self.yvalues[int(y), index]
+        return ret
+
+    def numrows(self):
+        return len(self.yvalues)
 
 class PlotWidget(Qwt.QwtPlot):
     def __init__(self, *args):
@@ -377,16 +422,11 @@ class PlotWidget(Qwt.QwtPlot):
 
     def makeSpectrogram(self, datalist):
         """Display an array of time series data as spectrogram"""
-        maxx = 0
-        min_dx = 1e9
-        for (x, y) in datalist:
-            x[1] < min_dx:
-                min_dx = x[1]
-            if x[-1] > maxx:
-                maxx = x[-1]
-        new_list = []
-        new_x = numpy.arange(0, maxx, min_dx)
-        for (x, y) in datalist:
-            if 
+        data = SpectrogramData(datalist)
+        spectrogram = Qwt.QwtPlotSpectrogram()
+        spectrogram.setData(data)
+        spectrogram.attach(self)
+        self.replot()
+            
 # 
 # plotwidget.py ends here
