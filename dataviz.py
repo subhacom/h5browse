@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Nov 26 18:17:03 2011 (+0530)
+# Last-Updated: Wed Nov 30 10:27:24 2011 (+0530)
 #           By: Subhasis Ray
-#     Update #: 2808
+#     Update #: 2829
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -70,6 +70,21 @@ default_settings = {
     'lfpfilter/cutoff': '450.0',
     'lfpfilter/rolloff': '45.0'
 }
+
+
+def compare_paths(x, y):
+    """Compare paths of format nodepath/{cellname}_{cellno} such that
+    cell_10 comes after cell_9 (semi-lexicographic)"""
+    partsx = x.rpartition('_')
+    partsy = y.rpartition('_')
+    front_cmp = cmp(partsx[0], partsy[0]) # do a string comparison for substring before the last '_'
+    if not front_cmp: # If front is same, do an integer comparison for trailing part after the last '_'
+        try:
+            return cmp(int(x[2]), int(y[2]))
+        except ValueError:
+            return 0
+    return front_cmp
+
 class DataVizWidget(QtGui.QMainWindow):
     def __init__(self, *args):
         QtGui.QMainWindow.__init__(self, *args)
@@ -347,16 +362,14 @@ class DataVizWidget(QtGui.QMainWindow):
             plotWidget = mdiChild.widget()
         self.displayLegendAction.setEnabled(True)
         self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
-        namelist = []
         datalist = []
-        for item in self.h5tree.selectedItems():
-            if item.childCount() == 0: # not a leaf node                
-                path = item.path()
+        pathlist = [item.path() for item in self.h5tree.selectedItems() if item.childCount() == 0]
+                
+        for path in pathlist:
                 tseries = self.h5tree.getTimeSeries(path)
                 datalist.append((tseries, numpy.array(self.h5tree.getData(path))))
-                namelist.append(path)
                 self.dataList.model().insertItem(path)
-        plotWidget.addPlotCurveList(namelist, datalist, curvenames=namelist, mode='raster')
+        plotWidget.addPlotCurveList(pathlist, datalist, curvenames=namelist, mode='raster')
         mdiChild.showMaximized()
                                     
     def __makeLinePlot(self):
@@ -502,7 +515,9 @@ class DataVizWidget(QtGui.QMainWindow):
     def __selectDataByRegex(self, pattern):
         self.data_dict = self.h5tree.getDataByRe(pattern)
         self.dataList.model().clear()
-        for key in self.data_dict.keys():
+        pathlist = self.data_dict.keys()
+        pathlist.sort(cmp=compare_paths)
+        for key in pathlist:
             self.dataList.model().insertItem(key)
 
     def __displayH5NodeProperties(self):
