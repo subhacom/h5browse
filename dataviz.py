@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov 30 10:27:24 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 2829
+# Last-Updated: Wed Nov 30 10:42:32 2011 (+0530)
+#           By: subha
+#     Update #: 2831
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -80,9 +80,9 @@ def compare_paths(x, y):
     front_cmp = cmp(partsx[0], partsy[0]) # do a string comparison for substring before the last '_'
     if not front_cmp: # If front is same, do an integer comparison for trailing part after the last '_'
         try:
-            return cmp(int(x[2]), int(y[2]))
+            return cmp(int(partsx[2]), int(partsy[2]))
         except ValueError:
-            return 0
+            print x, y
     return front_cmp
 
 class DataVizWidget(QtGui.QMainWindow):
