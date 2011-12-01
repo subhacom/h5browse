@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Nov 30 10:42:32 2011 (+0530)
-#           By: subha
-#     Update #: 2831
+# Last-Updated: Thu Dec  1 08:02:43 2011 (+0530)
+#           By: Subhasis Ray
+#     Update #: 2832
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -369,7 +369,7 @@ class DataVizWidget(QtGui.QMainWindow):
                 tseries = self.h5tree.getTimeSeries(path)
                 datalist.append((tseries, numpy.array(self.h5tree.getData(path))))
                 self.dataList.model().insertItem(path)
-        plotWidget.addPlotCurveList(pathlist, datalist, curvenames=namelist, mode='raster')
+        plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='raster')
         mdiChild.showMaximized()
                                     
     def __makeLinePlot(self):
