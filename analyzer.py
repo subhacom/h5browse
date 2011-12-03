@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Nov  1 17:37:24 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 53
+# Last-Updated: Sat Dec  3 17:39:16 2011 (+0530)
+#           By: subha
+#     Update #: 142
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,6 +49,8 @@ import h5py
 import numpy
 import scipy.signal as signal
 from datetime import datetime
+from collections import defaultdict
+
 # import nitime
 
 
@@ -100,6 +102,100 @@ def blackmann_windowedsinc_filter(datalist, sampling_interval, cutoff=450.0, rol
     print 'blackmann_windowedsinc_filter:', '%g s for %d arrays of length %d' % (delta.days * 86400 + delta.seconds + delta.microseconds * 1e-6, len(datalist), len(datalist[0]))
     return filtered_data_list
 
+##############################
+# Here I am putting in some scratchpad code to do various infrequent
+# things.
+##############################
+
+def get_synstat(datafile, netfile):
+    """Get some statistics of the synapses on various cell types."""
+    syn_node = netfile['/network/synapse']
+    ampa_list = []
+    gaba_list = []
+    nmda_list = []
+    cell_ampa_map = defaultdict(float)
+    celltype_ampa_map = defaultdict(list)
+    cell_nmda_map = defaultdict(float)
+    celltype_nmda_map = defaultdict(list)
+    cell_gaba_map = defaultdict(float)
+    celltype_gaba_map = defaultdict(list)
+
+    
+    # 1. First, we separate out te different kinds of synapses into lists
+    # In the new format network file, we have /network/synapse node, which contains rows of:
+    # (source_compartment, dest_compartment, type, Gbar, tau1, tau2, Ek)
+    for syninfo in syn_node:
+        syn_list = None
+        cell_syn_map = None
+        celltype_syn_map  = None
+        try:
+            if syninfo[2] == 'ampa':
+                syn_list = ampa_list
+                cell_syn_map = cell_ampa_map
+                celltype_syn_map = celltype_ampa_map
+            elif syninfo[2] == 'nmda':
+                syn_list = nmda_list
+                cell_syn_map = cell_nmda_map
+                celltype_syn_map = celltype_nmda_map
+            elif syninfo[2] == 'gaba':
+                syn_list = gaba_list
+                cell_syn_map = cell_gaba_map
+                celltype_syn_map = celltype_gaba_map
+            else:
+                print 'Unknown synapse type: ', syninfo[0], syninfo[1], syninfo[2], syninfo[3]
+                continue
+            syn_list.append((syninfo[1], syninfo[3]))
+        # 2. Second, we compute the total conductance of each type on each cell
+            dest_cell = syninfo[1].partition('/')[0]
+            cell_syn_map[dest_cell] += syninfo[3]
+            celltype_syn_map[dest_cell.partition('_')[0]].append(syninfo[3])
+        except Exception:
+            print syn_list, syninfo
+            return None
+
+    celltype_stat = {}
+    
+    for celltype, gbar_list in celltype_ampa_map.items():
+        gbar = numpy.array(gbar_list)
+        try:
+            stat = celltype_stat[celltype]
+        except KeyError:
+            stat = {}
+        stat['ampa'] = (numpy.mean(gbar), numpy.std(gbar))
+        celltype_stat[celltype] = stat
+
+    for celltype, gbar_list in celltype_nmda_map.items():
+        gbar = array(gbar_list)
+        try:
+            stat = celltype_stat[celltype]
+        except KeyError:
+            stat = {}
+        stat['nmda'] = (mean(gbar), std(gbar))
+        celltype_stat[celltype] = stat
+    for celltype, gbar_list in celltype_gaba_map.items():
+        gbar = array(gbar_list)
+        try:
+            stat = celltype_stat[celltype]
+        except KeyError:
+            stat = {}
+        stat['gaba'] = (numpy.mean(gbar), numpy.std(gbar))
+        celltype_stat[celltype] = stat
+    return celltype_stat
+
+import sys
+if __name__ == '__main__':
+    data = sys.argv[1]
+    net = sys.argv[2]
+    print data, net
+    datafile = h5py.File(data, 'r')
+    netfile = h5py.File(net, 'r')
+    print datafile, netfile
+    stat = get_synstat(datafile, netfile)
+    for key, value in stat.items():
+        print key
+        print '--------------'
+        for kk, vv in value.items():
+            print kk, vv
 
 # 
 # analyzer.py ends here
