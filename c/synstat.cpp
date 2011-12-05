@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec  5 11:04:40 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Dec  5 19:31:01 2011 (+0530)
+// Last-Updated: Mon Dec  5 19:37:35 2011 (+0530)
 //           By: subha
-//     Update #: 207
+//     Update #: 210
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -120,9 +120,9 @@ void synstat(const DataSet * syndataset)
         map<string, double>::iterator it;
         string comp_name = gbar_dataset[ii].dest;
         string cellname = comp_name.substr(0, comp_name.rfind('/'));
-        cout << "cellname: " << cellname << endl;
+        // cout << "cellname: " << cellname << endl;
         string cellclassname = cellname.substr(0, cellname.rfind('_'));
-        cout << "cellclass: " << cellclassname << endl;
+        // cout << "cellclass: " << cellclassname << endl;
         // Update total Gbar for each cell
         it = sum_map.find(cellname);
         if (it == sum_map.end()){
@@ -139,6 +139,7 @@ void synstat(const DataSet * syndataset)
         }
         // Track the count of cells of each type
         map<string, int>::iterator it_count = cellcount.find(cellclassname);
+        // TODO - this counts number of synapses into each cell type. Need to get actual cellcount.
         if (it_count == cellcount.end()){
             cellcount.insert(pair<string, double>(cellclassname, 1));
         } else {
@@ -152,7 +153,7 @@ void synstat(const DataSet * syndataset)
         celltype_var_map.insert(pair<string, double>(ii->first, 0.0));
     }
     for (map<string, double>::iterator ii = sum_map.begin(); ii != sum_map.end(); ++ii){
-        string cellclass = ii->first.substr(ii->first.rfind('_'));        
+        string cellclass = ii->first.substr(0, ii->first.rfind('_'));        
         celltype_var_map[cellclass] += (ii->second - celltype_sum_map[cellclass]) * (ii->second - celltype_sum_map[cellclass]);
     }            
     for (map<string, double>::iterator ii = celltype_var_map.begin(); ii != celltype_var_map.end(); ++ii){
