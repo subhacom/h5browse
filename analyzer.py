@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Dec  3 17:39:16 2011 (+0530)
+# Last-Updated: Mon Dec  5 12:01:48 2011 (+0530)
 #           By: subha
-#     Update #: 142
+#     Update #: 147
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,7 +50,6 @@ import numpy
 import scipy.signal as signal
 from datetime import datetime
 from collections import defaultdict
-
 # import nitime
 
 
@@ -165,15 +164,15 @@ def get_synstat(datafile, netfile):
         celltype_stat[celltype] = stat
 
     for celltype, gbar_list in celltype_nmda_map.items():
-        gbar = array(gbar_list)
+        gbar = numpy.array(gbar_list)
         try:
             stat = celltype_stat[celltype]
         except KeyError:
             stat = {}
-        stat['nmda'] = (mean(gbar), std(gbar))
+        stat['nmda'] = (numpy.mean(gbar), numpy.std(gbar))
         celltype_stat[celltype] = stat
     for celltype, gbar_list in celltype_gaba_map.items():
-        gbar = array(gbar_list)
+        gbar = numpy.array(gbar_list)
         try:
             stat = celltype_stat[celltype]
         except KeyError:
