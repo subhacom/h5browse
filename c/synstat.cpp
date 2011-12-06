@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec  5 11:04:40 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Dec  5 19:37:35 2011 (+0530)
+// Last-Updated: Tue Dec  6 16:44:36 2011 (+0530)
 //           By: subha
-//     Update #: 210
+//     Update #: 472
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -46,10 +46,14 @@
 // Code:
 
 #include <iostream>
+#include <fstream>
 #include <map>
+#include <set>
+#include <algorithm>
 // #include <pair>
 #include <string>
 
+#include <cassert>
 #include <cstdlib>
 #include <cmath>
 
@@ -64,125 +68,177 @@ using namespace H5;
 typedef struct syn_t{
     char src[32];
     char dest[32];
-    char syntype[4];
+    char type[4];
     float Gbar;
     float tau1;
     float tau2;
     float Ek;
 } syn_t;
-
+struct comparator{
+    bool  operator()(const string& left, const string& right) const
+    {
+        string lcelltype = left.substr(0, left.find('_'));
+        int lcellnum = atol(left.substr(left.find('_')+1).c_str());
+        string rcelltype = right.substr(0, right.find('_'));
+        int rcellnum = atol(right.substr(right.find('_')+1).c_str());
+        if (lcelltype == rcelltype){
+            return lcellnum < rcellnum;
+        }
+        return lcelltype < rcelltype;
+    }
+};
 const H5std_string DATA_SET_PATH("/network/synapse");
 
-void synstat(const DataSet * syndataset)
-{
-    const H5std_string SOURCE("source");
-    const H5std_string DEST("dest");
-    const H5std_string TYPE("type");
-    const H5std_string GBAR("Gbar");
-    const H5std_string TAU1("tau1");
-    const H5std_string TAU2("tau2");
-    const H5std_string EK("Ek");
-
-    // typedef struct gbar_t{
-    //     char src[32];
-    //     char dest[32];
-    //     char type[4];
-    //     float Gbar;        
-    // } gbar_t;
-
-    CompType syntype(sizeof(syn_t));
-    syntype.insertMember(SOURCE, HOFFSET(syn_t, src), StrType(PredType::NATIVE_CHAR, 32));
-    syntype.insertMember(DEST, HOFFSET(syn_t, dest), StrType(PredType::NATIVE_CHAR, 32));
-    syntype.insertMember(TYPE, HOFFSET(syn_t, syntype), StrType(PredType::NATIVE_CHAR, 4));
-    syntype.insertMember(GBAR, HOFFSET(syn_t, Gbar), PredType::NATIVE_FLOAT);
-    syntype.insertMember(TAU1, HOFFSET(syn_t, tau1), PredType::NATIVE_FLOAT);
-    syntype.insertMember(TAU2, HOFFSET(syn_t, tau2), PredType::NATIVE_FLOAT);
-    syntype.insertMember(EK, HOFFSET(syn_t, Ek), PredType::NATIVE_FLOAT);
-    cout << "A" << endl;
-    
+/**
+   Read synapse list from hdf5 dataset and for each cell store the
+   total Gbar for each synapse type (ampa, nmda, gaba).
+ */
+void cell_syn_stat(const DataSet& syndataset,
+                   set<string, comparator>& cellset,
+                   map<string, double>& cell_ampa_map,
+                   map<string, double>& cell_nmda_map,
+                   map<string, double>& cell_gaba_map){
     DataSpace dataspace;
     try{
-        dataspace = syndataset->getSpace();
+        dataspace = syndataset.getSpace();
     } catch (DataSetIException error){
         error.printError();
         return;
     }
-    cout << "A.0" << endl;
     hsize_t len = dataspace.getSimpleExtentNpoints();
-    cout << "A.1" << endl;
     syn_t * gbar_dataset = (syn_t*)calloc(len, sizeof(syn_t));
-    cout << "B" << endl;
-    syndataset->read(gbar_dataset, syndataset->getDataType());
-    cout << "C" << endl;
-    map<string, double> sum_map, celltype_sum_map, celltype_var_map;
-    map<string, int> cellcount;
+    assert(gbar_dataset != NULL);
+    syndataset.read(gbar_dataset, syndataset.getDataType());
+    // This block reads in all the synapses and sums up the gbar on
+    // all compartments for each cell
     for (hsize_t ii = 0; ii < len; ++ii){
-        map<string, double>::iterator it;
-        string comp_name = gbar_dataset[ii].dest;
-        string cellname = comp_name.substr(0, comp_name.rfind('/'));
-        // cout << "cellname: " << cellname << endl;
-        string cellclassname = cellname.substr(0, cellname.rfind('_'));
-        // cout << "cellclass: " << cellclassname << endl;
+        map<string, double> * sum_map;
         // Update total Gbar for each cell
-        it = sum_map.find(cellname);
-        if (it == sum_map.end()){
-            sum_map.insert(pair<string, double>(cellname, gbar_dataset[ii].Gbar));            
+        if (string(gbar_dataset[ii].type, 4) == "ampa"){
+            sum_map = &cell_ampa_map;
+        } else if (string(gbar_dataset[ii].type, 4) == "nmda"){
+            sum_map = &cell_nmda_map;
+        } else if (string(gbar_dataset[ii].type, 4) == "gaba"){
+            sum_map = &cell_gaba_map;
         } else {
-            sum_map[cellname] += gbar_dataset[ii].Gbar;
+            cerr << "Error: unrecognized synapse type '" << gbar_dataset[ii].type << " on " << gbar_dataset[ii].dest << endl;
+            continue;
         }
-        // Update the total Gbar for each cell type
-        it = celltype_sum_map.find(cellclassname);
-        if (it == sum_map.end()){
-            celltype_sum_map.insert(pair<string, double>(cellclassname, gbar_dataset[ii].Gbar));
+        string comp_path(gbar_dataset[ii].dest);
+        string cellname = comp_path.substr(0, comp_path.rfind('/'));
+        cellset.insert(cellname);
+        map<string, double>::iterator it = sum_map->find(cellname);
+        if (it == sum_map->end()){
+            sum_map->insert(pair<string, double>(cellname, gbar_dataset[ii].Gbar));
         } else {
-            celltype_sum_map[cellclassname] += gbar_dataset[ii].Gbar;
-        }
-        // Track the count of cells of each type
-        map<string, int>::iterator it_count = cellcount.find(cellclassname);
-        // TODO - this counts number of synapses into each cell type. Need to get actual cellcount.
-        if (it_count == cellcount.end()){
-            cellcount.insert(pair<string, double>(cellclassname, 1));
-        } else {
-            cellcount[cellclassname] += 1;
+            it->second += gbar_dataset[ii].Gbar;
         }
     }
-    cout << "D" << endl;
-    // calculate the average Gbar for each cell class
-    for (map<string, double>::iterator ii = celltype_sum_map.begin(); ii != celltype_sum_map.end(); ++ii){
-        ii->second = ii->second/cellcount[ii->first];
-        celltype_var_map.insert(pair<string, double>(ii->first, 0.0));
+    free(gbar_dataset);    
+}
+
+/**
+   Given a cell-to-total gbar map, fill up maps for
+   celltype->cellcount, celltype->mean(gbar), celltype->var(gbar).
+ */
+void celltype_syn_stat(const map<string, double>& cell_syn_map,
+                       map<string, int>& cellcount_map,
+                       map<string, double>& celltype_mean_map,
+                       map<string, double>& celltype_var_map){
+    for (map<string, double>::const_iterator ii = cell_syn_map.begin(); ii != cell_syn_map.end(); ++ii){
+        string celltype = ii->first.substr(0, ii->first.find('_'));
+        map<string, int>::iterator it = cellcount_map.find(celltype);
+        if (it == cellcount_map.end()){
+            cellcount_map.insert(pair<string, int>(celltype, 1));
+        } else {
+            it->second += 1;
+        }
+        map<string, double>::iterator syn_it = celltype_mean_map.find(celltype);
+        if (syn_it == celltype_mean_map.end()){
+            celltype_mean_map.insert(pair<string, double>(celltype, ii->second));
+        } else {
+            syn_it->second += ii->second;
+        }
     }
-    for (map<string, double>::iterator ii = sum_map.begin(); ii != sum_map.end(); ++ii){
-        string cellclass = ii->first.substr(0, ii->first.rfind('_'));        
-        celltype_var_map[cellclass] += (ii->second - celltype_sum_map[cellclass]) * (ii->second - celltype_sum_map[cellclass]);
-    }            
-    for (map<string, double>::iterator ii = celltype_var_map.begin(); ii != celltype_var_map.end(); ++ii){
-        ii->second = ii->second/cellcount[ii->first];
+    for (map<string, double>::iterator ii = celltype_mean_map.begin(); ii != celltype_mean_map.end(); ++ii) {
+        ii->second = ii->second / cellcount_map[ii->first];
     }
-    for (map<string, int>::iterator ii = cellcount.begin(); ii != cellcount.end(); ++ii){
-        cout << ii->first << ", " << ii->second << ", " << celltype_sum_map[ii->first] << ", " << celltype_var_map[ii->first] << endl;
+    for ( map<string, double>::const_iterator ii = cell_syn_map.begin(); ii != cell_syn_map.end(); ++ii) {
+        string celltype = ii->first.substr(0, ii->first.find('_'));
+        map<string, double>::iterator mean_it = celltype_mean_map.find(celltype);
+        map<string, double>::iterator var_it = celltype_var_map.find(celltype);        
+        if (var_it == celltype_var_map.end()) {
+            celltype_var_map.insert(pair<string, double>(celltype, (ii->second - mean_it->second) * (ii->second - mean_it->second)));
+        } else {
+            var_it->second += (ii->second - mean_it->second) * (ii->second - mean_it->second);
+        }
     }
-    cout << "#############################" << endl;
-    for (map<string, double>::iterator ii = sum_map.begin(); ii != sum_map.end(); ++ii){
-        cout << ii->first << ", " << ii->second << endl;
+    for (map<string, double>::iterator ii = celltype_var_map.begin(); ii != celltype_var_map.end(); ++ii) {
+        ii->second = sqrt(ii->second / cellcount_map[ii->first]);
     }
+}
+
+
+void synstat(const DataSet& syndataset, ofstream& outfile)
+{
+    
+    map<string, double> cell_ampa_map, cell_nmda_map, cell_gaba_map;
+    set<string, comparator> cellset;
+    cell_syn_stat(syndataset, cellset, cell_ampa_map, cell_nmda_map, cell_gaba_map);
+    for (set<string>::const_iterator it = cellset.begin(); it != cellset.end(); ++it){
+        outfile << *it
+                << ", " << cell_ampa_map[*it] << ", " << cell_nmda_map[*it] << ", " << cell_gaba_map[*it] << endl;
+    }
+    map<string, int> cellcount_ampa, cellcount_nmda, cellcount_gaba;
+    map<string, double> celltype_ampa_mean, celltype_ampa_var,
+            celltype_nmda_mean, celltype_nmda_var,
+            celltype_gaba_mean, celltype_gaba_var;
+    celltype_syn_stat(cell_ampa_map, cellcount_ampa, celltype_ampa_mean, celltype_ampa_var);
+    celltype_syn_stat(cell_nmda_map, cellcount_nmda, celltype_nmda_mean, celltype_nmda_var);
+    celltype_syn_stat(cell_gaba_map, cellcount_gaba, celltype_gaba_mean, celltype_gaba_var);    
+    outfile << "###############################" << endl;
+    string celltypes[] = {
+        "SupPyrRS",
+        "SupPyrFRB", 
+        "SupBasket", 
+        "SupAxoaxonic", 
+        "SupLTS", 
+        "SpinyStellate",
+        "TuftedIB", 
+        "TuftedRS", 
+        "DeepBasket", 
+        "DeepAxoaxonic", 
+        "DeepLTS", 
+        "NontuftedRS", 
+        "TCR", 
+        "nRT",
+        "" // sentinel
+    };
+    for (string * ptr = &celltypes[0]; !ptr->empty(); ++ptr){
+        outfile << *ptr << endl << "------------------" << endl
+                << "ampa\t" << celltype_ampa_mean[*ptr] << "\t" << celltype_ampa_var[*ptr] << endl
+                << "nmda\t" << celltype_nmda_mean[*ptr] << "\t" << celltype_nmda_var[*ptr] << endl
+                << "gaba\t" << celltype_gaba_mean[*ptr] << "\t" << celltype_gaba_var[*ptr] << endl;
+    }        
 }
 
 int main(int argc, char ** argv)
 {
-    if (argc < 2){
-        cout << "Usage:" << argv[0] << " <filename> - display some statistics of specified synapse."  << endl;
+    if (argc < 3){
+        cout << "Usage:" << argv[0] << " <filename> <outputfilename> - display some statistics of specified synapse."  << endl;
         return 0;
     }
 
     const H5std_string FILE_NAME(argv[1]);
-
+    ofstream outfile;
+    outfile.open(argv[2]);
     try{
         H5File * file = new H5File(FILE_NAME, H5F_ACC_RDONLY);
         Group * netgroup = new Group(file->openGroup("network"));
         const DataSet * syndataset = new DataSet(netgroup->openDataSet("synapse"));
-        synstat(syndataset);
+        synstat(*syndataset, outfile);
         file->close();
+        outfile.close();
     }
     catch( FileIException error )
     {
@@ -209,7 +265,7 @@ int main(int argc, char ** argv)
     {
        error.printError();
        return -1;
-    }
+    }    
     return 0;
 }
 // 

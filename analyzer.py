@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Dec  5 12:01:48 2011 (+0530)
+# Last-Updated: Tue Dec  6 14:04:21 2011 (+0530)
 #           By: subha
-#     Update #: 147
+#     Update #: 245
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,6 +45,7 @@
 
 # Code:
 
+import os
 import h5py
 import numpy
 import scipy.signal as signal
@@ -105,91 +106,78 @@ def blackmann_windowedsinc_filter(datalist, sampling_interval, cutoff=450.0, rol
 # Here I am putting in some scratchpad code to do various infrequent
 # things.
 ##############################
-
-def get_synstat(datafile, netfile):
+def celltype_synstat(cell_synstat):
+    start = datetime.now()
+    celltype_syn_map = defaultdict(list)
+    ret = {}
+    for cell, gbar in cell_synstat.items():
+        celltype_syn_map[cell.partition('_')[0]].append(gbar)
+    for celltype, gbar_list in celltype_syn_map.items():
+        ret[celltype] = (numpy.mean(gbar_list), numpy.std(gbar_list))
+    end = datetime.now()
+    delta = end - start
+    print 'celltype_synstat: %g s' % (delta.days * 86400 + delta.seconds + delta.microseconds * 1e-6)
+    return ret
+        
+def get_synstat(netfile):
     """Get some statistics of the synapses on various cell types."""
+    start = datetime.now()
     syn_node = netfile['/network/synapse']
     ampa_list = []
     gaba_list = []
     nmda_list = []
     cell_ampa_map = defaultdict(float)
-    celltype_ampa_map = defaultdict(list)
     cell_nmda_map = defaultdict(float)
-    celltype_nmda_map = defaultdict(list)
-    cell_gaba_map = defaultdict(float)
-    celltype_gaba_map = defaultdict(list)
-
-    
-    # 1. First, we separate out te different kinds of synapses into lists
+    cell_gaba_map = defaultdict(float)    
+    # 1. First, we separate out the different kinds of synapses into lists
     # In the new format network file, we have /network/synapse node, which contains rows of:
     # (source_compartment, dest_compartment, type, Gbar, tau1, tau2, Ek)
-    for syninfo in syn_node:
-        syn_list = None
+    for syn_row in syn_node:
         cell_syn_map = None
-        celltype_syn_map  = None
-        try:
-            if syninfo[2] == 'ampa':
-                syn_list = ampa_list
-                cell_syn_map = cell_ampa_map
-                celltype_syn_map = celltype_ampa_map
-            elif syninfo[2] == 'nmda':
-                syn_list = nmda_list
-                cell_syn_map = cell_nmda_map
-                celltype_syn_map = celltype_nmda_map
-            elif syninfo[2] == 'gaba':
-                syn_list = gaba_list
-                cell_syn_map = cell_gaba_map
-                celltype_syn_map = celltype_gaba_map
-            else:
-                print 'Unknown synapse type: ', syninfo[0], syninfo[1], syninfo[2], syninfo[3]
-                continue
-            syn_list.append((syninfo[1], syninfo[3]))
-        # 2. Second, we compute the total conductance of each type on each cell
-            dest_cell = syninfo[1].partition('/')[0]
-            cell_syn_map[dest_cell] += syninfo[3]
-            celltype_syn_map[dest_cell.partition('_')[0]].append(syninfo[3])
-        except Exception:
-            print syn_list, syninfo
-            return None
+        if 'ampa' == syn_row[2]:
+            cell_syn_map = cell_ampa_map
+        elif 'nmda' == syn_row[2]:
+            cell_syn_map = cell_nmda_map
+        elif 'gaba' == syn_row[2]:
+            cell_syn_map = cell_gaba_map
+        else:
+            print 'Unknown synapse type in row:', syn_row
+            continue
+        dest_cell = syn_row[1].partition('/')[0]
+        cell_syn_map[dest_cell] += syn_row[3]
+    end = datetime.now()
+    delta = end - start
+    print 'get_synstat: %g s' % (delta.days * 86400 + delta.seconds + delta.microseconds * 1e-6)
+    return {'ampa': cell_ampa_map, 'nmda': cell_nmda_map, 'gaba': cell_gaba_map}
 
-    celltype_stat = {}
-    
-    for celltype, gbar_list in celltype_ampa_map.items():
-        gbar = numpy.array(gbar_list)
-        try:
-            stat = celltype_stat[celltype]
-        except KeyError:
-            stat = {}
-        stat['ampa'] = (numpy.mean(gbar), numpy.std(gbar))
-        celltype_stat[celltype] = stat
+def dump_synstat(netfile):
+    cellmaps = get_synstat(netfile)
+    for key, cell_syn_map in cellmaps.items():
+        filename = os.path.basename(netfilename)
+        filename.replace('.h5.new', '_%s.csv' % (key))
+        data = sorted(cell_syn_map.items(), cmp=lambda x, y: cmp(int(x[0].rpartition('_')[-1]), int(y[0].rpartition('_')[-1])))
+        numpy.savetxt(filename, numpy.array(data, dtype='a32, f4'), fmt='%s, %g')        
+    celltype_ampa_map = celltype_synstat(cellmaps['ampa'])
+    celltype_nmda_map = celltype_synstat(cellmaps['nmda'])
+    celltype_gaba_map = celltype_synstat(cellmaps['gaba'])
+    celltype_syn_map = defaultdict(dict)
+    for celltype, value in celltype_ampa_map.items():
+        celltype_syn_map[celltype]['ampa'] = value
+    for celltype, value in celltype_gaba_map.items():
+        celltype_syn_map[celltype]['gaba'] = value
+    for celltype, value in celltype_nmda_map.items():
+        celltype_syn_map[celltype]['nmda'] = value
+    return celltype_syn_map
 
-    for celltype, gbar_list in celltype_nmda_map.items():
-        gbar = numpy.array(gbar_list)
-        try:
-            stat = celltype_stat[celltype]
-        except KeyError:
-            stat = {}
-        stat['nmda'] = (numpy.mean(gbar), numpy.std(gbar))
-        celltype_stat[celltype] = stat
-    for celltype, gbar_list in celltype_gaba_map.items():
-        gbar = numpy.array(gbar_list)
-        try:
-            stat = celltype_stat[celltype]
-        except KeyError:
-            stat = {}
-        stat['gaba'] = (numpy.mean(gbar), numpy.std(gbar))
-        celltype_stat[celltype] = stat
-    return celltype_stat
 
 import sys
+
 if __name__ == '__main__':
-    data = sys.argv[1]
-    net = sys.argv[2]
-    print data, net
-    datafile = h5py.File(data, 'r')
-    netfile = h5py.File(net, 'r')
-    print datafile, netfile
-    stat = get_synstat(datafile, netfile)
+    netfilename = sys.argv[1]
+    print 'Opening:', netfilename
+    netfile = h5py.File(netfilename, 'r')
+    stat = dump_synstat(netfile)
+    netfile.close()
     for key, value in stat.items():
         print key
         print '--------------'
