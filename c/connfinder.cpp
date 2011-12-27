@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Dec 26 21:02:52 2011 (+0530)
+// Last-Updated: Tue Dec 27 17:14:51 2011 (+0530)
 //           By: subha
-//     Update #: 190
+//     Update #: 201
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -77,11 +77,12 @@ using namespace std;
 // }
 
 
-herr_t collect_spike_names(hid_t loc_id, const char * name, const H5L_info_t * info, void * operator_data)
+herr_t spike_data_op(hid_t loc_id, const char * name, const H5L_info_t * info, void * operator_data)
 {
     vector< pair< string, vector<double> > > * data_list = (vector < pair < string, vector < double > > >*)operator_data;
     herr_t status;
     H5O_info_t infobuf;
+    cout << "spike_data_op: reading " << name << endl;
     status = H5Oget_info_by_name(loc_id, name, &infobuf, H5P_DEFAULT);
     if (status < 0) {
         cerr << "Error getting info for " << name << endl;
@@ -92,11 +93,13 @@ herr_t collect_spike_names(hid_t loc_id, const char * name, const H5L_info_t * i
         hid_t dset_id = H5Dopen(loc_id, name);
         hid_t space_id = H5Dget_space(dset_id);
         hssize_t size = H5Sget_simple_extent_npoints(space_id);
+        cout << "Dataset size is: " << size << endl;
         // This is unsafe, I should check that double is same size as HDF5 double.
         data.resize(size);
         hsize_t dims[] = {size};
         hid_t memtype_id = H5Tarray_create(H5T_NATIVE_DOUBLE, 1, dims, 0);
-        status = H5Dread(dset_id, memtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data[0]);
+        // status = H5Dread(dset_id, memtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data[0]);
+        status = H5LTread_dataset_double(loc_id, name, &data[0]);
         data_list->push_back(pair < string, vector< double > > (string(name), data));
     }
     return 0;
@@ -115,8 +118,7 @@ herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > 
     hsize_t num_datasets = group_info.nlinks;
     if (num_datasets > 0){
         cout << "Number of datasets: " << num_datasets << endl;
-        data.resize(num_datasets);
-        status = H5Literate(spike_group, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, collect_spike_names, &data);
+        status = H5Literate(spike_group, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, spike_data_op, &data);
     } else {
         H5Gclose(spike_group);
         cerr << "No data set inside spikes group." << endl;
@@ -139,6 +141,10 @@ int main(int argc, char **argv)
     vector< pair < string, vector <double> > > spike_data;
     herr_t status = get_spike_data(data_file_id, spike_data);
     H5Fclose(data_file_id);
+    for (unsigned int ii = 0; ii < spike_data.size(); ++ ii){
+        pair< string, vector < double > > data = spike_data[ii];
+        cout << data.first << ", " << data.second.size() << endl;
+    }
     return status;
 }
 
