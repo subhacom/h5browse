@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Dec 27 17:14:51 2011 (+0530)
+// Last-Updated: Tue Dec 27 17:28:00 2011 (+0530)
 //           By: subha
-//     Update #: 201
+//     Update #: 212
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -91,8 +91,12 @@ herr_t spike_data_op(hid_t loc_id, const char * name, const H5L_info_t * info, v
     if (infobuf.type == H5O_TYPE_DATASET){
         vector<double> data;
         hid_t dset_id = H5Dopen(loc_id, name);
-        hid_t space_id = H5Dget_space(dset_id);
-        hssize_t size = H5Sget_simple_extent_npoints(space_id);
+        hid_t filespace_id = H5Dget_space(dset_id);
+        hid_t memspace_id;
+        int rank = H5Sget_simple_extent_ndims(filespace_id);
+        cout << name << ", rank: " << rank << endl;
+        hsize_t dims[2];
+        status = H5Sget_simple_extent_dims(filespace_id, dims, NULL);
         cout << "Dataset size is: " << size << endl;
         // This is unsafe, I should check that double is same size as HDF5 double.
         data.resize(size);
