@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Dec 28 16:04:25 2011 (+0530)
+// Last-Updated: Thu Dec 29 00:28:26 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 344
+//     Update #: 580
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -48,46 +48,33 @@
 
 using namespace std;
 
-herr_t spike_data_op(hid_t loc_id, const char * name, const H5L_info_t * info, void * operator_data)
+void compute_spiking_rate(vector < double > & spike_data,
+                          vector < double > & spike_rate,
+                          double t_total,
+                          double binsize=1.0,
+                          double start=0.0,
+                          double end=-1.0);
+herr_t collect_spike_name(const hid_t loc_id, const char * name, const H5L_info_t * info, void * operator_data)
 {
-    vector< pair< string, vector<double> > > * data_list = (vector < pair < string, vector < double > > >*)operator_data;
+    vector < string > * spike_names = static_cast< vector < string > * >(operator_data);
+    assert(spike_names != NULL);
     herr_t status;
     H5O_info_t infobuf;
-    cout << "spike_data_op: reading " << name << endl;
     status = H5Oget_info_by_name(loc_id, name, &infobuf, H5P_DEFAULT);
-    if (status < 0) {
-        cerr << "Error getting info for " << name << endl;
+    if (status < 0){
+        cerr << "collect_spike_name: Error getting info on " << name << endl;
         return status;
     }
-    if (infobuf.type == H5O_TYPE_DATASET){
-        vector<double> data;
-        hid_t dset_id = H5Dopen(loc_id, name);
-        hid_t filespace_id = H5Dget_space(dset_id);
-        int rank = H5Sget_simple_extent_ndims(filespace_id);
-        cout << name << ", rank: " << rank << endl;
-        hsize_t dims[2];
-        status = H5Sget_simple_extent_dims(filespace_id, dims, NULL);
-        cout << "Dataset size is: " << dims[0] << endl;
-        // This is unsafe, I should check that double is same size as HDF5 double.
-        data.resize(dims[0]);
-        hid_t props = H5Dget_create_plist(dset_id);
-        if (H5D_CHUNKED == H5Pget_layout(props)){
-            hsize_t chunk_dims[2];
-            int rank_chunk = H5Pget_chunk(props, 2, chunk_dims);
-            cout << "chunk rank " << rank_chunk << ", dimensions " << chunk_dims[0] << "x" << chunk_dims[1] << endl;
-        }
-        hid_t memspace_id = H5Screate_simple(1, dims, NULL);
-        status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, H5P_DEFAULT, &data[0]);
-        // status = H5LTread_dataset_double(loc_id, name, &data[0]);
-        H5Dclose(dset_id);
-        data_list->push_back(pair < string, vector< double > > (string(name), data));
+    if ( H5O_TYPE_DATASET == infobuf.type ) {
+        spike_names->push_back(string(name));
+        cout << "Found " << name << endl;
     }
-    return 0;
+    return 0;        
 }
 
-herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > >& data)
-{
-    hid_t spike_group = H5Gopen(file, "spikes");
+herr_t get_spike_dataset_names(const hid_t file_id, vector<string>& names){
+    names.clear();
+    hid_t spike_group = H5Gopen(file_id, "spikes", H5P_DEFAULT);
     H5G_info_t group_info;
     herr_t status = H5Gget_info(spike_group, &group_info);
     if (status < 0){
@@ -98,7 +85,7 @@ herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > 
     hsize_t num_datasets = group_info.nlinks;
     if (num_datasets > 0){
         cout << "Number of datasets: " << num_datasets << endl;
-        status = H5Literate(spike_group, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, spike_data_op, &data);
+        status = H5Literate(spike_group, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, collect_spike_name, &names);
     } else {
         H5Gclose(spike_group);
         cerr << "No data set inside spikes group." << endl;
@@ -106,6 +93,62 @@ herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > 
     }
     H5Gclose(spike_group);
     return status;
+}
+    
+herr_t dump_spike_rates(const hid_t file_id, string output_filename, double t_total, double binsize=1.0, double start=0, double end=-1)
+{
+    vector < string > cells;
+    herr_t status = get_spike_dataset_names(file_id, cells);
+    if (status < 0) {
+        return status;
+    }
+    hid_t output_file_id = H5Fcreate(output_filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t spike_rate_group = H5Gcreate(output_file_id, "spikerate", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    
+    hid_t spike_group = H5Gopen(file_id, "spikes", H5P_DEFAULT);
+    
+    for (unsigned int ii = 0; ii < cells.size(); ++ii){
+        vector < double > spike_data;
+        hsize_t dims[2];
+        hid_t spike_info;
+        size_t type_size;
+        H5T_class_t type_class;
+        status = H5LTget_dataset_info(spike_group, cells[ii].c_str(), dims, &type_class, &type_size);
+        if (status < 0){
+            H5Gclose(spike_group);
+            H5Fclose(output_file_id);
+            return status;
+        }
+        cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;
+                                                       
+        spike_data.resize(dims[0]);
+        status = H5LTread_dataset_double(spike_group, cells[ii].c_str(), &spike_data[0]);
+        if (status < 0){
+            H5Gclose(spike_group);
+            H5Fclose(output_file_id);
+            return status;
+        }
+        cout << "Read dataset for " << cells[ii] << endl;
+        vector < double > spike_rate;
+        compute_spiking_rate(spike_data, spike_rate, t_total, binsize, start, end);
+        dims[0] = spike_rate.size();
+        dims[1] = 2;
+        double * dataset = new double[2 * spike_rate.size()];
+        double t = start + binsize/2.0;
+        for (unsigned jj = 0; jj < spike_rate.size(); jj += 2, t += binsize/2.0){
+            dataset[jj] = t;
+            dataset[jj+1] = spike_rate[jj];
+        }
+        status = H5LTmake_dataset_double(spike_rate_group, cells[ii].c_str(), 2, dims, dataset);
+        if (status < 0){
+            cerr << "Could not create dataset " << cells[ii] << endl;
+            H5Gclose(spike_group);
+            H5Fclose(output_file_id);
+            return status;
+        }
+    }
+    H5Gclose(spike_group);
+    H5Fclose(output_file_id);
 }
 
 /**
@@ -126,42 +169,37 @@ herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > 
    start - all data points recorded before this time are not included in frequency computation. Default 0.
 
    end - all data points recorded after this time are excluded from computation. If < 0, whole time series is considered.
-
-   
-
-   
- */
-void compute_spiking_rate(vector < pair < string, vector < double > > > & spike_data,
-                          vector < pair < string, vector < double > > > & spiking_rate,
+*/
+void compute_spiking_rate(vector < double > & spike_data,
+                          vector < double > & spike_rate,
                           double t_total,
-                          double binsize=1.0,
-                          size_t start=0.0,
-                          double end=-1.0)
+                          double binsize,
+                          double start,
+                          double end)
 {
     if (end < 0){
         end = t_total;
     }
     // number of bins in the output dataset
-    size_t num_bins = (int)((end - start) / binsize + 1);
-    spiking_rate.clear();
-    for (size_t ii = 0; ii < spike_data.size(); ++ii){
-        // Initialize number of spikes in each bin to 0
-        vector <double> frequency_data(num_bins, 0.0);
-        // Go through all the spike times
-        for (size_t jj = start; jj < spike_data[ii].second.size() && spike_data[ii].second[jj] < end; ++jj){
-            // If spike time is before start time, ignore
-            if (spike_data[ii].second[jj] < start){
+    size_t num_bins = (int)(2 * (end - start) / binsize - 1);
+    // Initialize number of spikes in each bin to 0
+    spike_rate.assign(num_bins, 0.0);
+    // Go through all the spike times
+    double t = start;
+    for (unsigned int ii = 0; ii < num_bins; ++ii){
+        for (unsigned int jj = 0; jj < spike_data.size(); ++jj){
+            if (spike_data[jj] < start){
                 continue;
             }
-            // Index of the bin on which this spike is centred
-            int index = (int)(spike_data[ii].second[jj] / binsize + 0.5);
-            // Increase spike count in each bin around the central bin to which this spike contributes
-            if (index - 1 > 0){
-                    frequency_data[index-1] += 1;
+            if (spike_data[jj] < t){
+                if ( spike_data[jj] > t - binsize/2.0 ) {
+                    spike_rate[ii] += 1.0;
+                }
+            } else if (spike_data[jj] <= t + binsize/2.0) {
+                spike_rate[ii] += 1.0;
             }
-            frequency_data[index] += 1;
         }
-        spiking_rate.push_back(pair < string, vector < double > > (spike_data[ii].first, frequency_data));
+        t += binsize/2.0;
     }
 }
 
@@ -174,26 +212,9 @@ int main(int argc, char **argv)
     string input_file_name(argv[1]);
     string output_file_name(argv[2]);
     hid_t data_file_id = H5Fopen(input_file_name.c_str(), H5F_ACC_RDONLY, H5Pcreate(H5P_FILE_ACCESS));
-    
-    vector< pair < string, vector <double> > > spike_data;
-    herr_t status = get_spike_data(data_file_id, spike_data);
+    dump_spike_rates(data_file_id, output_file_name, 5.0, 1.0);
     H5Fclose(data_file_id);
-    ofstream outfile(output_file_name.c_str());
-    for (unsigned int ii = 0; ii < spike_data.size(); ++ ii){
-        pair< string, vector < double > > data = spike_data[ii];
-        outfile << data.first << ", " << data.second.size() << endl;
-    }
-    vector < pair < string, vector < double > > > spike_rate;
-    // This is test, t_total may vary from simulation to simulation
-    compute_spiking_rate(spike_data, spike_rate, 5.0, 0.25e-3);
-    for (unsigned int ii = 0; ii < spike_rate.size(); ++ii){
-        outfile << spike_data[ii].first << " ";
-        for (unsigned int jj = 0; jj < spike_rate[ii].second.size(); ++jj){
-            outfile << spike_rate[ii].second[jj] << " ";
-        }
-        cout << endl;
-    }
-    return status;
+    return 0;
 }
 
 
