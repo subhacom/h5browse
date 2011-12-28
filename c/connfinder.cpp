@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Dec 29 00:28:26 2011 (+0530)
+// Last-Updated: Thu Dec 29 00:37:36 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 580
+//     Update #: 594
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -95,14 +95,14 @@ herr_t get_spike_dataset_names(const hid_t file_id, vector<string>& names){
     return status;
 }
     
-herr_t dump_spike_rates(const hid_t file_id, string output_filename, double t_total, double binsize=1.0, double start=0, double end=-1)
+herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double t_total, double binsize=1.0, double start=0, double end=-1)
 {
     vector < string > cells;
     herr_t status = get_spike_dataset_names(file_id, cells);
     if (status < 0) {
         return status;
     }
-    hid_t output_file_id = H5Fcreate(output_filename.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+
     hid_t spike_rate_group = H5Gcreate(output_file_id, "spikerate", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     
     hid_t spike_group = H5Gopen(file_id, "spikes", H5P_DEFAULT);
@@ -135,9 +135,10 @@ herr_t dump_spike_rates(const hid_t file_id, string output_filename, double t_to
         dims[1] = 2;
         double * dataset = new double[2 * spike_rate.size()];
         double t = start + binsize/2.0;
-        for (unsigned jj = 0; jj < spike_rate.size(); jj += 2, t += binsize/2.0){
-            dataset[jj] = t;
-            dataset[jj+1] = spike_rate[jj];
+        for (unsigned jj = 0; jj < spike_rate.size(); jj ++){
+            dataset[2*jj] = t;
+            dataset[2*jj+1] = spike_rate[jj];
+            t += binsize/2.0;
         }
         status = H5LTmake_dataset_double(spike_rate_group, cells[ii].c_str(), 2, dims, dataset);
         if (status < 0){
@@ -211,8 +212,17 @@ int main(int argc, char **argv)
     }
     string input_file_name(argv[1]);
     string output_file_name(argv[2]);
+    hid_t output_file_id = H5Fcreate(output_file_name.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
+    if (output_file_id < 0 ){
+        cerr << "Failed to open file " << output_file_name << " for writing. Check if file already exists." << endl;
+        return 1;
+    }
     hid_t data_file_id = H5Fopen(input_file_name.c_str(), H5F_ACC_RDONLY, H5Pcreate(H5P_FILE_ACCESS));
-    dump_spike_rates(data_file_id, output_file_name, 5.0, 1.0);
+    if (data_file_id < 0){
+        cerr << "Failed to open file " << input_file_name << " for writing. Check if file already exists." << endl;
+        return 2;
+    }
+    dump_spike_rates(data_file_id, output_file_id, 5.0, 1.0);
     H5Fclose(data_file_id);
     return 0;
 }
