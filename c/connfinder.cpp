@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Wed Dec 28 15:33:51 2011 (+0530)
+// Last-Updated: Wed Dec 28 16:04:25 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 327
+//     Update #: 344
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -134,7 +134,6 @@ herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > 
 void compute_spiking_rate(vector < pair < string, vector < double > > > & spike_data,
                           vector < pair < string, vector < double > > > & spiking_rate,
                           double t_total,
-                          double dt,
                           double binsize=1.0,
                           size_t start=0.0,
                           double end=-1.0)
@@ -143,10 +142,7 @@ void compute_spiking_rate(vector < pair < string, vector < double > > > & spike_
         end = t_total;
     }
     // number of bins in the output dataset
-    size_t num_bins = (int)((end - start) / dt + 1);
-    // The number of bins each spike will contribute to
-    int local_bins = (int)(binsize / dt + 1);
-
+    size_t num_bins = (int)((end - start) / binsize + 1);
     spiking_rate.clear();
     for (size_t ii = 0; ii < spike_data.size(); ++ii){
         // Initialize number of spikes in each bin to 0
@@ -158,13 +154,12 @@ void compute_spiking_rate(vector < pair < string, vector < double > > > & spike_
                 continue;
             }
             // Index of the bin on which this spike is centred
-            int index = spike_data[ii].second[jj] / dt;
+            int index = (int)(spike_data[ii].second[jj] / binsize + 0.5);
             // Increase spike count in each bin around the central bin to which this spike contributes
-            for (int kk = -local_bins/2; kk < local_bins/2; ++kk){
-                if (index + kk > 0 && index + kk < num_bins){
-                    frequency_data[index+kk] += 1;
-                }
+            if (index - 1 > 0){
+                    frequency_data[index-1] += 1;
             }
+            frequency_data[index] += 1;
         }
         spiking_rate.push_back(pair < string, vector < double > > (spike_data[ii].first, frequency_data));
     }
@@ -179,24 +174,25 @@ int main(int argc, char **argv)
     string input_file_name(argv[1]);
     string output_file_name(argv[2]);
     hid_t data_file_id = H5Fopen(input_file_name.c_str(), H5F_ACC_RDONLY, H5Pcreate(H5P_FILE_ACCESS));
-
+    
     vector< pair < string, vector <double> > > spike_data;
     herr_t status = get_spike_data(data_file_id, spike_data);
     H5Fclose(data_file_id);
+    ofstream outfile(output_file_name.c_str());
     for (unsigned int ii = 0; ii < spike_data.size(); ++ ii){
         pair< string, vector < double > > data = spike_data[ii];
-        cout << data.first << ", " << data.second.size() << endl;
+        outfile << data.first << ", " << data.second.size() << endl;
     }
     vector < pair < string, vector < double > > > spike_rate;
     // This is test, t_total may vary from simulation to simulation
     compute_spiking_rate(spike_data, spike_rate, 5.0, 0.25e-3);
     for (unsigned int ii = 0; ii < spike_rate.size(); ++ii){
-        cout << spike_data[ii].first << " ";
+        outfile << spike_data[ii].first << " ";
         for (unsigned int jj = 0; jj < spike_rate[ii].second.size(); ++jj){
-            cout << spike_rate[ii].second[jj] << " ";
+            outfile << spike_rate[ii].second[jj] << " ";
         }
         cout << endl;
-    }            
+    }
     return status;
 }
 
