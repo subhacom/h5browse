@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Dec 27 22:35:17 2011 (+0530)
+// Last-Updated: Wed Dec 28 15:33:51 2011 (+0530)
 //           By: Subhasis Ray
-//     Update #: 229
+//     Update #: 327
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -108,6 +108,68 @@ herr_t get_spike_data(const hid_t file, vector< pair< string, vector <double> > 
     return status;
 }
 
+/**
+   Calculate spiking rates from spike times taking data between .
+
+   spike_data - input vector of spike time data. Each element of
+   spike_data is a pair consisiting of a cell name and a vector
+   containing the spike times for that cell.
+
+   spiking_rate - output vector of pairs of (cell-name, data-vector).
+
+   t_total - total real time (in seconds) for the data.
+
+   dt - time interval between successive data points (sampling interval for original data).
+
+   binsize - size of frequency bins in seconds
+
+   start - all data points recorded before this time are not included in frequency computation. Default 0.
+
+   end - all data points recorded after this time are excluded from computation. If < 0, whole time series is considered.
+
+   
+
+   
+ */
+void compute_spiking_rate(vector < pair < string, vector < double > > > & spike_data,
+                          vector < pair < string, vector < double > > > & spiking_rate,
+                          double t_total,
+                          double dt,
+                          double binsize=1.0,
+                          size_t start=0.0,
+                          double end=-1.0)
+{
+    if (end < 0){
+        end = t_total;
+    }
+    // number of bins in the output dataset
+    size_t num_bins = (int)((end - start) / dt + 1);
+    // The number of bins each spike will contribute to
+    int local_bins = (int)(binsize / dt + 1);
+
+    spiking_rate.clear();
+    for (size_t ii = 0; ii < spike_data.size(); ++ii){
+        // Initialize number of spikes in each bin to 0
+        vector <double> frequency_data(num_bins, 0.0);
+        // Go through all the spike times
+        for (size_t jj = start; jj < spike_data[ii].second.size() && spike_data[ii].second[jj] < end; ++jj){
+            // If spike time is before start time, ignore
+            if (spike_data[ii].second[jj] < start){
+                continue;
+            }
+            // Index of the bin on which this spike is centred
+            int index = spike_data[ii].second[jj] / dt;
+            // Increase spike count in each bin around the central bin to which this spike contributes
+            for (int kk = -local_bins/2; kk < local_bins/2; ++kk){
+                if (index + kk > 0 && index + kk < num_bins){
+                    frequency_data[index+kk] += 1;
+                }
+            }
+        }
+        spiking_rate.push_back(pair < string, vector < double > > (spike_data[ii].first, frequency_data));
+    }
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 3){
@@ -125,6 +187,16 @@ int main(int argc, char **argv)
         pair< string, vector < double > > data = spike_data[ii];
         cout << data.first << ", " << data.second.size() << endl;
     }
+    vector < pair < string, vector < double > > > spike_rate;
+    // This is test, t_total may vary from simulation to simulation
+    compute_spiking_rate(spike_data, spike_rate, 5.0, 0.25e-3);
+    for (unsigned int ii = 0; ii < spike_rate.size(); ++ii){
+        cout << spike_data[ii].first << " ";
+        for (unsigned int jj = 0; jj < spike_rate[ii].second.size(); ++jj){
+            cout << spike_rate[ii].second[jj] << " ";
+        }
+        cout << endl;
+    }            
     return status;
 }
 
