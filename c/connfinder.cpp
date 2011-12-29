@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Dec 29 00:37:36 2011 (+0530)
-//           By: Subhasis Ray
-//     Update #: 594
+// Last-Updated: Thu Dec 29 10:50:14 2011 (+0530)
+//           By: subha
+//     Update #: 597
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -222,7 +222,8 @@ int main(int argc, char **argv)
         cerr << "Failed to open file " << input_file_name << " for writing. Check if file already exists." << endl;
         return 2;
     }
-    dump_spike_rates(data_file_id, output_file_id, 5.0, 1.0);
+    // Ignore the first second - because it is used for stabilizing
+    dump_spike_rates(data_file_id, output_file_id, 5.0, 1.0, 1.0);
     H5Fclose(data_file_id);
     return 0;
 }
