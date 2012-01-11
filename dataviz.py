@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Jan  7 16:02:08 2012 (+0530)
+# Last-Updated: Wed Jan 11 11:54:19 2012 (+0530)
 #           By: subha
-#     Update #: 2833
+#     Update #: 2835
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -674,6 +674,8 @@ class DataVizWidget(QtGui.QMainWindow):
                     print 'Presynaptic cell for', cell_name, 'is', row[0]
                     tmp_path = '%s/Vm/%s' % (filepath, row[0].partition('/')[0])
                     try:
+                        if tmp_path in presyn_vm_paths:
+                            continue
                         tmp = self.h5tree.getData(tmp_path)
                         ts = self.h5tree.getTimeSeries(tmp_path)
                         presyn_vm_paths.append(tmp_path)
@@ -707,6 +709,8 @@ class DataVizWidget(QtGui.QMainWindow):
                     print 'Presynaptic cell for', cell_name, 'is', row[0]
                     tmp_path = '%s/spikes/%s' % (filepath, row[0].partition('/')[0])
                     try:
+                        if tmp_path in presyn_spike_paths:
+                            continue
                         tmp = self.h5tree.getData(tmp_path)
                         ts = self.h5tree.getTimeSeries(tmp_path)
                         presyn_spike_paths.append(tmp_path)

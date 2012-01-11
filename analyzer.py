@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Dec  6 14:04:21 2011 (+0530)
+# Last-Updated: Wed Jan 11 11:14:46 2012 (+0530)
 #           By: subha
-#     Update #: 245
+#     Update #: 264
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -170,6 +170,47 @@ def dump_synstat(netfile):
     return celltype_syn_map
 
 
+def is_spiking(filehandle, cellname, ignore_time):
+    """Check if a cell is spiking.
+
+    filehandle -- data file (h5py.File object opened readonly)
+    
+    cellname -- cell whose spiking is to be checked
+
+    ignore_time -- any spiking before this time will be ignored. This
+    is because often there is a spike at time 0 due to imbalance in
+    initial Vm and resting membrane potential.
+    """
+    spike_times = numpy.array(filehandle['spikes'][cellname])
+    for time in spike_times:
+        if time > ignore_time:
+            return True
+    return False
+
+def find_presynaptic_spikes(netfile, datafile, cellname, ignore_time):
+    """Return a list of presynaptic cells that fired.
+
+    netfile -- network file [should be in the new format where source compartment and target compartments are listed under /network/synapse
+
+    datafile -- file containing spike data under /spikes
+
+    cellname -- cell whose presynaptic neighbours are to be investigated.
+
+    ignore_time -- ignore spikes before this time    
+    
+    """
+    source_cells = []
+    spiking_sources = []
+    for item in netfile['/network/synapse']:
+        target_cell = item[1].partition('/')[0]        
+        if target_cell == cellname:
+            source_cells.append(item[0].partition('/')[0])
+    for cell in source_cells:
+        if is_spiking(datafile, cell, ignore_time):
+            spiking_sources.append(source_cell)
+    return spiking_sources
+            
+ 
 import sys
 
 if __name__ == '__main__':
