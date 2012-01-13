@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Jan 11 11:14:46 2012 (+0530)
+# Last-Updated: Fri Jan 13 16:55:55 2012 (+0530)
 #           By: subha
-#     Update #: 264
+#     Update #: 315
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -187,7 +187,14 @@ def is_spiking(filehandle, cellname, ignore_time):
             return True
     return False
 
-def find_presynaptic_spikes(netfile, datafile, cellname, ignore_time):
+def get_spiking_cellnames(filehandle, celltype, ignoretime):
+    ret = []
+    for spiking_cell in filehandle['spikes']:
+        if spiking_cell.startswith(celltype) and is_spiking(filehandle, spiking_cell, ignoretime):
+            ret.append(spiking_cell)
+    return ret
+    
+def find_presynaptic_spike_sources(netfile, datafile, cellname, ignore_time):
     """Return a list of presynaptic cells that fired.
 
     netfile -- network file [should be in the new format where source compartment and target compartments are listed under /network/synapse
@@ -207,10 +214,47 @@ def find_presynaptic_spikes(netfile, datafile, cellname, ignore_time):
             source_cells.append(item[0].partition('/')[0])
     for cell in source_cells:
         if is_spiking(datafile, cell, ignore_time):
-            spiking_sources.append(source_cell)
+            spiking_sources.append(cell)
     return spiking_sources
+
+def get_pre_spikes(netfile, datafile, spiking_cells, ignore_time):
+    """Get the datasets for all presynaptic entites that spiked for
+    the cells in spiking_cells list"""
+    src_set = defaultdict(list)
+    ret = {}
+    for cell in spiking_cells:
+        sources = find_presynaptic_spike_sources(netfile, datafile, cell, ignore_time)
+        for src in sources:
+            if src not in src_set[cell]:
+                src_set[cell].append(src)
+        ectopic_src = 'ectopic_'+cell
+        if is_spiking(datafile, ectopic_src, ignore_time):
+            src_set[cell].append(ectopic_src)
+    for key, value in src_set.items():
+        ret[key] = [datafile['spikes'][v] for v in value]
+    return ret
             
- 
+
+def plot_spikes_and_prespikes(netfile, datafile, spiking_cells, ignore_time):
+    pre_spikes_map = get_pre_spikes(netfile, datafile, spiking_cells, ignore_time)
+    for ii in range(len(spiking_cells)):
+         data = datafile['spikes'][spiking_cells[ii]]
+         plot(data, ones(len(data)) * (1.0+ii), 'r^-', label=spiking_cells[ii])
+         pre_data = []
+         try:
+             pre_data  = pre_spikes_map[spiking_cells[ii]]
+         except KeyError:
+             continue
+         jj = 1
+         for value in pre_data:
+             if not value:
+                 continue
+             symbol = 'go'
+             if 'ectopic_' in value.name:
+                 symbol = 'bv'
+             plot(value, ones(len(value)) * (ii + jj * 1.0 / (1+len(pre_spikes_map[spiking_cells[ii]]))),  symbol, label=value.name)
+             jj += 1
+
 import sys
 
 if __name__ == '__main__':
@@ -227,3 +271,4 @@ if __name__ == '__main__':
 
 # 
 # analyzer.py ends here
+
