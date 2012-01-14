@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 28 18:29:44 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 529
+# Last-Updated: Sat Jan 14 16:36:09 2012 (+0530)
+#           By: subha
+#     Update #: 535
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -99,6 +99,7 @@ class PlotWidget(Qwt.QwtPlot):
         self.enableAxis(2)
         self.enableAxis(0)
         self.setAxisTitle(2, 'Time (second)')
+        self.setCanvasBackground(Qt.Qt.white)
         legend = Qwt.QwtLegend()
         legend.setItemMode(Qwt.QwtLegend.CheckableItem)
         self.insertLegend(legend, Qwt.QwtPlot.TopLegend)
