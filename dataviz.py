@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Jan 11 11:54:19 2012 (+0530)
+# Last-Updated: Sat Jan 21 15:33:12 2012 (+0530)
 #           By: subha
-#     Update #: 2835
+#     Update #: 2880
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -214,6 +214,12 @@ class DataVizWidget(QtGui.QMainWindow):
         self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
         self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
         
+        self.selectCurvesByRegexAction = QtGui.QAction(self.tr('Select curves by regular expression'), self)
+        self.connect(self.selectCurvesByRegexAction, QtCore.SIGNAL('triggered(bool)'), self.__selectCurvesByRegex)
+        
+        self.toggleCurveSelectionAction = QtGui.QAction(self.tr('Toggle selection'), self)
+        self.connect(self.toggleCurveSelectionAction, QtCore.SIGNAL('triggered(bool)'), self.__toggleCurveSelection)
+
         self.displayLegendAction = QtGui.QAction('Display legend', self)
         self.displayLegendAction.setCheckable(True)
         self.displayLegendAction.setChecked(True)
@@ -235,8 +241,8 @@ class DataVizWidget(QtGui.QMainWindow):
         self.selectForPlotAction = QtGui.QAction(self.tr('Select for plotting'), self.h5tree)
         self.connect(self.selectForPlotAction, QtCore.SIGNAL('triggered()'), self.__selectForPlot)
 
-        self.selectByRegexAction = QtGui.QAction('Select by regular expression', self)
-        self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__popupRegexTool)
+        self.selectByRegexAction = QtGui.QAction('Select data by regular expression', self)
+        self.connect(self.selectByRegexAction, QtCore.SIGNAL('triggered()'), self.__selectDatasetByRegex)
 
         self.displayPropertiesAction = QtGui.QAction('Properties', self)
         self.connect(self.displayPropertiesAction, QtCore.SIGNAL('triggered()'), self.__displayH5NodeProperties)
@@ -292,17 +298,22 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.plotMenu.addAction(self.newSpectrogramAction)
 
-        self.plotMenu.addAction(self.editPlotTitleAction)
-        self.plotMenu.addAction(self.editLegendTextAction)
-        self.plotMenu.addAction(self.configurePlotAction)
-        self.plotMenu.addAction(self.deselectAllCurvesAction)
-        self.plotMenu.addAction(self.togglePlotVisibilityAction)
-        self.plotMenu.addAction(self.editXLabelAction)
-        self.plotMenu.addAction(self.editYLabelAction)
-        self.plotMenu.addAction(self.displayLegendAction)
-        self.plotMenu.addAction(self.fitSelectedCurvesAction)
-        self.plotMenu.addAction(self.shiftSelectedCurvesAction)
-        self.plotMenu.addAction(self.scaleSelectedCurvesAction)
+        self.editPlotMenu = self.plotMenu.addMenu(self.tr('&Edit Plot'))
+        self.editPlotMenu.addAction(self.editPlotTitleAction)
+        self.editPlotMenu.addAction(self.editLegendTextAction)
+        self.editPlotMenu.addAction(self.configurePlotAction)
+        self.editPlotMenu.addAction(self.editXLabelAction)
+        self.editPlotMenu.addAction(self.editYLabelAction)
+        self.editPlotMenu.addAction(self.displayLegendAction)
+        self.editPlotMenu.addAction(self.fitSelectedCurvesAction)
+        self.editPlotMenu.addAction(self.shiftSelectedCurvesAction)
+        self.editPlotMenu.addAction(self.scaleSelectedCurvesAction)
+        self.editPlotMenu.addAction(self.togglePlotVisibilityAction)
+
+        self.selectPlotMenu = self.plotMenu.addMenu(self.tr('&Selection'))
+        self.selectPlotMenu.addAction(self.deselectAllCurvesAction)
+        self.selectPlotMenu.addAction(self.selectCurvesByRegexAction)
+        self.selectPlotMenu.addAction(self.toggleCurveSelectionAction)
         self.plotMenu.addAction(self.overlayAction)
         self.toolsMenu = self.menuBar().addMenu('&Tools')
 
@@ -436,13 +447,16 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
         else:
             mdiChild.setWidget(PlotWidget())
+        self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)        
         mdiChild.showMaximized()
         self.__makeRasterPlot()
 
     def __makeNewLinePlotByRegex(self):
         self.dataList.model().clear()
-        self.__popupRegexTool()
+        regex = self.__popupRegexTool()
+        self.__selectDataByRegex(regex)
         plotWidget = PlotWidget()
+        self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)        
         mdiChild = self.mdiArea.activeSubWindow()
         if (mdiChild is None) or (mdiChild.widget() is not None):
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
@@ -462,8 +476,10 @@ class DataVizWidget(QtGui.QMainWindow):
 
     def __makeNewRasterPlotByRegex(self):
         self.dataList.model().clear()
-        self.__popupRegexTool()
+        regex = self.__popupRegexTool()
+        self.__selectDataByRegex(regex)
         plotWidget = PlotWidget()
+        self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)        
         mdiChild = self.mdiArea.activeSubWindow()
         if (mdiChild is None) or mdiChild.widget():
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
@@ -510,7 +526,7 @@ class DataVizWidget(QtGui.QMainWindow):
         layout.addWidget(cancelButton, 1, 2, 1, 1)
         self.regexDialog.setLayout(layout)
         if self.regexDialog.exec_() == QtGui.QDialog.Accepted:
-            self.__selectDataByRegex(str(self.regexLineEdit.text()))
+            return str(self.regexLineEdit.text())
         
     def __selectDataByRegex(self, pattern):
         self.data_dict = self.h5tree.getDataByRe(pattern)
@@ -519,6 +535,10 @@ class DataVizWidget(QtGui.QMainWindow):
         pathlist.sort(cmp=compare_paths)
         for key in pathlist:
             self.dataList.model().insertItem(key)
+
+    def __selectDatasetByRegex(self):
+        regex = self.__popupRegexTool()
+        self.__selectDataByRegex(regex)
 
     def __displayH5NodeProperties(self):
         attributes = self.h5tree.currentItem().getAttributes()
@@ -873,6 +893,25 @@ class DataVizWidget(QtGui.QMainWindow):
             mdiChild.widget().addPlotCurveList(path_list, plot_data_list, curvenames=path_list)
             self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         mdiChild.showMaximized()
+
+    def __selectCurvesByRegex(self):
+        # we have to get the active subwindow before th dialog pops up, else it becomes NULL
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        regex = self.__popupRegexTool()
+        if activeSubWindow is None:
+            print 'Active subwindow is empty!'
+            return
+        activePlot = activeSubWindow.widget()
+        activePlot.selectCurvesByRegex(regex)
+
+    def __toggleCurveSelection(self):
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        if activeSubWindow is None:
+            print 'Active subwindow is empty!'
+            return
+        activePlot = activeSubWindow.widget()
+        activePlot.toggleCurveSelection()
+        
         
         
     def __showPreferencesDialog(self):

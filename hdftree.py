@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Jan  7 16:05:07 2012 (+0530)
+# Last-Updated: Sat Jan 21 15:29:34 2012 (+0530)
 #           By: subha
-#     Update #: 486
+#     Update #: 487
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -189,7 +189,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
             plotdt = h5f.attrs['plotdt']
         data = self.getData(path)
         num_points = len(data)
-        print path, data, num_points
+        # print path, data, num_points
         ret = numpy.linspace(0, simtime, num_points)
         return ret
 

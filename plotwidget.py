@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Jan 14 16:36:09 2012 (+0530)
+# Last-Updated: Sat Jan 21 15:44:38 2012 (+0530)
 #           By: subha
-#     Update #: 535
+#     Update #: 599
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -30,9 +30,11 @@
 # Code:
 
 from collections import defaultdict
+import re
+import numpy
+
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4 import Qwt5 as Qwt
-import numpy
 
 class SpectrogramData(Qwt.QwtRasterData):
     def __init__(self, datalist):
@@ -96,6 +98,7 @@ class PlotWidget(Qwt.QwtPlot):
         self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue, Qt.Qt.magenta, Qt.Qt.darkCyan, Qt.Qt.black]
         self.__nextColor = 0
         self.__overlay = True
+        self.__selectedCurves = [] # list of objects that are selected
         self.enableAxis(2)
         self.enableAxis(0)
         self.setAxisTitle(2, 'Time (second)')
@@ -210,46 +213,42 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
         
     def toggleSelectedCurves(self):
-        if self.legend() is None:
-            return
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                item.setVisible(not item.isVisible())
+        # if self.legend() is None:
+        #     return
+        for item in self.__selectedCurves:
+            item.setVisible(not item.isVisible())
+        # for item in self.itemList():
+        #     widget = self.legend().find(item)
+        #     if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
+        #         item.setVisible(not item.isVisible())
         self.replot()
 
-    def getSelectedCurves(self):
-        ret = []
+    def selectCurvesFromLegend(self):
+        if self.legend() is None:
+            return  []
+        self.__selectedCurves = []
         for item in self.itemList():
             widget = self.legend().find(item)
             if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                ret.append(item)
-        return ret
+                self.__selectedCurves.append(item)
 
     def showAllCurves(self):
         for item in self.itemList():
             if isinstance(item, Qwt.QwtPlotCurve):
-                print item
                 item.setVisible(True)
         self.replot()
 
     def setLineStyleSelectedCurves(self, style=Qwt.QwtPlotCurve.NoCurve):        
-        if self.legend() is None:
-            return
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                item.setStyle(style)
+        for item in self.__selectedCurves:
+            item.setStyle(style)
         self.replot()
 
     def fitSelectedCurves(self):
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                item.setCurveAttribute(item.Fitted)
-                fitter = Qwt.QwtSplineCurveFitter()
-                fitter.setSplineSize(10)
-                item.setCurveFitter(fitter)
+        for item in self.__selectedCurves:
+            item.setCurveAttribute(item.Fitted)
+            fitter = Qwt.QwtSplineCurveFitter()
+            fitter.setSplineSize(10)
+            item.setCurveFitter(fitter)
         self.replot()
                 
     def setSymbol(self, 
@@ -268,29 +267,27 @@ class PlotWidget(Qwt.QwtPlot):
         property of the selected curves visually. That should replace setting setSymbol amd setLineStyle.
 
         """
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                oldSymbol = item.symbol()
-                if symbolStyle is None:
-                    symbolStyle = oldSymbol.style()
-                if brushColor is None:
-                    brushColor = oldSymbol.brush().color()
-                if brushStyle is None:
-                    brushStyle = oldSymbol.brush().style()
-                if penColor is None:
-                    penColor = oldSymbol.pen().color()
-                if penWidth is None:
-                    penWidth = oldSymbol.pen().width()
-                if penStyle is None:
-                    penStyle = oldSymbol.pen().style()
-                if symbolHeight is None:
-                    symbolHeight = oldSymbol.size().height()
-                if symbolWidth is None:
-                    symbolWidth = oldSymbol.size().width()
-                pen = QtGui.QPen(penColor, penWidth, penStyle)
-                symbol = Qwt.QwtSymbol(symbolStyle, oldSymbol.brush(), pen, QtCore.QSize(width, height)) 
-                item.setSymbol(symbol)
+        for item in self.__selectedCurves:
+            oldSymbol = item.symbol()
+            if symbolStyle is None:
+                symbolStyle = oldSymbol.style()
+            if brushColor is None:
+                brushColor = oldSymbol.brush().color()
+            if brushStyle is None:
+                brushStyle = oldSymbol.brush().style()
+            if penColor is None:
+                penColor = oldSymbol.pen().color()
+            if penWidth is None:
+                penWidth = oldSymbol.pen().width()
+            if penStyle is None:
+                penStyle = oldSymbol.pen().style()
+            if symbolHeight is None:
+                symbolHeight = oldSymbol.size().height()
+            if symbolWidth is None:
+                symbolWidth = oldSymbol.size().width()
+            pen = QtGui.QPen(penColor, penWidth, penStyle)
+            symbol = Qwt.QwtSymbol(symbolStyle, oldSymbol.brush(), pen, QtCore.QSize(width, height)) 
+            item.setSymbol(symbol)
         self.replot()
 
     def alignScales(self):
@@ -373,36 +370,27 @@ class PlotWidget(Qwt.QwtPlot):
     def getDataPathsForSelectedCurves(self):
         """Get the HDF5 paths for the selected curves"""
         ret = []
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                ret.append(self.curve_path_dict[item])
+        for item in self.__selectedCurves:
+            ret.append(self.curve_path_dict[item])
         return ret
 
     
     def vShiftSelectedPlots(self, shift):
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                data = item.data()
-                ydata = numpy.array(data.yData()) + shift
-                item.setData(numpy.array(data.xData()), ydata)
-                widget.setChecked(False)
+        for item in self.__selectedCurves:
+            data = item.data()
+            ydata = numpy.array(data.yData()) + shift
+            item.setData(numpy.array(data.xData()), ydata)
         self.replot()
         self.clearZoomStack()
 
     def vScaleSelectedPlots(self, scale):
-        for item in self.itemList():
-            widget = self.legend().find(item)
-            if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
-                data = item.data()
-                ydata = numpy.array(data.yData()) * scale
-                item.setData(numpy.array(data.xData()), ydata)
-                widget.setChecked(False)
+        for item in self.__selectedCurves:
+            data = item.data()
+            ydata = numpy.array(data.yData()) * scale
+            item.setData(numpy.array(data.xData()), ydata)
         self.replot()
         self.clearZoomStack()
         
-
     def updatePlots(self, curve_list, data_list):
         for curve, data in zip(curve_list, data_list):
             curve.setData(data[0], data[1])
@@ -421,14 +409,41 @@ class PlotWidget(Qwt.QwtPlot):
                     closest = p
                     selected = item        
         if (selected is not None):
-            widget = self.legend().find(selected)
-            if isinstance(widget, Qwt.QwtLegendItem):
-                widget.setChecked(True)
-                self.emit(QtCore.SIGNAL('curveSelected'), widget.text().text())
+            if self.legend() is not None:
+                widget = self.legend().find(selected)
+                if isinstance(widget, Qwt.QwtLegendItem):
+                    widget.setChecked(True)
+            self.__selectedCurves.append(selected)
+            self.emit(QtCore.SIGNAL('curveSelected'), self.curve_path_dict[selected])
 
     def deselectAllCurves(self):
-        for item in self.legend().legendItems():
-            item.setChecked(False)
+        self.__selectedCurves = []
+        if self.legend() is not None:
+            for item in self.legend().legendItems():
+                item.setChecked(False)
+
+    def selectCurvesByRegex(self, pattern):
+        self.__selectedCurves = []
+        regex = re.compile(pattern)
+        for path in self.path_curve_dict.keys():
+            if regex.match(path):
+                for curve in self.path_curve_dict[path]:
+                    self.__selectedCurves.append(curve)
+                print path, 'added to selection'
+        if self.legend() is not None:
+            for item in self.legend().legendItems():
+                item.setChecked(False)
+            for curve in self.__selectedCurves:
+                widget = self.legend().find(curve)
+                if isinstance(widget, Qwt.QwtLegendItem):
+                    widget.setChecked(True)
+
+    def toggleCurveSelection(self):
+        unselected = []
+        for curve in self.curve_path_dict.keys():
+            if curve not in self.__selectedCurves:
+                unselected.append(curve)
+        self.__selectedCurves = unselected
 
     def makeSpectrogram(self, datalist):
         """Display an array of time series data as spectrogram"""
