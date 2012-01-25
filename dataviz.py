@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Jan 21 15:33:12 2012 (+0530)
+# Last-Updated: Mon Jan 23 10:51:25 2012 (+0530)
 #           By: subha
-#     Update #: 2880
+#     Update #: 2887
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -207,6 +207,9 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.deselectAllCurvesAction = QtGui.QAction('Deselect all curves', self)
         self.connect(self.deselectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__deselectAllCurves)
+        
+        self.selectAllCurvesAction =  QtGui.QAction('Select all curves', self)
+        self.connect(self.selectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__selectAllCurves)
 
         self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
         self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
@@ -312,6 +315,7 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.selectPlotMenu = self.plotMenu.addMenu(self.tr('&Selection'))
         self.selectPlotMenu.addAction(self.deselectAllCurvesAction)
+        self.selectPlotMenu.addAction(self.selectAllCurvesAction)
         self.selectPlotMenu.addAction(self.selectCurvesByRegexAction)
         self.selectPlotMenu.addAction(self.toggleCurveSelectionAction)
         self.plotMenu.addAction(self.overlayAction)
@@ -673,6 +677,11 @@ class DataVizWidget(QtGui.QMainWindow):
     def __deselectAllCurves(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.deselectAllCurves()
+
+    def __selectAllCurves(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.selectAllCurves()
+        
 
     def __plotPresynapticVm(self):
         """This is for easily displaying the data for presynaptic

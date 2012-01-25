@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Jan 21 15:44:38 2012 (+0530)
+# Last-Updated: Wed Jan 25 13:34:03 2012 (+0530)
 #           By: subha
-#     Update #: 599
+#     Update #: 623
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,7 +71,7 @@ class SpectrogramData(Qwt.QwtRasterData):
         return self
     
     def range(self):
-        print 'Range', self.ymin, self.ymax
+        # print 'Range', self.ymin, self.ymax
         return Qwt.QwtDoubleInterval(self.ymin, self.ymax)
 
     def value(self, x, y):
@@ -106,6 +106,7 @@ class PlotWidget(Qwt.QwtPlot):
         legend = Qwt.QwtLegend()
         legend.setItemMode(Qwt.QwtLegend.CheckableItem)
         self.insertLegend(legend, Qwt.QwtPlot.TopLegend)
+        self.legendChecked.connect(self.updateSelectionFromLegend)
         self.zoomer = Qwt.QwtPlotZoomer(Qwt.QwtPlot.xBottom,
                                    Qwt.QwtPlot.yLeft,
                                    Qwt.QwtPicker.DragSelection,
@@ -142,6 +143,15 @@ class PlotWidget(Qwt.QwtPlot):
                                              Qt.Qt.ShiftModifier),
             ]
         self.zoomer.setMousePattern(pattern)
+
+    
+    def updateSelectionFromLegend(self, curve, on):
+        if on:
+            if curve not in self.__selectedCurves:
+                self.__selectedCurves.append(curve)
+        else:
+            if curve in self.__selectedCurves:
+                self.__selectedCurves.remove(curve)
 
 
     def overlay(self):
@@ -384,6 +394,7 @@ class PlotWidget(Qwt.QwtPlot):
         self.clearZoomStack()
 
     def vScaleSelectedPlots(self, scale):
+        # print 'vScaleSelectedPlots'
         for item in self.__selectedCurves:
             data = item.data()
             ydata = numpy.array(data.yData()) * scale
@@ -422,6 +433,13 @@ class PlotWidget(Qwt.QwtPlot):
             for item in self.legend().legendItems():
                 item.setChecked(False)
 
+    def selectAllCurves(self):
+        self.__selectedCurves = self.curve_path_dict.keys()
+        if self.legend() is not None:
+            for item in self.legend().legendItems():
+                item.setChecked(True)
+        
+
     def selectCurvesByRegex(self, pattern):
         self.__selectedCurves = []
         regex = re.compile(pattern)
@@ -429,7 +447,6 @@ class PlotWidget(Qwt.QwtPlot):
             if regex.match(path):
                 for curve in self.path_curve_dict[path]:
                     self.__selectedCurves.append(curve)
-                print path, 'added to selection'
         if self.legend() is not None:
             for item in self.legend().legendItems():
                 item.setChecked(False)
