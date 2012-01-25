@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Jan 21 15:29:34 2012 (+0530)
+# Last-Updated: Wed Jan 25 14:05:37 2012 (+0530)
 #           By: subha
-#     Update #: 487
+#     Update #: 488
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -102,7 +102,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
             raise Exception('No open file for path: %s', path)
         node = h5f[path]
         if isinstance(node, h5py.Dataset):
-            print 'Warning - removing the 0 th element from data array as it is spurious in MOOSE table'
+            # print 'Warning - removing the 0 th element from data array as it is spurious in MOOSE table'
             return node[1:]
 
     # I have a little problem here - how do we find nodes by regular

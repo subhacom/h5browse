@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Jan 25 13:34:03 2012 (+0530)
+# Last-Updated: Wed Jan 25 18:18:12 2012 (+0530)
 #           By: subha
-#     Update #: 623
+#     Update #: 691
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -93,6 +93,21 @@ class SpectrogramData(Qwt.QwtRasterData):
 class PlotWidget(Qwt.QwtPlot):
     def __init__(self, *args):
         Qwt.QwtPlot.__init__(self, *args)
+        self.celltype_color_dict = {
+            'SupPyrRS': Qt.Qt.black,
+            'SupPyrFRB': Qt.Qt.cyan,
+            'SupBasket': Qt.Qt.darkMagenta,
+            'SupAxoaxonic': Qt.Qt.darkGreen,
+            'SupLTS': Qt.Qt.darkYellow,
+            'SpinyStellate': Qt.Qt.blue,
+            'TuftedIB': Qt.Qt.magenta,
+            'TuftedRS': Qt.Qt.green,
+            'NontuftedRS': Qt.Qt.yellow,
+            'DeepBasket': Qt.Qt.darkBlue,
+            'DeepAxoaxonic': Qt.Qt.darkGray,
+            'DeepLTS': Qt.Qt.darkCyan,
+            'TCR': Qt.Qt.red,
+            'nRT': Qt.Qt.darkRed }
         self.path_curve_dict = defaultdict(list)
         self.curve_path_dict = {}
         self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue, Qt.Qt.magenta, Qt.Qt.darkCyan, Qt.Qt.black]
@@ -342,12 +357,11 @@ class PlotWidget(Qwt.QwtPlot):
             data = datalist[ii]
             path = pathlist[ii]
             curvename = curvenames[ii]
-
+            celltype = path.rsplit('/')[-1].rsplit('_')[0]
             if colorlist is not None:
                 color = colorlist[ii % len(colorlist)]
             else:
                 color = self.nextColor()
-            
             curves = self.path_curve_dict[path]
             if curves and not self.overlay():
                 curve = curves[0]
@@ -469,6 +483,29 @@ class PlotWidget(Qwt.QwtPlot):
         spectrogram.setData(data)
         spectrogram.attach(self)
         self.clearZoomStack()
-            
+
+    def colorCurvesByCelltype(self):
+        """Assign same colour to all curves of the same cell type.
+        Beware that this function uses custom naming convention in
+        data file spikes/celltype_cellno or Vm/celltype_cellno in the
+        datasets.
+        """
+        for curve, path in self.curve_path_dict.items():
+            celltype = path.rpartition('/')[-1].rpartition('_')[0]
+            style = curve.style()
+            print 'Coloring', path
+            if style != curve.NoCurve: # line plot, not raster
+                pen = curve.pen()
+                curve.setPen(pen)
+            else:
+                pen = curve.symbol().pen()
+                pen.setColor(self.celltype_color_dict[celltype])        
+                symbol = curve.symbol()
+                symbol.setPen(pen)
+                curve.setSymbol(symbol)
+        self.replot()
+
+
+        
 # 
 # plotwidget.py ends here

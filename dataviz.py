@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Jan 23 10:51:25 2012 (+0530)
+# Last-Updated: Wed Jan 25 18:07:34 2012 (+0530)
 #           By: subha
-#     Update #: 2887
+#     Update #: 2894
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -187,6 +187,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
         self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
+        self.colorCurvesByCelltypeAction = QtGui.QAction('&Color plots by celltype', self)
+        self.connect(self.colorCurvesByCelltypeAction, QtCore.SIGNAL('triggered()'), self.__colorCurvesByCelltype)
+
         self.editLegendTextAction = QtGui.QAction(self.tr('Edit legend text'), self)
         self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
 
@@ -302,6 +305,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.newSpectrogramAction)
 
         self.editPlotMenu = self.plotMenu.addMenu(self.tr('&Edit Plot'))
+        self.editPlotMenu.addAction(self.colorCurvesByCelltypeAction)
         self.editPlotMenu.addAction(self.editPlotTitleAction)
         self.editPlotMenu.addAction(self.editLegendTextAction)
         self.editPlotMenu.addAction(self.configurePlotAction)
@@ -352,6 +356,7 @@ class DataVizWidget(QtGui.QMainWindow):
             model_file = os.path.basename(str(name)).replace('data', 'network') + '.new'
             model_file = os.path.join(os.path.dirname(str(name)), model_file)
             self.data_model_dict[str(name)] = model_file            
+            print 'Opened', name
         self.settings.setValue('lastVisitedDir', QtCore.QString(os.path.dirname(str(name))))
 
     def __closeFile(self):
@@ -1011,6 +1016,15 @@ class DataVizWidget(QtGui.QMainWindow):
         plotWidget.setAxisTitle(2, 'Frequency (Hz)')
         plotWidget.setLogLogScale((0.1, 500.0), None)
         mdiChild.showMaximized()
+
+    def __colorCurvesByCelltype(self):
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        if activeSubWindow is None:
+            print 'Active subwindow is empty!'
+            return
+        activePlot = activeSubWindow.widget()
+        activePlot.colorCurvesByCelltype()
+        
         
     def __plotPowerSpectrum(self):
         dialog = QtGui.QDialog(self)
