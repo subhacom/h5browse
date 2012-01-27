@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed Jan 25 18:07:34 2012 (+0530)
+# Last-Updated: Fri Jan 27 11:34:26 2012 (+0530)
 #           By: subha
-#     Update #: 2894
+#     Update #: 2922
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -173,6 +173,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotAction = QtGui.QAction('&Line plot in current subwindow', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
 
+        self.plotByRegexAction = QtGui.QAction('Line plot by regular expression in current subwindow', self)
+        self.connect(self.plotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlotByRegex)
+
         self.newRasterPlotAction = QtGui.QAction('&New raster plot', self)
         self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
 
@@ -184,6 +187,10 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
+
+        self.rasterPlotByRegexAction = QtGui.QAction('Raster plot by regular expression in current subwindow', self)
+        self.connect(self.rasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlotByRegex)
+
         self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
         self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
 
@@ -297,11 +304,12 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.newLinePlotAction)
         self.plotMenu.addAction(self.newLinePlotByRegexAction)
         self.plotMenu.addAction(self.plotAction)
+        self.plotMenu.addAction(self.plotByRegexAction)
 
         self.plotMenu.addAction(self.newRasterPlotAction)
         self.plotMenu.addAction(self.newRasterPlotByRegexAction)
         self.plotMenu.addAction(self.rasterPlotAction)
-
+        self.plotMenu.addAction(self.rasterPlotByRegexAction)
         self.plotMenu.addAction(self.newSpectrogramAction)
 
         self.editPlotMenu = self.plotMenu.addMenu(self.tr('&Edit Plot'))
@@ -503,6 +511,56 @@ class DataVizWidget(QtGui.QMainWindow):
             tseries = self.h5tree.getTimeSeries(path)
             data = numpy.array(self.h5tree.getData(path))
             datalist.append((tseries, data))
+        plotWidget.addPlotCurveList(pathlist, datalist, mode='raster')
+        mdiChild.showMaximized()
+
+    def __makeLinePlotByRegex(self):
+        mdiChild = self.mdiArea.activeSubWindow()
+        regex = self.__popupRegexTool()
+        self.__selectDataByRegex(regex)
+        pathlist = []
+        datalist = []
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            pathlist.append(path)
+            tseries = self.h5tree.getTimeSeries(path)
+            data = numpy.array(self.h5tree.getData(path))
+            datalist.append((tseries, data))
+        if not pathlist:
+            return
+        if mdiChild is None or mdiChild.widget() is None:
+            plotWidget = PlotWidget()
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
+            self.displayLegendAction.setEnabled(True)
+            self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        else:
+            plotWidget = mdiChild.widget()
+        plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
+        mdiChild.showMaximized()
+        
+    def __makeRasterPlotByRegex(self):
+        mdiChild = self.mdiArea.activeSubWindow()
+        regex = self.__popupRegexTool()
+        self.__selectDataByRegex(regex)
+        pathlist = []
+        datalist = []
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            pathlist.append(path)
+            tseries = self.h5tree.getTimeSeries(path)
+            data = numpy.array(self.h5tree.getData(path))
+            datalist.append((tseries, data))
+        if not pathlist:
+            return
+        if mdiChild is None or mdiChild.widget() is None:
+            plotWidget = PlotWidget()
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
+            self.displayLegendAction.setEnabled(True)
+            self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        else:
+            plotWidget = mdiChild.widget()
         plotWidget.addPlotCurveList(pathlist, datalist, mode='raster')
         mdiChild.showMaximized()
 

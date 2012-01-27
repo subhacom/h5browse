@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Jan 25 18:18:12 2012 (+0530)
+# Last-Updated: Fri Jan 27 11:55:07 2012 (+0530)
 #           By: subha
-#     Update #: 691
+#     Update #: 694
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -472,6 +472,9 @@ class PlotWidget(Qwt.QwtPlot):
     def toggleCurveSelection(self):
         unselected = []
         for curve in self.curve_path_dict.keys():
+            widget = self.legend().find(curve)
+            if isinstance(widget, Qwt.QwtLegendItem):
+                widget.setChecked(not widget.checked())
             if curve not in self.__selectedCurves:
                 unselected.append(curve)
         self.__selectedCurves = unselected
