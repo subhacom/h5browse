@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Thu Dec 29 10:50:14 2011 (+0530)
+// Last-Updated: Mon Jan 30 20:43:02 2012 (+0530)
 //           By: subha
-//     Update #: 597
+//     Update #: 673
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <cstring>
+#include <unistd.h>
 
 #include "hdf5.h"
 #include "hdf5_hl.h"
@@ -94,15 +95,46 @@ herr_t get_spike_dataset_names(const hid_t file_id, vector<string>& names){
     H5Gclose(spike_group);
     return status;
 }
-    
-herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double t_total, double binsize=1.0, double start=0, double end=-1)
+
+typedef struct key_value_pair{
+    char key[16];
+    char value[16];
+}key_value_pair;
+herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_total, double binsize=1.0, double start=0, double end=-1)
 {
     vector < string > cells;
     herr_t status = get_spike_dataset_names(file_id, cells);
     if (status < 0) {
         return status;
     }
+    t_total = -1.0;
 
+    hid_t runcfg_node = H5Gopen(file_id, "runconfig", H5P_DEFAULT);    
+    size_t dst_size = sizeof(key_value_pair);
+    key_value_pair buf[5]; // that is the number of entries under scheduling, pain of C that I have to specify it beforehand    size_t dst_size = sizeof(key_value_pair);
+    size_t dst_field_sizes[2] = {sizeof(buf[0].key),
+                                 sizeof(buf[0].value)};
+
+    size_t dst_offset[2] = { HOFFSET(key_value_pair, key),
+                             HOFFSET(key_value_pair, value)};
+    status = H5TBread_table(runcfg_node, "scheduling", dst_size, dst_offset, dst_field_sizes, buf);
+    if (status < 0) {
+        H5Gclose(runcfg_node);
+        H5Fclose(output_file_id);
+        return status;
+    }
+    H5Gclose(runcfg_node);    
+    for (int ii = 0; ii < 5; ++ii){
+        if (string(buf[ii].key) == "simtime"){
+            t_total = atof(buf[ii].value);
+            break;
+        }
+    }
+    if (t_total < 0){
+        cerr << "dump_spike_rates: could not obtain simulation time." << endl;
+        H5Fclose(output_file_id);
+        return -1;
+    }
     hid_t spike_rate_group = H5Gcreate(output_file_id, "spikerate", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     
     hid_t spike_group = H5Gopen(file_id, "spikes", H5P_DEFAULT);
@@ -207,11 +239,29 @@ void compute_spiking_rate(vector < double > & spike_data,
 int main(int argc, char **argv)
 {
     if (argc < 3){
-        cout << "Usage:" << argv[0] << " <input_file> <outputfile> " << endl;
+        cout << "Usage:" << argv[0] << " [-t <binsize-in-seconds>] -i <input_file> -o <outputfile> " << endl;
         return 1;
     }
-    string input_file_name(argv[1]);
-    string output_file_name(argv[2]);
+    int char_code = 0;
+    float binsize = 1.0;
+    float start = 0.0;
+    float end = -1.0;
+    
+    string input_file_name, output_file_name;
+    while ((char_code = getopt(argc, argv, "b:s:e:i:o:")) != -1){
+        cout << "charcode: " << (char)char_code << ", arg: " << string(optarg) << endl;
+        if (char_code == 'b'){
+            binsize = atof(optarg);
+        } else if (char_code == 's'){
+            start = atof(optarg);
+        } else if (char_code == 'e') {
+            end = atof(optarg);
+        } else if (char_code == 'i'){
+            input_file_name = string(optarg);
+        } else if (char_code == 'o'){
+            output_file_name = string(optarg);
+        }
+    }
     hid_t output_file_id = H5Fcreate(output_file_name.c_str(), H5F_ACC_EXCL, H5P_DEFAULT, H5P_DEFAULT);
     if (output_file_id < 0 ){
         cerr << "Failed to open file " << output_file_name << " for writing. Check if file already exists." << endl;
@@ -223,7 +273,8 @@ int main(int argc, char **argv)
         return 2;
     }
     // Ignore the first second - because it is used for stabilizing
-    dump_spike_rates(data_file_id, output_file_id, 5.0, 1.0, 1.0);
+    double t_total = 0.0;
+    dump_spike_rates(data_file_id, output_file_id, t_total, binsize, start, end);
     H5Fclose(data_file_id);
     return 0;
 }
