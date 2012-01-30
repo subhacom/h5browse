@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Jan 27 11:55:07 2012 (+0530)
+# Last-Updated: Fri Jan 27 13:50:37 2012 (+0530)
 #           By: subha
-#     Update #: 694
+#     Update #: 696
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -240,7 +240,9 @@ class PlotWidget(Qwt.QwtPlot):
     def toggleSelectedCurves(self):
         # if self.legend() is None:
         #     return
+        
         for item in self.__selectedCurves:
+            print 'toggling', self.curve_path_dict[item]
             item.setVisible(not item.isVisible())
         # for item in self.itemList():
         #     widget = self.legend().find(item)
