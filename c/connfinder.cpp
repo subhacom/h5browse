@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Mon Jan 30 20:43:02 2012 (+0530)
+// Last-Updated: Mon Jan 30 21:51:00 2012 (+0530)
 //           By: subha
-//     Update #: 673
+//     Update #: 714
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -49,6 +49,8 @@
 
 using namespace std;
 
+enum spikerate_mode { BY_TYPE, BY_CELL, BY_LAYER, ALL };
+    
 void compute_spiking_rate(vector < double > & spike_data,
                           vector < double > & spike_rate,
                           double t_total,
@@ -100,7 +102,63 @@ typedef struct key_value_pair{
     char key[16];
     char value[16];
 }key_value_pair;
-herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_total, double binsize=1.0, double start=0, double end=-1)
+
+herr_t get_spikerates_by_celltype(const his_t spike_group, vector < string >& cells, map < string, vector < double > * > & spike_rates, double t_total, double binsize, double start, double end)
+{
+    herr_t status;
+    for (unsigned int ii = 0; ii < cells.size(); ++ii){
+        size_t pos = cells[ii].rfind('_');
+        string celltype = cells[ii].substr(0, pos);
+        map < string, vector < double > * >::iterator data_iter = spike_rates.find(celltype);
+        if (data_iter == spike_rates.end()) {
+            spike_rates.insert( pair <string, vector <double * > >(celltype,  new vector<double>()));
+        }
+        vector < double >& spike_data = *spike_rates[celltype];
+        hsize_t dims[2];
+        hid_t spike_info;
+        size_t type_size;
+        H5T_class_t type_class;
+        status = H5LTget_dataset_info(spike_group, cells[ii].c_str(), dims, &type_class, &type_size);
+        if (status < 0){
+            H5Gclose(spike_group);
+            H5Fclose(output_file_id);
+            return status;
+        }
+        cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;
+        size_t old_size = spike_data.size();
+        spike_data.resize( old_size + dims[0]);
+        status = H5LTread_dataset_double(spike_group, cells[ii].c_str(), &spike_data[old_size]);
+        if (status < 0){
+            H5Gclose(spike_group);
+            H5Fclose(output_file_id);
+            return status;
+        }
+        cout << "Read dataset for " << cells[ii] << endl;
+    }
+
+    for (map < string, vector <double> * >::iterator data_iter = spike_rates.begin(); 
+        vector < double > spike_rate;
+        compute_spiking_rate(spike_data, spike_rate, t_total, binsize, start, end);
+        dims[0] = spike_rate.size();
+        dims[1] = 2;
+        double * dataset = new double[2 * spike_rate.size()];
+        double t = start + binsize/2.0;
+        for (unsigned jj = 0; jj < spike_rate.size(); jj ++){
+            dataset[2*jj] = t;
+            dataset[2*jj+1] = spike_rate[jj];
+            t += binsize/2.0;
+        }
+        status = H5LTmake_dataset_double(spike_rate_group, cells[ii].c_str(), 2, dims, dataset);
+        if (status < 0){
+            cerr << "Could not create dataset " << cells[ii] << endl;
+            H5Gclose(spike_group);
+            H5Fclose(output_file_id);
+            return status;
+        }
+    }
+    
+}
+herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_total, double binsize=1.0, double start=0, double end=-1, enum spikerate_mode mode=BY_TYPE)
 {
     vector < string > cells;
     herr_t status = get_spike_dataset_names(file_id, cells);
