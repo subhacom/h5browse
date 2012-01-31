@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jan 27 11:34:26 2012 (+0530)
+# Last-Updated: Tue Jan 31 12:03:02 2012 (+0530)
 #           By: subha
-#     Update #: 2922
+#     Update #: 2928
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -415,9 +415,14 @@ class DataVizWidget(QtGui.QMainWindow):
         for item in self.h5tree.selectedItems():
             path = item.path()
             pathlist.append(path)
-            tseries = self.h5tree.getTimeSeries(path)
             data = numpy.array(self.h5tree.getData(path))
-            datalist.append((tseries, data))
+            if len(data.shape) == 1:
+                tseries = self.h5tree.getTimeSeries(path)
+                datalist.append((tseries, data))
+            elif len(data.shape) == 2:
+                tseries = data[:,0]
+                for col in range(1, data.shape[1]):
+                    datalist.append((tseries, data[:, col]))
         plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='curve')
         mdiChild.showMaximized()
 

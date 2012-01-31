@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Jan 25 14:05:37 2012 (+0530)
+# Last-Updated: Tue Jan 31 11:56:52 2012 (+0530)
 #           By: subha
-#     Update #: 488
+#     Update #: 492
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -185,12 +185,18 @@ class H5TreeWidget(QtGui.QTreeWidget):
                 if item[0] == 'plotdt':
                     plotdt = float(item[1])
         else:
-            simtime = h5f.attrs['simtime']
-            plotdt = h5f.attrs['plotdt']
+            try:
+                simtime = h5f.attrs['simtime']
+                plotdt = h5f.attrs['plotdt']
+            except KeyError:
+                simtime = None
+                plotdt = 1.0
         data = self.getData(path)
         num_points = len(data)
-        # print path, data, num_points
-        ret = numpy.linspace(0, simtime, num_points)
+        if simtime is not None:
+            ret = numpy.linspace(0, simtime, num_points)
+        else:
+            ret = numpy.linspace(0, num_points, 1)
         return ret
 
     def get_plotdt(self, path):

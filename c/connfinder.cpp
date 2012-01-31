@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Jan 31 01:51:18 2012 (+0530)
-//           By: Subhasis Ray
-//     Update #: 878
+// Last-Updated: Tue Jan 31 14:56:15 2012 (+0530)
+//           By: subha
+//     Update #: 985
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -55,12 +55,13 @@ typedef struct {
     char value[16];
 } key_value_pair;
 
-enum spikerate_mode_t { BY_TYPE, BY_CELL, BY_LAYER, ALL };
+enum spikerate_mode_t { BY_TYPE, BY_LAYER, ALL, BY_CELL };
     
 void compute_spiking_rate(vector < double > & spike_data,
                           vector < double > & spike_rate,
                           double t_total,
                           double binsize=1.0,
+                          double dt=1.0,
                           double start=0.0,
                           double end=-1.0);
 
@@ -112,9 +113,11 @@ herr_t get_spikerates_by_celltype (const hid_t spike_group,
                                    string_dvector_map & spike_rates,
                                    double t_total,
                                    double binsize,
+                                   double dt,
                                    double start,
                                    double end) {
     herr_t status = 0;
+    map <string, int> cellcount;
     string_dvector_map celltype_spiketime_map;
     for (unsigned int ii = 0; ii < cells.size(); ++ii){
         hsize_t dims[2];
@@ -134,6 +137,7 @@ herr_t get_spikerates_by_celltype (const hid_t spike_group,
         // Now update the vector in the map
         size_t pos = cells[ii].rfind('_');
         string celltype = cells[ii].substr(0, pos);
+        cellcount[celltype] += 1;
         string_dvector_map::iterator data_iter = celltype_spiketime_map.find(celltype);
         if (data_iter == celltype_spiketime_map.end()) {
             celltype_spiketime_map.insert( pair <string, vector <double> >(celltype,  spike_times));
@@ -151,13 +155,17 @@ herr_t get_spikerates_by_celltype (const hid_t spike_group,
         // sort the spike times of all cells of each type
         sort(spike_data.begin(), spike_data.end(), std::less<double>());
         vector < double > spike_rate;
-        compute_spiking_rate(spike_data, spike_rate, t_total, binsize, start, end);
+        compute_spiking_rate(spike_data, spike_rate, t_total, binsize, dt, start, end);
+        // Normalize the spike rate by cellcount for each celltype
+        for (unsigned int ii = 0; ii < spike_rate.size(); ++ii){
+            spike_rate[ii] /= cellcount[data_iter->first];
+        }
         spike_rates[data_iter->first].assign(spike_rate.begin(), spike_rate.end());
     }
     return status;    
 }
 
-herr_t get_spikerates_by_cell(const hid_t spike_group, vector < string >& cells, string_dvector_map & spike_rates, double t_total, double binsize, double start, double end)
+herr_t get_spikerates_by_cell(const hid_t spike_group, vector < string >& cells, string_dvector_map & spike_rates, double t_total, double binsize, double dt, double start, double end)
 {
     herr_t status = 0;
     for (unsigned int ii = 0; ii < cells.size(); ++ii){
@@ -177,12 +185,100 @@ herr_t get_spikerates_by_cell(const hid_t spike_group, vector < string >& cells,
         }
         cout << "get_spikerates_by_cell: Read dataset for " << cells[ii] << endl;
         
-        compute_spiking_rate(spike_data, spike_rates[cells[ii]], t_total, binsize, start, end);
+        compute_spiking_rate(spike_data, spike_rates[cells[ii]], t_total, binsize, dt, start, end);
     }
     return status;
 }
 
-herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_total, double binsize=1.0, double start=0, double end=-1, spikerate_mode_t mode=BY_TYPE)
+herr_t get_spikerates_by_layer(const hid_t spike_group, vector < string >& cells, string_dvector_map & spike_rates, double t_total, double binsize, double dt, double start, double end)
+{
+    static map <string, string> celltype_layer_map;
+    if (celltype_layer_map.empty()){
+        celltype_layer_map["SupPyrRS"] = "3";
+        celltype_layer_map["SupPyrFRB"] = "3";
+        celltype_layer_map["SupBasket"] = "3";
+        celltype_layer_map["SupAxoaxonic"] = "3";
+        celltype_layer_map["SupLTS"] = "3";
+        celltype_layer_map["SpinyStellate"] = "4";
+        celltype_layer_map["TuftedIB"] = "5";
+        celltype_layer_map["TuftedRS"] = "5";
+        celltype_layer_map["NontuftedRS"] = "6";
+        // The Deep interneurons actually belong to L4 to L6. I am
+        // assigning them to L4 as it has only SpinyStellate cells and
+        // that may not be the dominant type in overall spike rate.
+        celltype_layer_map["DeepBasket"] = "4";
+        celltype_layer_map["DeepAxoaxonic"] = "4";
+        celltype_layer_map["DeepLTS"] = "4";
+        // Thalamus is arbitrarily assigned L7
+        celltype_layer_map["TCR"] = "7";
+        celltype_layer_map["nRT"] = "7";
+        celltype_layer_map["ectopic_SupPyrRS"] = "3";
+        celltype_layer_map["ectopic_SupPyrFRB"] = "3";
+        celltype_layer_map["ectopic_SupBasket"] = "3";
+        celltype_layer_map["ectopic_SupAxoaxonic"] = "3";
+        celltype_layer_map["ectopic_SupLTS"] = "3";
+        celltype_layer_map["ectopic_SpinyStellate"] = "4";
+        celltype_layer_map["ectopic_TuftedIB"] = "5";
+        celltype_layer_map["ectopic_TuftedRS"] = "5";
+        celltype_layer_map["ectopic_NontuftedRS"] = "6";
+        celltype_layer_map["ectopic_DeepBasket"] = "4";
+        celltype_layer_map["ectopic_DeepAxoaxonic"] = "4";
+        celltype_layer_map["ectopic_DeepLTS"] = "4";
+        celltype_layer_map["ectopic_TCR"] = "7";
+        celltype_layer_map["ectopic_nRT"] = "7";
+    }
+    herr_t status = 0;
+    map <string, int> cellcount;
+    string_dvector_map layer_spiketime_map;
+    for (unsigned int ii = 0; ii < cells.size(); ++ii){
+        hsize_t dims[2];
+        hid_t spike_info;
+        size_t type_size;
+        H5T_class_t type_class;
+        status = H5LTget_dataset_info(spike_group, cells[ii].c_str(), dims, &type_class, &type_size);
+        if (status < 0){
+            return status;
+        }
+        cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;
+        vector < double > spike_times(dims[0], 0.0);
+        status = H5LTread_dataset_double(spike_group, cells[ii].c_str(), &spike_times[0]);
+        if (status < 0){
+            return status;
+        }
+        // Now update the vector in the map
+        size_t pos = cells[ii].rfind('_');
+        string celltype = cells[ii].substr(0, pos);
+        string layer = celltype_layer_map[celltype];
+        cellcount[layer] += 1;
+        string_dvector_map::iterator data_iter = layer_spiketime_map.find(layer);
+        if (data_iter == layer_spiketime_map.end()) {
+            layer_spiketime_map.insert( pair <string, vector <double> >(layer,  spike_times));
+        } else {
+            vector <double> & v = layer_spiketime_map[layer];
+            v.insert(v.end(), spike_times.begin(), spike_times.end());
+        }
+    }
+    cout << "get_spikerates_by_layer: Collected data for all cells." << endl;
+    // now compute the rates for each celltype
+    for (string_dvector_map::iterator data_iter = layer_spiketime_map.begin();
+         data_iter != layer_spiketime_map.end();
+         ++data_iter){
+        vector < double >& spike_data = data_iter->second;
+        // sort the spike times of all cells of each type
+        sort(spike_data.begin(), spike_data.end(), std::less<double>());
+        vector < double > spike_rate;
+        compute_spiking_rate(spike_data, spike_rate, t_total, binsize, dt, start, end);
+        // Normalize the spike rate by cellcount for each layer
+        for (unsigned int ii = 0; ii < spike_rate.size(); ++ii){
+            spike_rate[ii] /= cellcount[data_iter->first];
+        }
+        spike_rates[data_iter->first].assign(spike_rate.begin(), spike_rate.end());
+        cout << "get_spikerates_by_layer: computed spike rates for " << data_iter->first << endl;
+    }
+    return status;        
+}
+
+herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_total, double binsize=1.0, double dt=1.0, double start=0, double end=-1, spikerate_mode_t mode=BY_TYPE)
 {
     vector < string > cells;
     herr_t status = get_spike_dataset_names(file_id, cells);
@@ -221,12 +317,14 @@ herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_to
     string_dvector_map cell_spikerate_map;
     switch(mode){
         case BY_TYPE:
-            status = get_spikerates_by_celltype(spike_group, cells, cell_spikerate_map, t_total, binsize, start, end);
+            status = get_spikerates_by_celltype(spike_group, cells, cell_spikerate_map, t_total, binsize, dt, start, end);
             break;
         case BY_CELL:
-            status = get_spikerates_by_cell(spike_group, cells, cell_spikerate_map, t_total, binsize, start, end);
+            status = get_spikerates_by_cell(spike_group, cells, cell_spikerate_map, t_total, binsize, dt, start, end);
             break;
-            // TODO: implement classify by cortical layer
+        case BY_LAYER:
+            status = get_spikerates_by_layer(spike_group, cells, cell_spikerate_map, t_total, binsize, dt, start, end);
+            break;
         default:
             cout << "dump_spike_rates: mode not recognized: " << mode << endl;
             status = -1;
@@ -246,8 +344,9 @@ herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_to
         for (unsigned jj = 0; jj < dims[0]; jj ++){
             dataset[2*jj] = t;
             dataset[2*jj+1] = data_iter->second[jj];
-            t += binsize/2.0;
+            t += dt;
         }
+        cout << "dump_spike_rates: writing spike rates for " << data_iter->first << endl;
         status = H5LTmake_dataset_double(spike_rate_group, data_iter->first.c_str(), 2, dims, dataset);
         if (status < 0){
             cerr << "Could not create dataset " << data_iter->first << endl;
@@ -280,6 +379,7 @@ void compute_spiking_rate(vector < double > & spike_data,
                           vector < double > & spike_rate,
                           double t_total,
                           double binsize,
+                          double dt,
                           double start,
                           double end)
 {
@@ -287,10 +387,10 @@ void compute_spiking_rate(vector < double > & spike_data,
         end = t_total;
     }
     // number of bins in the output dataset
-    size_t num_bins = (int)(2 * (end - start) / binsize - 1);
+    size_t num_bins = (int)((end - start) / dt - 1);
     // Initialize number of spikes in each bin to 0
     spike_rate.assign(num_bins, 0.0);
-    // Go through all the spike times
+    // Go through all the spike times and compute the spike counts in each bin
     double t = start;
     for (unsigned int ii = 0; ii < num_bins; ++ii){
         for (unsigned int jj = 0; jj < spike_data.size(); ++jj){
@@ -305,7 +405,8 @@ void compute_spiking_rate(vector < double > & spike_data,
                 spike_rate[ii] += 1.0;
             }
         }
-        t += binsize/2.0;
+        spike_rate[ii] /= binsize;
+        t += dt;
     }
 }
 
@@ -316,12 +417,13 @@ int main(int argc, char **argv)
         return 1;
     }
     int char_code = 0;
-    float binsize = 1.0;
-    float start = 0.0;
-    float end = -1.0;
+    double binsize = 1.0;
+    double dt = 100e-3;
+    double start = 0.0;
+    double end = -1.0;
     spikerate_mode_t mode = BY_TYPE;
     string input_file_name, output_file_name;
-    while ((char_code = getopt(argc, argv, "b:s:e:i:o:m:")) != -1){
+    while ((char_code = getopt(argc, argv, "b:s:e:i:o:m:d:")) != -1){
         cout << "charcode: " << (char)char_code << ", arg: " << string(optarg) << endl;
         if (char_code == 'b'){
             binsize = atof(optarg);
@@ -333,6 +435,8 @@ int main(int argc, char **argv)
             input_file_name = string(optarg);
         } else if (char_code == 'o'){
             output_file_name = string(optarg);
+        } else if (char_code == 'd'){
+            dt = atof(optarg);
         } else if (char_code == 'm'){
             long m = atol(optarg);
             switch (m){
@@ -366,9 +470,53 @@ int main(int argc, char **argv)
     }
     // Ignore the first second - because it is used for stabilizing
     double t_total = 0.0;
-    herr_t status = dump_spike_rates(data_file_id, output_file_id, t_total, binsize, start, end, mode);
+    herr_t status = dump_spike_rates(data_file_id, output_file_id, t_total, binsize, dt, start, end, mode);
     if (status < 0){
         cout << "main: error returned by dump_spike_rates: " << status << endl;
+        H5Fclose(data_file_id);
+        H5Fclose(output_file_id);
+        return -1;
+    }
+    hsize_t dims = 1;
+    hid_t dataspace_id = H5Screate(H5S_SCALAR);
+    hid_t attr_id = H5Acreate(output_file_id, "binsize", H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT);
+    if (attr_id < 0){
+        cout << "main: failed to create  attribute 'binsize': " << attr_id << endl;
+        H5Fclose(data_file_id);
+        H5Fclose(output_file_id);
+        return attr_id;
+    }
+        
+    status = H5Awrite(attr_id, H5T_NATIVE_DOUBLE, &binsize);
+    if (status < 0){
+        cout << "main: failed to write attribute binsize: " << status << endl;
+        H5Fclose(data_file_id);
+        H5Fclose(output_file_id);
+        return status;
+    }
+    H5Aclose(attr_id);            
+    attr_id = H5Acreate(output_file_id, "dt", H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT);
+    if (attr_id < 0){
+        cout << "main: failed to create  attribute 'dt': " << attr_id << endl;
+        H5Fclose(data_file_id);
+        H5Fclose(output_file_id);
+        return attr_id;
+    }
+        
+    status = H5Awrite(attr_id, H5T_NATIVE_DOUBLE, &dt);
+    if (status < 0){
+        cout << "main: failed to write attribute binsize: " << status << endl;
+        H5Fclose(data_file_id);
+        H5Fclose(output_file_id);
+        return status;
+    }
+    H5Aclose(attr_id);
+    status = H5LTset_attribute_string(output_file_id, "/", "datasource", input_file_name.c_str());
+    if (status < 0){
+        cout << "main: failed to write attribute 'datasource': " << status << endl;
+        H5Fclose(data_file_id);
+        H5Fclose(output_file_id);
+        return status;
     }
     H5Fclose(data_file_id);
     H5Fclose(output_file_id);
