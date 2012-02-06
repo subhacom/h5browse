@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Feb  6 15:26:08 2012 (+0530)
+# Last-Updated: Mon Feb  6 17:56:20 2012 (+0530)
 #           By: subha
-#     Update #: 442
+#     Update #: 562
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -194,6 +194,14 @@ def get_spiking_cellnames(filehandle, celltype, ignoretime):
             ret.append(spiking_cell)
     return ret
     
+def get_presynaptic_cells(netfile, cellname):
+    """Return a list of all presynaptic cell names"""
+    precells = set()
+    for item in netfile['/network/synapse']:
+        if cellname in item[1]:
+            precells.add(item[0].partition('/')[0])
+    return precells
+
 def find_presynaptic_spike_sources(netfile, datafile, cellname, ignore_time):
     """Return a list of presynaptic cells that fired.
 
@@ -287,17 +295,52 @@ def get_probetimes(filehandle):
     indices = numpy.nonzero(numpy.diff(stim_probe) > 0.0)
     return indices[0] * simtime / len(stim_probe)
 
-def get_affected_cells(datafile, netfile, timwin):
-    pass
+def get_affected_cells(datafile, netfile, timewin):
+    stim_dest = get_stimulated_cells(netfile)
+    print 'Stimulus destinations'
+    for key, value in stim_dest.items():
+        print key, ':',
+        for cellname in value:
+            print cellname, ',',
+        print
+    background_times = get_bgtimes(datafile)
+    probe_times = get_probetimes(datafile)
+    fired_on_bg = set()
+    fired_on_probe = set()
+    for cellname in datafile['/spikes']:
+        spike_times = datafile['/spikes'][cellname][:]
+        print cellname, spike_times.shape[0]
+        if spike_times[-1] < probe_times[0]:
+            continue        
+        for ii in range(len(probe_times)/2):
+            probe_time = probe_times[2*ii]
+            bg_time = background_times[4*ii]
+            print bg_time, probe_time
+            indices_in_window = numpy.nonzero(numpy.logical_and(spike_times > bg_time, spike_times < bg_time+timewin))[0]
+            if len(indices_in_window) > 0:
+                fired_on_bg.add(cellname)
+                print 'Fired on bg:', cellname
+            indices_in_window = numpy.nonzero(numpy.logical_and(spike_times > probe_time, spike_times < probe_time+timewin))[0]
+            if len(indices_in_window) > 0:
+                fired_on_probe.add(cellname)
+                print 'Fired on bg+probe:', cellname
+    return (fired_on_bg, fired_on_probe)
+            
+def is_connected_to_probed_cell(netfile, cellname):
+    stim_dests = get_stimulated_cells(netfile)
+    precells = get_presynaptic_cells(netfile, cellname)
+    return len(stim_dests['/stim/stim_probe'] & precells) > 0
+
+def get_stimulated_cells(netfile):
+    stim_dest = defaultdict(set)
+    for row in netfile['stimulus']['connection']:
+        # The paths are /model/net/{cellname}/{compname}.
+        cellname = row[1].rpartition('/')[0].rpartition('/')[-1]
+        stim_dest[row[0]].add(cellname)
+    return stim_dest
 
 def find_spikes_by_stim(datafile, netfile, timewindow):
-    stim_dest = defaultdict(list)
-    for row in netfile['stimulus']['connection']:
-        # the destinations are in {cellpath}/comp_1 form.  rpartion to
-        # remove the comp_1 part of the dest path.
-        cellpath = row[1].rpartition('/')[0]
-        cellname = cellpath.rpartition('/')[-1]
-        stim_dest[row[0]].append(cellname) 
+    stim_dest = get_stimulated_cells(netfile)
     bg_times = get_bgtimes(datafile)
     probe_times = get_probetimes(datafile)
     fired_on_bg = set()
@@ -313,8 +356,8 @@ def find_spikes_by_stim(datafile, netfile, timewindow):
         for ii in range(len(probe_times)):
             t_bg = bg_times[2*ii]
             t = probe_times[ii]
-            probe_indices = numpy.nonzero(spike_times[numpy.nonzero(spike_times > t)] < t+timewindow)
-            bg_indices =  numpy.nonzero(spike_times[numpy.nonzero(spike_times > t_bg)] < t_bg+timewindow)
+            probe_indices = numpy.nonzero(spike_times[numpy.nonzero(spike_times > t)[0]] < t+timewindow)
+            bg_indices =  numpy.nonzero(spike_times[numpy.nonzero(spike_times > t_bg)[0]] < t_bg+timewindow)
             if len(probe_indices) > 0:
                 fired_on_probe.add(cellname)
             if len(bg_indices) > 0:
@@ -341,9 +384,18 @@ if __name__ == '__main__':
     netfile = h5py.File(netfilename, 'r')
     datafile = h5py.File(datafilename, 'r')
     # stat = dump_synstat(netfile)
-    probe_conn_set = find_spikes_by_stim(datafile,  netfile, 100e-3)
-    for cellname in probe_conn_set:
-        print 'Probe connected:', cellname
+    # probe_conn_set = find_spikes_by_stim(datafile,  netfile, 100e-3)
+    # for cellname in probe_conn_set:
+    #     print 'Probe connected:', cellname
+    bgset, probeset, = get_affected_cells(datafile, netfile, 100e-3)
+    print 'Only in probe set'
+    only_probe = probeset - bgset
+    for item in only_probe:
+        print item
+    print 'The following are connected to a probed cell:'
+    connected = [cellname for cellname in only_probe if is_connected_to_probed_cell(netfile, cellname)]
+    for cellname in connected:
+        print cellname
     netfile.close()
     datafile.close()
     # for key, value in stat.items():
