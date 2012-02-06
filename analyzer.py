@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Jan 13 16:55:55 2012 (+0530)
+# Last-Updated: Mon Feb  6 15:26:08 2012 (+0530)
 #           By: subha
-#     Update #: 315
+#     Update #: 442
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -255,19 +255,102 @@ def plot_spikes_and_prespikes(netfile, datafile, spiking_cells, ignore_time):
              plot(value, ones(len(value)) * (ii + jj * 1.0 / (1+len(pre_spikes_map[spiking_cells[ii]]))),  symbol, label=value.name)
              jj += 1
 
+def get_simtime(filehandle):
+    ret = None
+    for row in filehandle['runconfig']['scheduling']:
+        if row[0] == 'simtime':
+            ret = float(row[1])
+    return ret
+
+def get_simdt(filehandle):
+    ret = None
+    for row in filehandle['runconfig']['scheduling']:
+        if row[0] == 'simdt':
+            ret = float(row[1])
+    return ret
+
+def get_plotdt(filehandle):
+    ret = None
+    for row in filehandle['runconfig']['scheduling']:
+        if row[0] == 'plotdt':
+            ret = float(row[1])
+    return ret
+
+def get_bgtimes(filehandle):
+    stim_bg = filehandle['stimulus']['stim_bg'][:]
+    simtime = get_simtime(filehandle)
+    return numpy.nonzero(numpy.diff(stim_bg) > 0.0)[0] * simtime / len(stim_bg)
+
+def get_probetimes(filehandle):
+    stim_probe = filehandle['stimulus']['stim_probe'][:]
+    simtime = get_simtime(filehandle)
+    indices = numpy.nonzero(numpy.diff(stim_probe) > 0.0)
+    return indices[0] * simtime / len(stim_probe)
+
+def get_affected_cells(datafile, netfile, timwin):
+    pass
+
+def find_spikes_by_stim(datafile, netfile, timewindow):
+    stim_dest = defaultdict(list)
+    for row in netfile['stimulus']['connection']:
+        # the destinations are in {cellpath}/comp_1 form.  rpartion to
+        # remove the comp_1 part of the dest path.
+        cellpath = row[1].rpartition('/')[0]
+        cellname = cellpath.rpartition('/')[-1]
+        stim_dest[row[0]].append(cellname) 
+    bg_times = get_bgtimes(datafile)
+    probe_times = get_probetimes(datafile)
+    fired_on_bg = set()
+    fired_on_probe = set()
+    for cellname in datafile['/spikes']:
+        spike_times = datafile['/spikes'][cellname][:]
+        # print spike_times.shape
+        # If the cell did not fire any spike after the first probe
+        # pulse, skip it: there is unlikely to be a path from probed
+        # cell to this.
+        if spike_times[-1] < probe_times[0]:
+            continue
+        for ii in range(len(probe_times)):
+            t_bg = bg_times[2*ii]
+            t = probe_times[ii]
+            probe_indices = numpy.nonzero(spike_times[numpy.nonzero(spike_times > t)] < t+timewindow)
+            bg_indices =  numpy.nonzero(spike_times[numpy.nonzero(spike_times > t_bg)] < t_bg+timewindow)
+            if len(probe_indices) > 0:
+                fired_on_probe.add(cellname)
+            if len(bg_indices) > 0:
+                fired_on_bg.add(cellname)
+    probe_connected = set()
+    for cellname in fired_on_probe:
+        # exclude cells that are directly stimulated by the probe stimulus
+        if cellname not in stim_dest['/stim/stim_probe'] and cellname not in stim_dest['/stim/stim_bg']:
+            probe_connected.add(cellname)
+            print 'probe/bg -connected:', cellname
+    bg_connected = set()
+    for cellname in fired_on_bg:
+        # exclude cells that are directly stimulated by the stimulus
+        if cellname not in stim_dest['/stim/stim_probe'] and cellname not in stim_dest['/stim/stim_bg']:
+            bg_connected.add(cellname)    
+    return probe_connected - fired_on_bg
+
 import sys
 
 if __name__ == '__main__':
     netfilename = sys.argv[1]
-    print 'Opening:', netfilename
+    datafilename = sys.argv[2]
+    print 'Opening:', netfilename, 'and', datafilename
     netfile = h5py.File(netfilename, 'r')
-    stat = dump_synstat(netfile)
+    datafile = h5py.File(datafilename, 'r')
+    # stat = dump_synstat(netfile)
+    probe_conn_set = find_spikes_by_stim(datafile,  netfile, 100e-3)
+    for cellname in probe_conn_set:
+        print 'Probe connected:', cellname
     netfile.close()
-    for key, value in stat.items():
-        print key
-        print '--------------'
-        for kk, vv in value.items():
-            print kk, vv
+    datafile.close()
+    # for key, value in stat.items():
+    #     print key
+    #     print '--------------'
+    #     for kk, vv in value.items():
+    #         print kk, vv
 
 # 
 # analyzer.py ends here

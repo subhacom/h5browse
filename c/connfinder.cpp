@@ -6,9 +6,9 @@
 // Maintainer: 
 // Created: Mon Dec 26 15:06:27 2011 (+0530)
 // Version: 
-// Last-Updated: Tue Jan 31 14:56:15 2012 (+0530)
+// Last-Updated: Thu Feb  2 11:42:27 2012 (+0530)
 //           By: subha
-//     Update #: 985
+//     Update #: 1006
 // URL: 
 // Keywords: 
 // Compatibility: 
@@ -78,7 +78,9 @@ herr_t collect_spike_name(const hid_t loc_id, const char * name, const H5L_info_
     }
     if ( H5O_TYPE_DATASET == infobuf.type ) {
         spike_names->push_back(string(name));
+#ifdef DEBUG
         cout << "Found " << name << endl;
+#endif
     }
     return 0;        
 }
@@ -97,7 +99,9 @@ herr_t get_spike_dataset_names(const hid_t file_id,
     }
     hsize_t num_datasets = group_info.nlinks;
     if (num_datasets > 0){
+#ifdef DEBUG        
         cout << "Number of datasets: " << num_datasets << endl;
+#endif
         status = H5Literate(spike_group, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, collect_spike_name, &names);
     } else {
         H5Gclose(spike_group);
@@ -128,7 +132,9 @@ herr_t get_spikerates_by_celltype (const hid_t spike_group,
         if (status < 0){
             return status;
         }
+#ifdef DEBUG
         cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;
+#endif
         vector < double > spike_times(dims[0], 0.0);
         status = H5LTread_dataset_double(spike_group, cells[ii].c_str(), &spike_times[0]);
         if (status < 0){
@@ -146,7 +152,9 @@ herr_t get_spikerates_by_celltype (const hid_t spike_group,
             v.insert(v.end(), spike_times.begin(), spike_times.end());
         }
     }
+#ifdef DEBUG    
     cout << "get_spikerates_by_celltype: Collected data for all cells." << endl;
+#endif
     // now compute the rates for each celltype
     for (string_dvector_map::iterator data_iter = celltype_spiketime_map.begin();
          data_iter != celltype_spiketime_map.end();
@@ -177,13 +185,17 @@ herr_t get_spikerates_by_cell(const hid_t spike_group, vector < string >& cells,
         if (status < 0){
             return status;
         }
-        cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;                                        
+#ifdef DEBUG        
+        cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;
+#endif
         vector < double > spike_data(dims[0], 0.0);
         status = H5LTread_dataset_double(spike_group, cells[ii].c_str(), &spike_data[0]);
         if (status < 0){
             return status;
         }
+#ifdef DEBUG        
         cout << "get_spikerates_by_cell: Read dataset for " << cells[ii] << endl;
+#endif
         
         compute_spiking_rate(spike_data, spike_rates[cells[ii]], t_total, binsize, dt, start, end);
     }
@@ -239,7 +251,9 @@ herr_t get_spikerates_by_layer(const hid_t spike_group, vector < string >& cells
         if (status < 0){
             return status;
         }
+#ifdef DEBUG
         cout << "Found dataset info for " << cells[ii] << ": size: " << type_size << endl;
+#endif
         vector < double > spike_times(dims[0], 0.0);
         status = H5LTread_dataset_double(spike_group, cells[ii].c_str(), &spike_times[0]);
         if (status < 0){
@@ -258,7 +272,9 @@ herr_t get_spikerates_by_layer(const hid_t spike_group, vector < string >& cells
             v.insert(v.end(), spike_times.begin(), spike_times.end());
         }
     }
+#ifdef DEBUG
     cout << "get_spikerates_by_layer: Collected data for all cells." << endl;
+#endif
     // now compute the rates for each celltype
     for (string_dvector_map::iterator data_iter = layer_spiketime_map.begin();
          data_iter != layer_spiketime_map.end();
@@ -273,11 +289,35 @@ herr_t get_spikerates_by_layer(const hid_t spike_group, vector < string >& cells
             spike_rate[ii] /= cellcount[data_iter->first];
         }
         spike_rates[data_iter->first].assign(spike_rate.begin(), spike_rate.end());
+#ifdef DEBUG        
         cout << "get_spikerates_by_layer: computed spike rates for " << data_iter->first << endl;
+#endif
     }
     return status;        
 }
 
+/**
+   Calculate the spike rates from one data file and save into another hdf5 file.
+
+   @param file_id -- input file id (open HDF5 id)
+
+   @param output_file_id -- output file id (open HDF5 id)
+
+   @param t_total -- total simulation time, this is set by the function
+
+   @param binsize -- size of bins in second
+
+   @param dt -- interval between successive window positions
+
+   @param start -- start time for considering the spikes (if unspecified it defaults to the simulation start)
+
+   @param end -- end time for considering the spikes (if unspecified or negative, it defaults to simulatin end)
+
+   @param mode -- mode of spike rate counting, it can be cell by cell,
+   averaged over a whole celltype or averaged over all cells in a
+   layer. Note that the celltype-to-layer map is hardcoded and may not
+   be appropriate for all cases.
+ */
 herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_total, double binsize=1.0, double dt=1.0, double start=0, double end=-1, spikerate_mode_t mode=BY_TYPE)
 {
     vector < string > cells;
@@ -326,12 +366,12 @@ herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_to
             status = get_spikerates_by_layer(spike_group, cells, cell_spikerate_map, t_total, binsize, dt, start, end);
             break;
         default:
-            cout << "dump_spike_rates: mode not recognized: " << mode << endl;
+            cerr << "dump_spike_rates: mode not recognized: " << mode << endl;
             status = -1;
     }
     H5Gclose(spike_group);          
     if (status < 0){
-        cout << "dump_spike_rates: error occurred. Status = " << status << endl;
+        cerr << "dump_spike_rates: error occurred. Status = " << status << endl;
             H5Fclose(output_file_id);
             return status;
     }
@@ -346,7 +386,9 @@ herr_t dump_spike_rates(const hid_t file_id, hid_t output_file_id, double & t_to
             dataset[2*jj+1] = data_iter->second[jj];
             t += dt;
         }
+#ifdef DEBUG
         cout << "dump_spike_rates: writing spike rates for " << data_iter->first << endl;
+#endif
         status = H5LTmake_dataset_double(spike_rate_group, data_iter->first.c_str(), 2, dims, dataset);
         if (status < 0){
             cerr << "Could not create dataset " << data_iter->first << endl;
@@ -424,7 +466,9 @@ int main(int argc, char **argv)
     spikerate_mode_t mode = BY_TYPE;
     string input_file_name, output_file_name;
     while ((char_code = getopt(argc, argv, "b:s:e:i:o:m:d:")) != -1){
+#ifdef DEBUG
         cout << "charcode: " << (char)char_code << ", arg: " << string(optarg) << endl;
+#endif
         if (char_code == 'b'){
             binsize = atof(optarg);
         } else if (char_code == 's'){
@@ -472,7 +516,7 @@ int main(int argc, char **argv)
     double t_total = 0.0;
     herr_t status = dump_spike_rates(data_file_id, output_file_id, t_total, binsize, dt, start, end, mode);
     if (status < 0){
-        cout << "main: error returned by dump_spike_rates: " << status << endl;
+        cerr << "main: error returned by dump_spike_rates: " << status << endl;
         H5Fclose(data_file_id);
         H5Fclose(output_file_id);
         return -1;
@@ -481,7 +525,7 @@ int main(int argc, char **argv)
     hid_t dataspace_id = H5Screate(H5S_SCALAR);
     hid_t attr_id = H5Acreate(output_file_id, "binsize", H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT);
     if (attr_id < 0){
-        cout << "main: failed to create  attribute 'binsize': " << attr_id << endl;
+        cerr << "main: failed to create  attribute 'binsize': " << attr_id << endl;
         H5Fclose(data_file_id);
         H5Fclose(output_file_id);
         return attr_id;
@@ -489,7 +533,7 @@ int main(int argc, char **argv)
         
     status = H5Awrite(attr_id, H5T_NATIVE_DOUBLE, &binsize);
     if (status < 0){
-        cout << "main: failed to write attribute binsize: " << status << endl;
+        cerr << "main: failed to write attribute binsize: " << status << endl;
         H5Fclose(data_file_id);
         H5Fclose(output_file_id);
         return status;
@@ -497,7 +541,7 @@ int main(int argc, char **argv)
     H5Aclose(attr_id);            
     attr_id = H5Acreate(output_file_id, "dt", H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT);
     if (attr_id < 0){
-        cout << "main: failed to create  attribute 'dt': " << attr_id << endl;
+        cerr << "main: failed to create  attribute 'dt': " << attr_id << endl;
         H5Fclose(data_file_id);
         H5Fclose(output_file_id);
         return attr_id;
@@ -505,7 +549,7 @@ int main(int argc, char **argv)
         
     status = H5Awrite(attr_id, H5T_NATIVE_DOUBLE, &dt);
     if (status < 0){
-        cout << "main: failed to write attribute binsize: " << status << endl;
+        cerr << "main: failed to write attribute binsize: " << status << endl;
         H5Fclose(data_file_id);
         H5Fclose(output_file_id);
         return status;
@@ -513,7 +557,7 @@ int main(int argc, char **argv)
     H5Aclose(attr_id);
     status = H5LTset_attribute_string(output_file_id, "/", "datasource", input_file_name.c_str());
     if (status < 0){
-        cout << "main: failed to write attribute 'datasource': " << status << endl;
+        cerr << "main: failed to write attribute 'datasource': " << status << endl;
         H5Fclose(data_file_id);
         H5Fclose(output_file_id);
         return status;
