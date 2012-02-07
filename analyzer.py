@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Feb  6 17:56:20 2012 (+0530)
+# Last-Updated: Tue Feb  7 16:03:06 2012 (+0530)
 #           By: subha
-#     Update #: 562
+#     Update #: 684
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,6 +48,7 @@
 import os
 import h5py
 import numpy
+import pylab
 import scipy.signal as signal
 from datetime import datetime
 from collections import defaultdict
@@ -374,6 +375,88 @@ def find_spikes_by_stim(datafile, netfile, timewindow):
         if cellname not in stim_dest['/stim/stim_probe'] and cellname not in stim_dest['/stim/stim_bg']:
             bg_connected.add(cellname)    
     return probe_connected - fired_on_bg
+
+def get_bgstim_aligned_chunks(datafile, cellname):
+    ret = []
+    spikes = datafile['/spikes']
+    simtime = get_simtime(datafile)    
+    stimulus_node = datafile['/runconfig/stimulus']
+    stimulus_info = {}
+    for row in stimulus_node:
+        try:
+            value = int(row[1])
+        except ValueError:
+            try:
+                value = float(row[1])
+            except ValueError:
+                value = row[1]
+        stimulus_info[row[0]] = value
+    stim_width = stimulus_info['bg_interval'] + stimulus_info['pulse_width'] + stimulus_info['isi']
+    print cellname, stim_width
+    for name in spikes:
+        if cellname in name and not name.startswith('ectopic'):
+            t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
+            spiketrain = spikes[name][:] - t_stim
+            indices = numpy.nonzero(spiketrain > 0)[0]
+            while len(indices) > 0:
+                spiketrain = spiketrain[indices]
+                chunk_indices = numpy.nonzero(spiketrain < stim_width)[0]                
+                if len(chunk_indices) > 0:
+                    chunk = spiketrain[chunk_indices]
+                    ret.append(chunk)
+                spiketrain = spiketrain - stim_width
+                indices = numpy.nonzero(spiketrain > 0)[0]
+    return (ret, stim_width)
+    
+def calculate_psth(datafile, cellname, binsize):
+    spikes = datafile['/spikes']
+    simtime = get_simtime(datafile)    
+    stimulus_node = datafile['/runconfig/stimulus']
+    stimulus_info = {}
+    for row in stimulus_node:
+        try:
+            value = int(row[1])
+        except ValueError:
+            try:
+                value = float(row[1])
+            except ValueError:
+                value = row[1]
+        stimulus_info[row[0]] = value
+    stim_width = stimulus_info['bg_interval'] + stimulus_info['pulse_width'] + stimulus_info['isi']
+    psth = numpy.zeros(int(stim_width/binsize))
+    bins = numpy.arange(0, stim_width, binsize)
+    for name in spikes:
+        if cellname in name and not name.startswith('ectopic'):
+            t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
+            spiketrain = spikes[name][:] - t_stim
+            indices = numpy.nonzero(spiketrain > 0)[0]
+            while len(indices) > 0:
+                spiketrain = spiketrain[indices]
+                chunk_indices = numpy.nonzero(spiketrain < stim_width)[0]                
+                if len(chunk_indices) > 0:
+                    chunk = spiketrain[chunk_indices]
+                    psth += numpy.histogram(chunk, bins)[0]
+                spiketrain = spiketrain - stim_width
+                indices = numpy.nonzero(spiketrain > 0)[0]
+    return (psth, bins)
+
+def plot_psth(datafile, celltypes, binsize):
+    celltype_st_map = {}
+    numrows = len(celltypes)
+    w = 1    
+    ii = 0
+    for celltype in celltypes:
+        x, w, = get_bgstim_aligned_chunks(datafile, celltype)
+        x = numpy.concatenate(x)
+        x.sort()
+        celltype_st_map[celltype] = x
+        ii += 1
+        pylab.subplot(numrows, 1, ii)
+        # pylab.title(celltype)
+        pylab.hist(x, numpy.arange(0, w, binsize), label=celltype)
+        pylab.legend()
+    pylab.show()
+    return celltype_st_map
 
 import sys
 
