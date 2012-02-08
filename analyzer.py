@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Feb  8 10:06:36 2012 (+0530)
+# Last-Updated: Wed Feb  8 15:51:13 2012 (+0530)
 #           By: subha
-#     Update #: 782
+#     Update #: 876
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -476,6 +476,7 @@ def extract_chunks(spiketrain, stimstart, stimwidth):
     ret = []
     spiketrain = spiketrain - stimstart
     indices = numpy.nonzero(spiketrain > 0)[0]
+    print len(indices)
     while len(indices) > 0:
         spiketrain = spiketrain[indices]
         indices = numpy.nonzero(spiketrain < stimwidth)[0]
@@ -486,44 +487,68 @@ def extract_chunks(spiketrain, stimstart, stimwidth):
         indices = numpy.nonzero(spiketrain > 0)[0]
     return ret
 
-def chunks_from_multiple_datafile(filenames, celltypes):    
+def chunks_from_multiple_datafile(filenames, celltypes, bg_interval=None, isi=None, pulse_width=None):    
     ret = {}
+    stim_width_map = {}
     for celltype in celltypes:
         ret[celltype] = defaultdict(list)
-        stim_width_map = {}
     for filename in filenames:
         fhandle = h5py.File(filename, 'r')
         simtime = get_simtime(fhandle)    
         stimulus_info = get_stiminfo_dict(fhandle)
+        if (bg_interval is not None and isi is not None and pulse_width is not None) and (float(stimulus_info['bg_interval']) != bg_interval or float(stimulus_info['isi']) != isi):
+            continue
+            
         stim_width = stimulus_info['bg_interval'] + stimulus_info['pulse_width'] + stimulus_info['isi']
         stim_width_map[filename] = stim_width
         t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
         spikes = fhandle['/spikes']
         for name in spikes:
-            for celltype in celltypes:
-                if celltype in name and not name.startswith('ectopic'):
-                    chunks = extract_chunks(spikes[name][:], t_stim, stim_width)
-                    ret[celltype][filename] = chunks                    
+            celltype = name.rpartition('/')[-1].rpartition('_')[0]
+            if not celltype.startswith('ectopic'):
+                chunks = extract_chunks(spikes[name][:], t_stim, stim_width)
+                ret[celltype][filename] += chunks
         fhandle.close()
     return (ret, stim_width_map)
 
-def psth_multifile(filenames, celltypes, binsize):
+def psth_multifile(filenames, celltypes, binsize, combined=False, bg_interval=None, isi=None, pulse_width=None):
     numrows = len(celltypes)
-    chunks, stimwidths, = chunks_from_multiple_datafile(filenames, celltypes)
+    chunks, stimwidths, = chunks_from_multiple_datafile(filenames, celltypes, bg_interval=bg_interval, isi=isi, pulse_width=pulse_width)
     for ii in range(len(celltypes)):
+        print 'Processing', celltypes[ii]
         pylab.subplot(numrows, 1, ii)
         pylab.title(celltypes[ii])
-        spike_data = chunks[celltypes[ii]]
+        x = []
         for filename, chunked_data in chunks[celltypes[ii]].items():
             if len(chunked_data) == 0:
                 continue
-            x = numpy.concatenate(chunked_data)
-            if len(x) == 0:
+            tmp = numpy.concatenate(chunked_data)
+            print celltypes[ii], filename, tmp.shape
+            if len(tmp) == 0:
                 continue
-            x.sort()
-            pylab.hist(x, numpy.arange(0, stimwidths[filename], binsize), label=os.path.basename(filename))
-            pylab.scatter([0, stim
-        pylab.legend()
+            if not combined:
+                tmp.sort()
+                pylab.hist(tmp, numpy.arange(0, stimwidths[filename], binsize), label=os.path.basename(filename))
+                maxy = pylab.ylim()[1]
+                pylab.yticks([int(y) for y in numpy.linspace(0, maxy, 5)])
+
+            else:
+                x = numpy.concatenate([x, tmp])
+            print 'Processed', filename, len(x)
+        if combined:
+            if bg_interval is None:
+                print stimwidths.values()
+                stim_width = max(stimwidths.values())
+            else:
+                stim_width = bg_interval + isi + pulse_width
+            x.sort()            
+            print 'Total number of spikes', len(x)
+            pylab.hist(x, numpy.arange(0, stim_width, binsize))
+            maxy = pylab.ylim()[1]
+            pylab.yticks([int(y) for y in numpy.linspace(0, maxy, 5)])
+        else:
+            pylab.legend()
+    pylab.subplots_adjust(hspace=1)
     pylab.show()
 
 filenames = [
@@ -566,7 +591,7 @@ filenames = [
 import sys
 
 if __name__ == '__main__':
-    psth_multifile(filenames, ['SpinyStellate'], 10e-3)
+    psth_multifile(filenames, ['SpinyStellate', 'DeepBasket', 'DeepLTS', 'DeepAxoaxonic', 'nRT', 'TCR'], 10e-3, combined=True, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
     # netfilename = sys.argv[1]
     # datafilename = sys.argv[2]
     # print 'Opening:', netfilename, 'and', datafilename
