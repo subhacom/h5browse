@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Feb  7 16:03:06 2012 (+0530)
+# Last-Updated: Wed Feb  8 10:06:36 2012 (+0530)
 #           By: subha
-#     Update #: 684
+#     Update #: 782
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -458,34 +458,135 @@ def plot_psth(datafile, celltypes, binsize):
     pylab.show()
     return celltype_st_map
 
+def get_stiminfo_dict(fhandle):
+    stimulus_node = fhandle['/runconfig/stimulus']
+    stimulus_info = {}
+    for row in stimulus_node:
+        try:
+            value = int(row[1])
+        except ValueError:
+            try:
+                value = float(row[1])
+            except ValueError:
+                value = row[1]
+        stimulus_info[row[0]] = value
+    return stimulus_info
+
+def extract_chunks(spiketrain, stimstart, stimwidth):
+    ret = []
+    spiketrain = spiketrain - stimstart
+    indices = numpy.nonzero(spiketrain > 0)[0]
+    while len(indices) > 0:
+        spiketrain = spiketrain[indices]
+        indices = numpy.nonzero(spiketrain < stimwidth)[0]
+        if len(indices) > 0:
+            chunk = spiketrain[indices]
+            ret.append(chunk)
+        spiketrain = spiketrain - stimwidth
+        indices = numpy.nonzero(spiketrain > 0)[0]
+    return ret
+
+def chunks_from_multiple_datafile(filenames, celltypes):    
+    ret = {}
+    for celltype in celltypes:
+        ret[celltype] = defaultdict(list)
+        stim_width_map = {}
+    for filename in filenames:
+        fhandle = h5py.File(filename, 'r')
+        simtime = get_simtime(fhandle)    
+        stimulus_info = get_stiminfo_dict(fhandle)
+        stim_width = stimulus_info['bg_interval'] + stimulus_info['pulse_width'] + stimulus_info['isi']
+        stim_width_map[filename] = stim_width
+        t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
+        spikes = fhandle['/spikes']
+        for name in spikes:
+            for celltype in celltypes:
+                if celltype in name and not name.startswith('ectopic'):
+                    chunks = extract_chunks(spikes[name][:], t_stim, stim_width)
+                    ret[celltype][filename] = chunks                    
+        fhandle.close()
+    return (ret, stim_width_map)
+
+def psth_multifile(filenames, celltypes, binsize):
+    numrows = len(celltypes)
+    chunks, stimwidths, = chunks_from_multiple_datafile(filenames, celltypes)
+    for ii in range(len(celltypes)):
+        pylab.subplot(numrows, 1, ii)
+        pylab.title(celltypes[ii])
+        spike_data = chunks[celltypes[ii]]
+        for filename, chunked_data in chunks[celltypes[ii]].items():
+            if len(chunked_data) == 0:
+                continue
+            x = numpy.concatenate(chunked_data)
+            if len(x) == 0:
+                continue
+            x.sort()
+            pylab.hist(x, numpy.arange(0, stimwidths[filename], binsize), label=os.path.basename(filename))
+            pylab.scatter([0, stim
+        pylab.legend()
+    pylab.show()
+
+filenames = [
+    "../py/data/2012_01_17/data_20120117_114805_6302.h5",
+    "../py/data/2012_02_01/data_20120201_204744_29839.h5",
+    "../py/data/2012_02_01/data_20120201_143411_29609.h5",
+    "../py/data/2012_01_09/data_20120109_112852_22086.h5",
+    "../py/data/2012_01_14/data_20120114_120027_996.h5",
+    "../py/data/2012_01_03/data_20120103_101152_12049.h5",
+    "../py/data/2012_01_03/data_20120103_100645_11976.h5",
+    "../py/data/2012_01_11/data_20120111_135100_30693.h5",
+    "../py/data/2012_01_11/data_20120111_135144_30762.h5",
+    "../py/data/2012_01_23/data_20120123_092600_14963.h5",
+    "../py/data/2012_01_23/data_20120123_092558_14940.h5",
+    "../py/data/2012_01_23/data_20120123_092550_14913.h5",
+    "../py/data/2012_01_23/data_20120123_092150_14871.h5",
+    "../py/data/2012_02_03/data_20120203_144711_31441.h5",
+    "../py/data/2012_02_03/data_20120203_144712_31468.h5",
+    "../py/data/2012_02_03/data_20120203_144709_31418.h5",
+    "../py/data/2012_01_18/data_20120118_142820_7865.h5",
+    "../py/data/2012_01_13/data_20120113_170727_32728.h5",
+    "../py/data/2012_02_06/data_20120206_112440_1220.h5",
+    "../py/data/2012_02_06/data_20120206_112441_1248.h5",
+    "../py/data/2012_01_19/data_20120119_201036_10692.h5",
+    "../py/data/2012_01_19/data_20120119_132336_9035.h5",
+    "../py/data/2012_01_29/data_20120129_175543_22839.h5",
+    "../py/data/2012_01_29/data_20120129_175534_22710.h5",
+    "../py/data/2012_01_29/data_20120129_175541_22810.h5",
+    "../py/data/2012_01_29/data_20120129_175538_22760.h5",
+    "../py/data/2012_01_29/data_20120129_175542_22835.h5",
+    "../py/data/2012_01_29/data_20120129_175540_22787.h5",
+    "../py/data/2012_01_29/data_20120129_115942_22585.h5",
+    "../py/data/2012_01_29/data_20120129_175536_22733.h5",
+    "../py/data/2012_01_10/data_20120110_115732_23924.h5",
+    "../py/data/2012_01_25/data_20120125_131449_16448.h5",
+    "../py/data/2012_01_25/data_20120125_131453_16471.h5",
+    "../py/data/2012_01_25/data_20120125_131455_16498.h5",
+    "../py/data/2012_01_25/data_20120125_131456_16525.h5"]
+
 import sys
 
 if __name__ == '__main__':
-    netfilename = sys.argv[1]
-    datafilename = sys.argv[2]
-    print 'Opening:', netfilename, 'and', datafilename
-    netfile = h5py.File(netfilename, 'r')
-    datafile = h5py.File(datafilename, 'r')
-    # stat = dump_synstat(netfile)
-    # probe_conn_set = find_spikes_by_stim(datafile,  netfile, 100e-3)
-    # for cellname in probe_conn_set:
-    #     print 'Probe connected:', cellname
-    bgset, probeset, = get_affected_cells(datafile, netfile, 100e-3)
-    print 'Only in probe set'
-    only_probe = probeset - bgset
-    for item in only_probe:
-        print item
-    print 'The following are connected to a probed cell:'
-    connected = [cellname for cellname in only_probe if is_connected_to_probed_cell(netfile, cellname)]
-    for cellname in connected:
-        print cellname
-    netfile.close()
-    datafile.close()
-    # for key, value in stat.items():
-    #     print key
-    #     print '--------------'
-    #     for kk, vv in value.items():
-    #         print kk, vv
+    psth_multifile(filenames, ['SpinyStellate'], 10e-3)
+    # netfilename = sys.argv[1]
+    # datafilename = sys.argv[2]
+    # print 'Opening:', netfilename, 'and', datafilename
+    # netfile = h5py.File(netfilename, 'r')
+    # datafile = h5py.File(datafilename, 'r')
+    # # stat = dump_synstat(netfile)
+    # # probe_conn_set = find_spikes_by_stim(datafile,  netfile, 100e-3)
+    # # for cellname in probe_conn_set:
+    # #     print 'Probe connected:', cellname
+    # bgset, probeset, = get_affected_cells(datafile, netfile, 100e-3)
+    # print 'Only in probe set'
+    # only_probe = probeset - bgset
+    # for item in only_probe:
+    #     print item
+    # print 'The following are connected to a probed cell:'
+    # connected = [cellname for cellname in only_probe if is_connected_to_probed_cell(netfile, cellname)]
+    # for cellname in connected:
+    #     print cellname
+    # netfile.close()
+    # datafile.close()
 
 # 
 # analyzer.py ends here
