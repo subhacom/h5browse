@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Feb  9 12:31:41 2012 (+0530)
+# Last-Updated: Thu Feb  9 14:49:48 2012 (+0530)
 #           By: subha
-#     Update #: 918
+#     Update #: 922
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -487,6 +487,9 @@ def extract_chunks(spiketrain, stimstart, stimwidth):
     return ret
 
 def chunks_from_multiple_datafile(filenames, celltypes, bg_interval=None, isi=None, pulse_width=None):    
+    """Collect spiketimes for each entry in celltypes from all files
+    in filenames into chunks aligned with first of the background
+    pulse pair."""
     ret = {}
     stim_width_map = {}
     cellcount_map = defaultdict(int)
@@ -504,11 +507,11 @@ def chunks_from_multiple_datafile(filenames, celltypes, bg_interval=None, isi=No
         t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
         spikes = fhandle['/spikes']
         for name in spikes:
-            celltype = name.rpartition('/')[-1].rpartition('_')[0]
-            if not celltype.startswith('ectopic'):
-                chunks = extract_chunks(spikes[name][:], t_stim, stim_width)
-                ret[celltype][filename] += chunks
-                cellcount_map[celltype] += 1
+            for celltype in celltypes:
+                if not celltype.startswith('ectopic') and celltype in name:
+                    chunks = extract_chunks(spikes[name][:], t_stim, stim_width)
+                    ret[celltype][filename] += chunks
+                    cellcount_map[celltype] += 1
         fhandle.close()
     return (ret, stim_width_map, cellcount_map)
 
@@ -604,7 +607,7 @@ filenames = [
 import sys
 
 if __name__ == '__main__':
-    psth_multifile(filenames, ['SpinyStellate', 'DeepBasket', 'DeepLTS', 'DeepAxoaxonic', 'nRT', 'TCR'], 10e-3, combined=True, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
+    psth_multifile(filenames, ['SpinyStellate_0', 'DeepBasket_1', 'DeepLTS_2', 'DeepAxoaxonic_3', 'nRT_1', 'TCR_4'], 10e-3, combined=True, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
     # netfilename = sys.argv[1]
     # datafilename = sys.argv[2]
     # print 'Opening:', netfilename, 'and', datafilename
