@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Feb 10 14:40:41 2012 (+0530)
+# Last-Updated: Fri Feb 10 17:36:40 2012 (+0530)
 #           By: subha
-#     Update #: 930
+#     Update #: 1072
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -53,7 +53,7 @@ import scipy.signal as signal
 from datetime import datetime
 from collections import defaultdict
 # import nitime
-
+import scipy.optimize as opt
 
 # This is mostly taken from SciPy cookbook FIR filter example.
 # See: http://www.scipy.org/Cookbook/FIRFilter
@@ -567,9 +567,48 @@ def psth_multifile(filenames, celltypes, binsize, combined=False, bg_interval=No
     pylab.subplots_adjust(hspace=1)
     pylab.show()
 
-def psth_optimized_binsize(filenames, celltypes, min_binsize, max_binsize, bg_interval=None, isi=None, pulse_width=None):
-    spikechunks, stimwidths, cellcounts, = chunks_from_multiple_datafile(filenames, celltypes, bg_interval, isi, pulse_width)
+def get_psth(binsize, timewindow, spiketrains):
+    combined_spikes = numpy.concatenate(spiketrains)
+    combined_spikes.sort()
+    return numpy.histogram(combined_spikes, numpy.arange(0, timewindow, binsize))
     
+def cost_psth(binsize, timewindow, spiketrains):
+    """Take a binsize and a sequence of spike trains and return PSTH
+    from that."""
+    num_spike_trains = len(spiketrains)
+    hist, edges, = get_psth(binsize, timewindow, spiketrains)
+    mean_count = numpy.mean(hist)
+    variance_count = numpy.var(hist)
+    return (2 * mean_count - variance_count)/(num_spike_trains * binsize)**2
+    
+def get_optimal_psth_binsize(spiketrain, timewindow, min_binsize, max_binsize):
+    xopt, fval, ierr, numfunc, = opt.fminbound(cost_psth, min_binsize, max_binsize, args=(timewindow, spiketrain), full_output=True, disp=3)
+    print 'optimal binsize:', xopt, 'cost:', fval, 'error code:', ierr, 'no. of evaluations:', numfunc
+    return xopt
+
+            
+        
+def plot_psth_optimal_binsize(filenames, celltypes, min_binsize, max_binsize, bg_interval, isi, pulse_width):
+    stimwidth = bg_interval + isi + pulse_width
+    spikechunks, stimwidths, cellcounts, = chunks_from_multiple_datafile(filenames, celltypes, bg_interval, isi, pulse_width)
+    spiketrains = defaultdict(list)
+    numrows = len(celltypes)
+    ii = 1
+    for cell in celltypes:        
+        for chunks in spikechunks[cell].values():
+            spiketrains[cell] += chunks
+        print cell, 
+        binsize = get_optimal_psth_binsize(spiketrains[cell], stimwidth, min_binsize, max_binsize)
+        hist, edges, = get_psth(binsize, stimwidth, spiketrains[cell])
+        pylab.subplot(numrows, 1, ii)
+        pylab.title(cell)
+        pylab.bar(edges[:-1], hist, binsize, label=cell)
+        pylab.xlim(0, edges[-1])
+        maxy = pylab.ylim()[1]
+        pylab.yticks([int(y) for y in numpy.linspace(0, maxy, 5)])
+        ii += 1
+    pylab.subplots_adjust(hspace=1)
+    pylab.show()
     
 
 filenames = [
@@ -612,7 +651,16 @@ filenames = [
 import sys
 
 if __name__ == '__main__':
-    psth_multifile(filenames, ['SpinyStellate_0', 'DeepBasket_1', 'DeepLTS_2', 'DeepAxoaxonic_3', 'nRT_1', 'TCR_4'], 10e-3, combined=True, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
+    # psth_multifile(filenames, ['SpinyStellate_0', 'DeepBasket_1', 'DeepLTS_2', 'DeepAxoaxonic_3', 'nRT_1', 'TCR_4'], 10e-3, combined=True, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
+    plot_psth_optimal_binsize(filenames, ['SpinyStellate', 'DeepBasket', 'DeepLTS', 'DeepAxoaxonic', 'nRT', 'TCR'], 1e-3, 100e-3, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
+
+# SpinyStellate optimal binsize: 0.499995553487 cost: 0.000346856234075 error: 0 no. of evaluations: 25
+# DeepBasket optimal binsize: 0.194248984076 cost: 1.2071571773 error: 0 no. of evaluations: 24
+# DeepLTS optimal binsize: 0.499995553487 cost: 0.000766664154798 error: 0 no. of evaluations: 25
+# DeepAxoaxonic optimal binsize: 0.184999101659 cost: 0.325977767009 error: 0 no. of evaluations: 21
+# nRT optimal binsize: 0.499995553487 cost: 0.00995474316129 error: 0 no. of evaluations: 25
+# TCR optimal binsize: 0.499748242359 cost: 0.00450390170128 error: 0 no. of evaluations: 24
+        
     # netfilename = sys.argv[1]
     # datafilename = sys.argv[2]
     # print 'Opening:', netfilename, 'and', datafilename
