@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Feb 10 17:36:40 2012 (+0530)
+# Last-Updated: Fri Feb 10 17:48:52 2012 (+0530)
 #           By: subha
-#     Update #: 1072
+#     Update #: 1074
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -600,6 +600,7 @@ def plot_psth_optimal_binsize(filenames, celltypes, min_binsize, max_binsize, bg
         print cell, 
         binsize = get_optimal_psth_binsize(spiketrains[cell], stimwidth, min_binsize, max_binsize)
         hist, edges, = get_psth(binsize, stimwidth, spiketrains[cell])
+        hist /= (len(spiketrains[cell]) * binsize)
         pylab.subplot(numrows, 1, ii)
         pylab.title(cell)
         pylab.bar(edges[:-1], hist, binsize, label=cell)
