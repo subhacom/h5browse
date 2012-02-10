@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Feb  9 14:49:48 2012 (+0530)
+# Last-Updated: Fri Feb 10 14:40:41 2012 (+0530)
 #           By: subha
-#     Update #: 922
+#     Update #: 930
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -566,6 +566,11 @@ def psth_multifile(filenames, celltypes, binsize, combined=False, bg_interval=No
             pylab.legend()
     pylab.subplots_adjust(hspace=1)
     pylab.show()
+
+def psth_optimized_binsize(filenames, celltypes, min_binsize, max_binsize, bg_interval=None, isi=None, pulse_width=None):
+    spikechunks, stimwidths, cellcounts, = chunks_from_multiple_datafile(filenames, celltypes, bg_interval, isi, pulse_width)
+    
+    
 
 filenames = [
     "../py/data/2012_01_17/data_20120117_114805_6302.h5",
