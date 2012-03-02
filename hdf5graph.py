@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Feb 29 16:25:03 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Mar  1 19:54:52 2012 (+0530)
+# Last-Updated: Fri Mar  2 11:06:29 2012 (+0530)
 #           By: subha
-#     Update #: 195
+#     Update #: 202
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -43,6 +43,7 @@ class HDFGraph(object):
         src = [row[0].rpartition('/')[0] for row in self.syntab]
         dst = [row[1].rpartition('/')[0] for row in self.syntab]
         weight = [row[3] for row in self.syntab]
+        syntypes = [row[2] for row in self.syntab]
         nodeset = set(src) | set(dst)
         nodeindex = dict(zip(nodeset, range(len(nodeset))))
         self.graph.add_vertices(len(nodeset))
@@ -50,6 +51,7 @@ class HDFGraph(object):
                                nodeindex[dst[ii]]) 
                               for ii in range(len(src))])
         self.graph.es['weight'] = weight
+        self.graph.es['type'] = syntypes
         self.graph.vs['label'] = list(nodeset)
 
     def write_dot(self, filename):
@@ -70,7 +72,7 @@ if __name__ == '__main__':
         filename = "../py/data/2012_02_08/network_20120208_115556_4589.h5.new"
     g = HDFGraph(filename)
     dot_file = g.filename.replace('.h5', '').replace('new', 'dot')
-    gml_file = g.filename.replace('.h5', '').replace('new', 'gml')
+    # gml_file = g.filename.replace('.h5', '').replace('new', 'gml')
     g.write_gml(gml_file)
     g.write_dot(dot_file) 
     clusters = g.graph.clusters()
