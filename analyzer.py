@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Feb 10 17:48:52 2012 (+0530)
+# Last-Updated: Sat Mar 10 20:11:35 2012 (+0530)
 #           By: subha
-#     Update #: 1074
+#     Update #: 1241
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,6 +54,7 @@ from datetime import datetime
 from collections import defaultdict
 # import nitime
 import scipy.optimize as opt
+import igraph as ig
 
 # This is mostly taken from SciPy cookbook FIR filter example.
 # See: http://www.scipy.org/Cookbook/FIRFilter
@@ -610,7 +611,138 @@ def plot_psth_optimal_binsize(filenames, celltypes, min_binsize, max_binsize, bg
         ii += 1
     pylab.subplots_adjust(hspace=1)
     pylab.show()
+
+def plot_conncounts(netfilepath):
+    netfile = h5py.File(netfilepath, 'r')
+    syn = numpy.asarray(netfile['/network/synapse'])
+    netfile.close()
+    conndict = defaultdict(int)
+    for row in syn:
+        conn = row[0] + '-' + row[1]
+        conndict[conn] += 1
+    pylab.plot(range(len(conndict)), conndict.values(), '.')
+    # pylab.xticks(numpy.array(range(len(syn))), conndict.keys())
+    pylab.show()
+
+def plot_cellcell_conncounts(netfilepath):
+    """Plot number synapses between each connected cell pair"""
+    netfile = h5py.File(netfilepath, 'r')
+    syn = numpy.asarray(netfile['/network/synapse'])
+    netfile.close()
+    conndict = defaultdict(int)
+    for row in syn:
+        conn = row[0].partition('/')[0] + '-' + row[1].partition('/')[0]
+        conndict[conn] += 1
+    pylab.plot(range(len(conndict)), conndict.values(), '.')
+    pylab.xticks(numpy.array(range(len(syn))), conndict.keys())
+    pylab.show()
+
+def get_cellcell_conncounts(netfilepath):
+    """Return number synapses between each connected cell pair"""
+    netfile = h5py.File(netfilepath, 'r')
+    syn = numpy.asarray(netfile['/network/synapse'])
+    netfile.close()
+    conndict = defaultdict(int)
+    for row in syn:
+        conn = row[0].partition('/')[0] + '-' + row[1].partition('/')[0]
+        conndict[conn] += 1
+    return conndict
+
+def find_bad_files(netfilelist):
+    """A counterpart of plot_conncounts to find out files that have
+    compartment-pairs with excess connections or are not readable"""
+    io_err_list = []
+    conn_err_list = []
+    for filename in netfilelist:
+        try:
+            netfile = h5py.File(filename, 'r')
+            syn = numpy.asarray(netfile['/network/synapse'])
+            netfile.close()
+        except Exception, e:
+            io_err_list.append(filename)
+            continue
+        conndict = defaultdict(int)
+        for row in syn:
+            conn = row[0] + '-' + row[1]
+            conndict[conn] += 1
+        if max(conndict.values()) > 2:
+            conn_err_list.append(filename)
+    return (io_err_list, conn_err_list)
+
+def firstspike_time(tstart, train):
+    t = np.nonzero(train > tstart)[0]
+    if len(t > 0):
+        return train[t[0]]
+    return 1e15
+        
+def sort_spikestrains(cell_spike_train_dict, timepoint):
+    cells = cell_spike_train_dict.keys()
+    def sortkey(cell):
+        train = cell_spike_train_dict[cell]
+        return firstspike_time(timepoint, train)
+    sorted_cells = sorted(cells, key=sortkey)
+    return sorted_cells
+
+def get_cell_index(cellstartindices, cellname):
+    """cellstartindices - dict containing celltype and the starting
+    index for this cell type in the whole population (cells of same
+    type are contiguous ain the index space)."""
+    celltype, index = cellname.split('_')
+    return cellstartindices[celltype] + int(index)
+
+def read_networkgraph(filename):
+    netfile = h5py.File(filename, 'r')
+    syninfo = numpy.asarray(netfile['/network/synapse'])
+    cellinfo = numpy.asarray(netfile['/runconfig/cellcount'])
+    labels = []
+    cellstartindices = {}
+    current_start = 0
+    for row in cellinfo:
+        cellstartindices[row[0]] = current_start
+        labels += ['%s_%d' % (row[0], ii) for ii in range(int(row[1]))]
+        current_start += int(row[1])
+    graph = ig.Graph(0, directed=True)
+    graph.add_vertices(current_start)
+    graph.vs['label'] = labels
+    # Now add the edges
+    edges = defaultdict(list)
+    for row in syninfo:
+        source = row[0].partition('/')[0]        
+        dest = row[1].partition('/')[0]
+        e1 = get_cell_index(cellstartindices, source)
+        e2 = get_cell_index(cellstartindices, dest)
+        edges[row[2]].append((e1, e2))
+    ampa_edges = list(set(edges['ampa']))
+    gaba_edges = list(set(edges['gaba']))
     
+    graph.add_edges(ampa_edges + gaba_edges)    
+    print len(graph.es)
+    print len(ampa_edges), len(gaba_edges)
+    labels = ['ampa'] * len(ampa_edges) + ['gaba'] * len(gaba_edges)
+    print len(labels)
+    graph.es['label'] = labels
+    return graph
+        
+def get_files_with_same_settings(filelist, originalfile, hdfnodepath):
+    """Look into the files in filelist and compare node hdfnodepath
+    with that in originalfile. Return the names in filelist for which
+    this node is identical."""
+    for filename in filelist:
+        pass
+
+def get_files_with_same_cells(filelist, cellcount_dict):
+    not_equal = []
+    for filename  in filelist:
+        f = h5py.File(filename, 'r')
+        cellcounts = numpy.asarray(f['/runconfig/cellcount'])
+        f.close()
+        for row in cellcounts:
+            if int(row[1]) != int(cellcount_dict[row[0]]):
+                not_equal.append(filename)
+                print filename, 'does not match', row[0], row[1], '!=', cellcount_dict[row[0]]
+                break
+    return list(set(filelist).difference(set(not_equal)))
+
 
 filenames = [
     "../py/data/2012_01_17/data_20120117_114805_6302.h5",
