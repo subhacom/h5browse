@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Mar 10 20:11:35 2012 (+0530)
+# Last-Updated: Sun Mar 11 18:16:47 2012 (+0530)
 #           By: subha
-#     Update #: 1241
+#     Update #: 1281
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,7 +50,7 @@ import h5py
 import numpy
 import pylab
 import scipy.signal as signal
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 # import nitime
 import scipy.optimize as opt
@@ -690,6 +690,41 @@ def get_cell_index(cellstartindices, cellname):
     celltype, index = cellname.split('_')
     return cellstartindices[celltype] + int(index)
 
+def load_cell_graph(netfilepath):
+    filehandle = h5py.File(netfilepath, 'r')
+    syninfo = numpy.asarray(filehandle['/network/synapse'])
+    cellinfo = numpy.asarray(filehandle['/runconfig/cellcount'])
+    filehandle.close()
+    # first extract the starting index of the celltypes in whole population
+    cellstart = {}
+    startindex = 0    
+    for row in cellinfo:
+        cellstart[row[0]] = startindex
+        startindex += int(row[1])
+    edges = defaultdict(set)
+    for row in syninfo:
+        src_name = row[0].partition('/')[0]        
+        celltype, index_str, = src_name.split('_')
+        src = cellstart[celltype] + int(index_str)
+        dst_name = row[1].partition('/')[0]
+        celltype, index_str, = dst_name.split('_')
+        dst = cellstart[celltype] + int(index_str)
+        edges[row[2]].add((src, dst))
+    cellgraph = ig.Graph(0, directed=True)
+    cellgraph.add_vertices(startindex)
+    cellgraph.vs['name'] = ['%s_%d' % (celltype, index) for (celltype, count) in cellinfo for index in range(int(count))]
+    celltypes = []
+    for celltype, count in cellinfo:
+        celltypes.extend([celltype] * int(count))
+    cellgraph.vs['celltype'] = celltypes
+    cellgraph.add_edges(edges['ampa'])
+    cellgraph.add_edges(edges['gaba'])
+    edge_types = []
+    edge_types.extend(['ampa'] * len(edges['ampa']))
+    edge_types.extend(['gaba'] * len(edges['gaba']))    
+    cellgraph.es['synapse'] = edge_types
+    return cellgraph
+
 def read_networkgraph(filename):
     netfile = h5py.File(filename, 'r')
     syninfo = numpy.asarray(netfile['/network/synapse'])
@@ -743,6 +778,95 @@ def get_files_with_same_cells(filelist, cellcount_dict):
                 break
     return list(set(filelist).difference(set(not_equal)))
 
+def spike_probability_w_filter(srctrain, dsttrain, window):
+    """Calculate in how many cases of spike in source cell, dest_cell
+    fires first spike within time window"""
+    if len(srctrain) == 0:
+        return 0.0
+    count = 0
+    index = 0
+    count = len(filter(lambda tspike: len(numpy.nonzero((dsttrain < tspike + window) & (dsttrain > tspike))[0]) > 0, srctrain))
+    return float(count) / len(srctrain)
+
+def spike_probability(srctrain, dsttrain, window):
+    """Calculate in how many cases of spike in source cell, dest_cell
+    fires first spike within time window"""
+    if len(srctrain) == 0:
+        return 0.0
+    count = 0
+    index = 0
+    # ('SpinyStellate_231-SpinyStellate_22', 0.0)
+    # ('SpinyStellate_231-SpinyStellate_22', 0.1428571492433548)
+    # ('SpinyStellate_231-SpinyStellate_22', 0.2142857164144516)
+    # ('SpinyStellate_231-SpinyStellate_22', 0.2142857164144516)
+    # ('SpinyStellate_231-SpinyStellate_22', 0.3571428656578064)
+    # ('SpinyStellate_231-SpinyStellate_22', 0.3571428656578064)
+    for tspike in srctrain:
+        if len(numpy.nonzero((dsttrain < tspike + window) & (dsttrain > tspike))[0]) > 0:
+            count += 1
+    return float(count) / len(srctrain)
+
+def find_probabilities(netfilepath, datafilepath, timewindow):
+    cellgraph = load_cell_graph(netfilepath)
+    datafile = h5py.File(datafilepath, 'r')
+    probabilities = {}
+    for edge in cellgraph.es(synapse_eq='ampa'):
+        src = cellgraph.vs[edge.source]['name']
+        srctrain = numpy.asarray(datafile['/spikes'][src])
+        dst = cellgraph.vs[edge.target]['name']
+        dsttrain = numpy.asarray(datafile['/spikes'][dst])
+        probabilities['%s-%s' % (src, dst)]  = spike_probability_w_filter(srctrain, dsttrain, timewindow)
+    datafile.close()
+    return probabilities
+
+def dump_probabilities(netfilepathlist, datafilepathlist, timewindows):
+    for netfilepath, datafilepath in zip(netfilepathlist, datafilepathlist):
+        outfilename = datafilepath.replace('/data_', '/prob_')
+        print 'Saving probabilities in', outfilename
+        outfile = None
+        try:            
+            outfile = h5py.File(outfilename, 'w')
+            grp = outfile.create_group('/spiking_prob')
+            delta = timedelta(0,0,0)
+            for ii in range(6):
+                window = ii*1e-3
+                start = datetime.now()
+                probabilities = find_probabilities(netfilepath, datafilepath, window)
+                end = datetime.now()
+                delta = delta + (end-start)
+                data = numpy.asarray(probabilities.items(), dtype=('|S35,f'))
+                print data[0]
+                dset = grp.create_dataset('delta_%d' % (ii), data=data)
+                dset.attrs['window'] = window       
+            print 'Time to find probabilities:', (delta.seconds + delta.microseconds * 1e-6)
+        finally:
+            if outfile:
+                outfile.close()
+        
+def test():
+    netfilepath = '/data/subha/cortical/py/data/2012_02_01/network_20120201_204744_29839.h5.new'
+    datafilepath = '/data/subha/cortical/py/data/2012_02_01/data_20120201_204744_29839.h5'
+    outfilename = datafilepath.rpartition('/')[-1].replace('data_', 'prob_')
+    print 'Outfile', outfilename
+    outfile = None
+    try:
+        outfile = h5py.File(outfilename, 'w')
+        grp = outfile.create_group('/spiking_prob')
+        delta = timedelta(0,0,0)
+        for ii in range(6):
+            window = ii*1e-3
+            start = datetime.now()
+            probabilities = find_probabilities(netfilepath, datafilepath, window)
+            end = datetime.now()
+            delta = delta + (end-start)
+            data = numpy.asarray(probabilities.items(), dtype=('|S35,f'))
+            print data[0]
+            dset = grp.create_dataset('delta_%d' % (ii), data=data)
+            dset.attrs['window'] = window       
+        print 'Time to find probabilities:', (delta.seconds + delta.microseconds * 1e-6)
+    finally:
+        if outfile:
+            outfile.close()
 
 filenames = [
     "../py/data/2012_01_17/data_20120117_114805_6302.h5",
