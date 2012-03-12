@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Jan 31 11:56:52 2012 (+0530)
+# Last-Updated: Mon Mar 12 10:17:44 2012 (+0530)
 #           By: subha
-#     Update #: 492
+#     Update #: 494
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -103,7 +103,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
         node = h5f[path]
         if isinstance(node, h5py.Dataset):
             # print 'Warning - removing the 0 th element from data array as it is spurious in MOOSE table'
-            return node[1:]
+            return node
 
     # I have a little problem here - how do we find nodes by regular
     # expression for arbitrary file structure?

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Sun Mar 11 18:16:47 2012 (+0530)
+# Last-Updated: Mon Mar 12 11:09:47 2012 (+0530)
 #           By: subha
-#     Update #: 1281
+#     Update #: 1283
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -802,7 +802,7 @@ def spike_probability(srctrain, dsttrain, window):
     # ('SpinyStellate_231-SpinyStellate_22', 0.3571428656578064)
     # ('SpinyStellate_231-SpinyStellate_22', 0.3571428656578064)
     for tspike in srctrain:
-        if len(numpy.nonzero((dsttrain < tspike + window) & (dsttrain > tspike))[0]) > 0:
+        if len(numpy.nonzero((dsttrain <= tspike + window) & (dsttrain > tspike))[0]) > 0:
             count += 1
     return float(count) / len(srctrain)
 
@@ -815,7 +815,7 @@ def find_probabilities(netfilepath, datafilepath, timewindow):
         srctrain = numpy.asarray(datafile['/spikes'][src])
         dst = cellgraph.vs[edge.target]['name']
         dsttrain = numpy.asarray(datafile['/spikes'][dst])
-        probabilities['%s-%s' % (src, dst)]  = spike_probability_w_filter(srctrain, dsttrain, timewindow)
+        probabilities['%s-%s' % (src, dst)]  = spike_probability(srctrain, dsttrain, timewindow)
     datafile.close()
     return probabilities
 

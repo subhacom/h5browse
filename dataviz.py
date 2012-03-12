@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue Jan 31 12:03:02 2012 (+0530)
+# Last-Updated: Mon Mar 12 11:02:00 2012 (+0530)
 #           By: subha
-#     Update #: 2928
+#     Update #: 3018
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -399,6 +399,39 @@ class DataVizWidget(QtGui.QMainWindow):
                 self.dataList.model().insertItem(path)
         plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='raster')
         mdiChild.showMaximized()
+
+    def __select_x_y_fields(self, dtype):
+        widget = QtGui.QDialog()
+        widget.setWindowTitle('Select fields to plot')
+        layout = QtGui.QHBoxLayout()
+        xlabel = QtGui.QLabel('X')
+        x = QtGui.QComboBox(widget)
+        x.addItem('index')
+        x.addItems(dtype.names)
+        x.setCurrentIndex(0)
+        ylabel = QtGui.QLabel('Y')
+        y = QtGui.QComboBox(widget)
+        y.addItem('index')
+        y.addItems(dtype.names)
+        y.setCurrentIndex(1)
+        okbutton = QtGui.QPushButton('Ok')
+        okbutton.setDefault(True)
+        self.connect(okbutton, QtCore.SIGNAL('clicked()'), widget, QtCore.SLOT('accept()')) 
+        cancelbutton = QtGui.QPushButton('Cancel')
+        self.connect(cancelbutton, QtCore.SIGNAL('clicked()'), widget, QtCore.SLOT('reject()'))
+        layout.addWidget(xlabel)
+        layout.addWidget(x)
+        layout.addWidget(ylabel)
+        layout.addWidget(y)
+        layout.addWidget(okbutton)
+        layout.addWidget(cancelbutton)
+        widget.setLayout(layout)
+        widget.exec_()
+        if widget.result() == widget.Accepted:
+            print 'Accepted'
+            return (x.currentIndex(), y.currentIndex())
+        else:
+            return (-1, -1)
                                     
     def __makeLinePlot(self):
         if self.mdiArea.activeSubWindow() is None or self.mdiArea.activeSubWindow().widget() is None:
@@ -415,14 +448,40 @@ class DataVizWidget(QtGui.QMainWindow):
         for item in self.h5tree.selectedItems():
             path = item.path()
             pathlist.append(path)
-            data = numpy.array(self.h5tree.getData(path))
+            data = self.h5tree.getData(path)
+            tseries = None
+            print 'Shape of data', data.shape
             if len(data.shape) == 1:
-                tseries = self.h5tree.getTimeSeries(path)
+                # Handle 1 D array of compund records
+                if data.dtype.kind == 'V':
+                    print 'Record data'
+                    if len(data.dtype.names) >= 2:
+                        x,y, = self.__select_x_y_fields(data.dtype)
+                        print x, y
+                        if x < 0 or y < 0:
+                            return
+                        if x == 0:
+                            tseries = numpy.arange(0, len(data))
+                        else:
+                            tseries = data[data.dtype.names[x-1]]
+                        if y == 0:
+                            data =  numpy.arange(0, len(data))
+                        else:
+                            data = data[data.dtype.names[y-1]]
+                    else:
+                        print 'Cannot plot data of this type:', data.dtype
+                        return
+                else:
+                    tseries = self.h5tree.getTimeSeries(path)
                 datalist.append((tseries, data))
+                    
             elif len(data.shape) == 2:
                 tseries = data[:,0]
                 for col in range(1, data.shape[1]):
                     datalist.append((tseries, data[:, col]))
+        print 'tseries:', len(tseries)
+        print 'data:', len(data), data[0]
+        print datalist
         plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='curve')
         mdiChild.showMaximized()
 

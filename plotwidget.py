@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Feb 23 21:47:53 2012 (+0530)
+# Last-Updated: Mon Mar 12 09:04:56 2012 (+0530)
 #           By: subha
-#     Update #: 698
+#     Update #: 699
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -387,6 +387,9 @@ class PlotWidget(Qwt.QwtPlot):
                     curve.setData(data, numpy.ones(len(data)) * (1 + len(self.path_curve_dict.keys())))
             else:
                 if (isinstance(data, tuple) or isinstance(data, list)) and len(data) == 2:
+                    print data[0]
+                    print data[1]
+                    
                     curve.setData(data[0], data[1])
                 else:
                     xdata = numpy.linspace(0, simtime, len(data))
