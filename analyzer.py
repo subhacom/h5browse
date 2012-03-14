@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 12 11:28:36 2012 (+0530)
+# Last-Updated: Mon Mar 12 16:08:59 2012 (+0530)
 #           By: subha
-#     Update #: 1287
+#     Update #: 1305
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -788,7 +788,7 @@ def spike_probability_w_filter(srctrain, dsttrain, window):
     count = len(filter(lambda tspike: len(numpy.nonzero((dsttrain < tspike + window) & (dsttrain > tspike))[0]) > 0, srctrain))
     return float(count) / len(srctrain)
 
-def spike_probability(srctrain, dsttrain, window):
+def get_spike_following_probability(srctrain, dsttrain, window):
     """Calculate in how many cases of spike in source cell, dest_cell
     fires first spike within time window"""
     if len(srctrain) == 0:
@@ -806,7 +806,7 @@ def spike_probability(srctrain, dsttrain, window):
             count += 1
     return float(count) / len(srctrain)
 
-def find_probabilities(netfilepath, datafilepath, timewindow):
+def find_spike_following_probability_in_connected_cells(netfilepath, datafilepath, timewindow):
     cellgraph = load_cell_graph(netfilepath)
     datafile = h5py.File(datafilepath, 'r')
     probabilities = {}
@@ -815,11 +815,11 @@ def find_probabilities(netfilepath, datafilepath, timewindow):
         srctrain = numpy.asarray(datafile['/spikes'][src])
         dst = cellgraph.vs[edge.target]['name']
         dsttrain = numpy.asarray(datafile['/spikes'][dst])
-        probabilities['%s-%s' % (src, dst)]  = spike_probability(srctrain, dsttrain, timewindow)
+        probabilities['%s-%s' % (src, dst)]  = get_spike_folloing_probability(srctrain, dsttrain, timewindow)
     datafile.close()
     return probabilities
 
-def dump_probabilities(netfilepathlist, datafilepathlist, timewindows):
+def dump_spike_following_probabilities_in_connected_cells(netfilepathlist, datafilepathlist, timewindows):
     for netfilepath, datafilepath in zip(netfilepathlist, datafilepathlist):
         outfilename = datafilepath.replace('/data_', '/prob_')
         print 'Saving probabilities in', outfilename
@@ -831,7 +831,7 @@ def dump_probabilities(netfilepathlist, datafilepathlist, timewindows):
             for ii in range(6):
                 window = ii*1e-3
                 start = datetime.now()
-                probabilities = find_probabilities(netfilepath, datafilepath, window)
+                probabilities = find_spike_following_probability_in_connected_cells(netfilepath, datafilepath, window)
                 end = datetime.now()
                 delta = delta + (end-start)
                 data = numpy.asarray(probabilities.items(), dtype=('|S35,f'))
@@ -842,6 +842,15 @@ def dump_probabilities(netfilepathlist, datafilepathlist, timewindows):
         finally:
             if outfile:
                 outfile.close()
+
+def find_spike_following_probability_in_unconnected_cells(netfile, datafile):
+    cellgraph = load_cell_graph(netfilepath)
+    
+
+def dump_spike_following_probabilities_in_unconnected_cells(netfilepathlist, datafilepathlist, timewindows):
+    """Compute the probability of a spike in a second cell following
+    that in first cell when cells are not connected."""
+    pass
         
 def test():
     netfilepath = '/data/subha/cortical/py/data/2012_02_01/network_20120201_204744_29839.h5.new'
