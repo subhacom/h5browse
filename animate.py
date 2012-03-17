@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Sep 27 09:51:03 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Sep 28 11:04:23 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 448
+# Last-Updated: Sat Mar 17 17:04:20 2012 (+0530)
+#           By: subha
+#     Update #: 449
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -178,6 +178,10 @@ class TraubVmDisplay(object):
         self.renderer = vtk.vtkRenderer()
         self.renwin = vtk.vtkRenderWindow()
         self.renwin.SetSize(1280, 900)
+        # self.renwin.SetStereoRender(True)
+        # self.renwin.StereoCapableWindowOn()
+        # self.renwin.SetStereoTypeToCrystalEyes()
+        # self.renwin.StereoRenderOn()
         self.renwin.AddRenderer(self.renderer)
         self.colorfn = vtk.vtkColorTransferFunction()
         colormap_matrix = numpy.loadtxt('cool.cmp')
