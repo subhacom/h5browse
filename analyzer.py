@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 12 16:08:59 2012 (+0530)
+# Last-Updated: Mon Mar 19 17:41:10 2012 (+0530)
 #           By: subha
-#     Update #: 1305
+#     Update #: 1427
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -843,14 +843,66 @@ def dump_spike_following_probabilities_in_connected_cells(netfilepathlist, dataf
             if outfile:
                 outfile.close()
 
-def find_spike_following_probability_in_unconnected_cells(netfile, datafile):
-    cellgraph = load_cell_graph(netfilepath)
-    
 
-def dump_spike_following_probabilities_in_unconnected_cells(netfilepathlist, datafilepathlist, timewindows):
-    """Compute the probability of a spike in a second cell following
-    that in first cell when cells are not connected."""
-    pass
+def dump_spike_following_probability_in_unconnected_cells(netfilepath, datafilepath, timewindows):
+    """
+    For each edge, randomly select a cell from the same population
+    that is not connected to this source. Use this similarly to
+    postsynaptic cell in
+    find_spike_following_probability_in_connected_cells.
+    """
+    ex = None
+    print 'Netfile path: %s, Datafile path: %s' % (datafilepath, netfilepath)
+    cellgraph = load_cell_graph(netfilepath)
+    cellindices = {}
+    datafile = h5py.File(datafilepath, 'r')
+    for row in datafile['/runconfig/cellcount']:
+        cellindices[row[0]] = numpy.arange(0, int(row[1]))
+    outfilename = datafilepath.replace('/data_', '/noconn_prob_')
+    print 'Saving probabilities in', outfilename
+    outfile = None
+    dsets = defaultdict(dict)
+    try:
+        probabilities = {}
+        for edge in cellgraph.es:
+            src = cellgraph.vs[edge.source]['name']
+            srctrain = numpy.asarray(datafile['/spikes'][src])
+            dst = cellgraph.vs[edge.target]['name']
+            dst_type, dst_index = dst.split('_')
+            forbidden = set([src])
+            neighbors = cellgraph.vs[cellgraph.neighbors(edge.source, ig.OUT)]['name']
+            for nn in neighbors:
+                forbidden.add(nn)
+            index = cellindices[dst_type][numpy.random.randint(len(cellindices[dst_type]))]
+            target = '%s_%d' % (dst_type, index)
+            while target in forbidden:
+                index = cellindices[dst_type][numpy.random.randint(len(cellindices[dst_type]))]
+                target = '%s_%d' % (dst_type, index)
+            targettrain = numpy.asarray(datafile['/spikes'][target])
+            for ii in range(len(timewindows)):
+                prob = get_spike_following_probability(srctrain, targettrain, timewindows[ii])
+                name = 'delta_%d' % (ii)
+                dsets[name]['%s-%s' % (src, target)] = prob
+    # except Exception, e:
+    #     ex = e        
+    finally:
+        datafile.close()
+    # if ex is not None:
+    #     raise ex
+    #     return
+    try:
+        outfile = h5py.File(outfilename, 'w')
+        grp = outfile.create_group('spiking_prob')
+        for ii in range(len(timewindows)):
+            key = 'delta_%d' % (ii)
+            value = dsets[key]
+            dset = grp.create_dataset(key, data=numpy.asarray(value.items(), dtype=('|S35,f')))
+            dset.attrs['window'] = timewindows[ii]
+    finally:
+        if outfile:
+            outfile.close()
+        
+
         
 def test():
     netfilepath = '/data/subha/cortical/py/data/2012_02_01/network_20120201_204744_29839.h5.new'
