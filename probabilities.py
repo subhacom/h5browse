@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 20 16:58:45 2012 (+0530)
+# Last-Updated: Tue Mar 20 18:55:01 2012 (+0530)
 #           By: subha
-#     Update #: 179
+#     Update #: 276
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -141,10 +141,66 @@ def test_main():
     print spike_unconn_prob
     pylab.hist(spike_unconn_prob.values(), normed=True)
     pylab.show()
-    
+
+from matplotlib import pyplot    
+from matplotlib.backends.backend_pdf import PdfPages
+params = {'font.size' : 10,
+          'axes.labelsize' : 10,
+          'font.size' : 10,
+          'text.fontsize' : 10,
+          'legend.fontsize': 10,
+          'xtick.labelsize' : 8,
+          'ytick.labelsize' : 8}
+
+def run_on_files(filelist, windowlist, delaylist):
+    """Go through specified datafiles and dump the probability historgrams"""
+    pyplot.rcParams.update(params)
+    for datafilepath in filelist:
+        netfilepath = datafilepath.replace('/data_', '/network_')
+        print 'Netfile path', netfilepath
+        outfilepath = datafilepath.replace('/data_', '/hist_').replace('.h5', '.pdf')
+        outfile = PdfPages(outfilepath)
+        prob_counter = SpikeCondProb(datafilepath, netfilepath)
+        for window in windowlist:
+            rows = len(delaylist)
+            cols = 2
+            if rows * cols < len(delaylist):
+                rows += 1
+            figure = pyplot.figure()
+            ii = 1
+            for delay in delaylist:
+                connected_prob = prob_counter.calc_spike_prob_all_connected(window, delay)
+                values = np.asarray(connected_prob.values())
+                pyplot.subplot(rows, cols, ii)
+                pyplot.hist(values, normed=True, label='conn w:%g,d:%g' % (window, delay))
+                pyplot.legend(prop={'size':'xx-small'})
+                # ax = pyplot.gca()
+                # for x in ax.xaxis.get_major_ticks():
+                #     x.label1.set_fontsize(10)
+                # for x in ax.yaxis.get_major_ticks():
+                #     x.label1.set_fontsize(10)
+                ii += 1
+                unconnected_prob = prob_counter.calc_spike_prob_all_unconnected(window, delay)
+                values = np.asarray(unconnected_prob.values())
+                pyplot.subplot(rows, cols, ii)
+                pyplot.hist(values, normed=True, label='unconn w:%g,d:%g' % (window, delay))
+                pyplot.legend(prop={'size':'xx-small'})
+                # ax = pyplot.gca()
+                # for x in ax.xaxis.get_major_ticks():
+                #     x.label1.set_fontsize(10)
+                # for x in ax.yaxis.get_major_ticks():
+                #     x.label1.set_fontsize(10)
+                ii += 1
+        outfile.savefig(figure)
+        figure.clf()
+        outfile.close()
+                
+
     
 if __name__ == '__main__':
-    test_main()
+    # test_main()
+    files = [line.strip().replace('.new', '') for line in open('recent_data_files_20120320.txt', 'r')]
+    run_on_files(files, [10e-3], [0, 10e-3, 20e-3, 30e-3, 40e-3, 50e-3])
     
 # 
 # probabilities.py ends here
