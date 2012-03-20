@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 20 00:46:54 2012 (+0530)
-#           By: Subhasis Ray
-#     Update #: 156
+# Last-Updated: Tue Mar 20 16:58:45 2012 (+0530)
+#           By: subha
+#     Update #: 179
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -63,7 +63,8 @@ class SpikeCondProb(object):
             self.cells.extend(['%s_%d' % (celltype, ii) for ii in range(count)])
             celltype_list.extend([celltype] * count)
             start_index += count
-        graph = ig.Graph(directed=True)
+        print len(self.cells), start_index
+        graph = ig.Graph(0, directed=True)
         graph.add_vertices(start_index)
         graph.vs['name'] = self.cells
         graph.vs['type'] = celltype_list
@@ -102,7 +103,7 @@ class SpikeCondProb(object):
             spike_prob_connected['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
         return spike_prob_connected
 
-    def calc_spike_prob_unconnected(self, width, delay=0.0):
+    def calc_spike_prob_all_unconnected(self, width, delay=0.0):
         """Calculate the spikeing probability of, for each source, an
         unconnected taget."""
         spike_prob_unconnected = {}
@@ -124,14 +125,20 @@ class SpikeCondProb(object):
 
 import pylab    
 def test_main():
-    datafilepath = 'test_data/data_20111025_115951_4849.h5'
-    netfilepath = 'test_data/network_20111025_115951_4849.h5'
+    datafilepath = 'test_data/data.h5'
+    netfilepath = 'test_data/network.h5'
+    window = 10e-3
+    delay = 10e-3
     cond_prob = SpikeCondProb(datafilepath, netfilepath)
-    spike_prob = cond_prob.calc_spike_prob_all_connected(30e-3)
+    spike_prob = cond_prob.calc_spike_prob_all_connected(window, delay)
+    print 'TCR_2->SupPyrRS_4: spike following probability', spike_prob
     pylab.subplot(2,1,1)
     pylab.hist(spike_prob.values(), normed=True)
     pylab.subplot(2,1,2)
-    spike_unconn_prob = cond_prob.calc_spike_prob_unconnected(30e-3)
+    spike_unconn_prob_0 = cond_prob.calc_spike_prob('TCR_2', 'SupPyrRS_0', window, delay)
+    print 'TCR_2->SupPyrRS_0: probability of spike following', spike_unconn_prob_0
+    spike_unconn_prob = cond_prob.calc_spike_prob_all_unconnected(30e-3)
+    print spike_unconn_prob
     pylab.hist(spike_unconn_prob.values(), normed=True)
     pylab.show()
     
