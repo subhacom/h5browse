@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 21 14:49:12 2012 (+0530)
+# Last-Updated: Wed Mar 21 17:08:45 2012 (+0530)
 #           By: subha
-#     Update #: 379
+#     Update #: 397
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -145,7 +145,7 @@ class SpikeCondProb(object):
             precell = self.get_excitatory_subgraph().vs[edge.source]['name']
             postcell = self.get_excitatory_subgraph().vs[edge.target]['name']
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
-            print '$', precell, postcell
+            # print '$', precell, postcell
         return spike_prob
 
     def calc_spike_prob_excitatory_unconnected(self, width, delay):
@@ -164,7 +164,7 @@ class SpikeCondProb(object):
             precell = pre['name']
             postcell = post_vs[index]['name']
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
-            print '#', precell, post['name'], postcell
+            # print '#', precell, post['name'], postcell
         return spike_prob
 
 
@@ -221,15 +221,16 @@ def run_on_files(filelist, windowlist, delaylist):
             for delay in delaylist:
                 connected_prob = prob_counter.calc_spike_prob_excitatory_connected(window, delay)
                 dset = grp.create_dataset('conn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(connected_prob.items(), dtype=('|S35,f')))
-                values = np.asarray(connected_prob.values())
-                pyplot.subplot(rows, cols, ii+1)
-                pyplot.hist(values, normed=True, label='conn w:%g,d:%g' % (window, delay))
-                pyplot.legend(prop={'size':'xx-small'})
                 unconnected_prob = prob_counter.calc_spike_prob_excitatory_unconnected(window, delay)
                 dset = grp.create_dataset('unconn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(unconnected_prob.items(), dtype=('|S35,f')))            
-                values = np.asarray(unconnected_prob.values())
+
+                data = [np.asarray(connected_prob.values()), np.asarray(unconnected_prob.values())]
+                labels = ['conn w:%g,d:%g' % (window, delay), 'unconn w:%g,d:%g' % (window, delay)]
+                pyplot.subplot(rows, cols, ii+1)
+                pyplot.hist(data, bins=np.arange(0, 1, 0.1), normed=True, histtype='bar', label=labels)
+                pyplot.legend(prop={'size':'xx-small'})
                 pyplot.subplot(rows, cols, ii+2)
-                pyplot.hist(values, normed=True, label='unconn w:%g,d:%g' % (window, delay))
+                pyplot.hist(data, bins=np.arange(0, 1, 0.1), normed=True, histtype='step', cumulative=True, label=labels)
                 pyplot.legend(prop={'size':'xx-small'})
                 ii += 2
                 print 'finished delay:', delay
