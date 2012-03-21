@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 21 10:31:35 2012 (+0530)
+# Last-Updated: Wed Mar 21 13:36:41 2012 (+0530)
 #           By: subha
-#     Update #: 324
+#     Update #: 365
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -31,6 +31,7 @@
 import numpy as np
 import h5py as h5
 import igraph as ig
+from datetime import datetime
 
 excitatory_celltypes = [
     'SupPyrRS',
@@ -135,10 +136,10 @@ class SpikeCondProb(object):
 
     def get_excitatory_subgraph(self):
         if not hasattr(self, 'excitatory_subgraph'):
-            self.excitatory_subgraph = self.amp_graph.subgraph(self.ampa_graph.vs.select(lambda v: v['type'] in excitatory_celltypes))
+            self.excitatory_subgraph = self.ampa_graph.subgraph(self.ampa_graph.vs.select(lambda v: v['type'] in excitatory_celltypes))
         return self.excitatory_subgraph
         
-    def calc_spike_probe_excitatory_connected(self, width, delay=0.0):
+    def calc_spike_prob_excitatory_connected(self, width, delay=0.0):
         spike_prob = {}
         for edge in self.get_excitatory_subgraph().es:
             precell = self.get_excitatory_subgraph().vs[edge.source]['name']
@@ -146,7 +147,7 @@ class SpikeCondProb(object):
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
         return spike_prob
 
-    def calc_spike_probe_excitatory_unconnected(self, width, delay):
+    def calc_spike_prob_excitatory_unconnected(self, width, delay):
         spike_prob = {}
         for edge in self.get_excitatory_subgraph().es:
             pre = self.get_excitatory_subgraph().vs[edge.source]
@@ -198,44 +199,47 @@ def run_on_files(filelist, windowlist, delaylist):
     """Go through specified datafiles and dump the probability historgrams"""
     pyplot.rcParams.update(params)
     for datafilepath in filelist:
+        start = datetime.now()
         netfilepath = datafilepath.replace('/data_', '/network_')
         print 'Netfile path', netfilepath
-        outfilepath = datafilepath.replace('/data_', '/hist_').replace('.h5', '.pdf')
+        outfilepath = datafilepath.replace('/data_', '/exc_hist_').replace('.h5', '.png')
+        dataoutpath = datafilepath.replace('/data_', '/exc_prob_')
+        dataout = h5.File(dataoutpath, 'w')
+        grp = dataout.create_group('/spiking_prob')
         outfile = PdfPages(outfilepath)
         prob_counter = SpikeCondProb(datafilepath, netfilepath)
+        jj = 0
         for window in windowlist:
             rows = len(delaylist)
             cols = 2
             if rows * cols < len(delaylist):
                 rows += 1
             figure = pyplot.figure()
-            ii = 1
+            ii = 0
             for delay in delaylist:
-                connected_prob = prob_counter.calc_spike_prob_all_connected(window, delay)
+                connected_prob = prob_counter.calc_spike_prob_excitatory_connected(window, delay)
+                dset = grp.create_dataset('conn_window_%d_delta_%d' % (jj, ii), data=np.asarray(connected_prob.items(), dtype=('|S35,f')))
                 values = np.asarray(connected_prob.values())
                 pyplot.subplot(rows, cols, ii)
                 pyplot.hist(values, normed=True, label='conn w:%g,d:%g' % (window, delay))
                 pyplot.legend(prop={'size':'xx-small'})
-                # ax = pyplot.gca()
-                # for x in ax.xaxis.get_major_ticks():
-                #     x.label1.set_fontsize(10)
-                # for x in ax.yaxis.get_major_ticks():
-                #     x.label1.set_fontsize(10)
-                ii += 1
-                unconnected_prob = prob_counter.calc_spike_prob_all_unconnected(window, delay)
+                unconnected_prob = prob_counter.calc_spike_prob_excitatory_unconnected(window, delay)
+                dset = grp.create_dataset('unconn_window_%d_delta_%d' % (jj, ii), data=np.asarray(unconnected_prob.items(), dtype=('|S35,f')))            
                 values = np.asarray(unconnected_prob.values())
-                pyplot.subplot(rows, cols, ii)
+                pyplot.subplot(rows, cols, ii+1)
                 pyplot.hist(values, normed=True, label='unconn w:%g,d:%g' % (window, delay))
                 pyplot.legend(prop={'size':'xx-small'})
-                # ax = pyplot.gca()
-                # for x in ax.xaxis.get_major_ticks():
-                #     x.label1.set_fontsize(10)
-                # for x in ax.yaxis.get_major_ticks():
-                #     x.label1.set_fontsize(10)
                 ii += 1
-        outfile.savefig(figure)
-        figure.clf()
+                print 'finished delay:', delay
+            jj += 1
+            print 'finished window', window
+            outfile.savefig(figure)
+            figure.clf()
+        dataout.close()
         outfile.close()
+        end = datetime.now()
+        delta = end - start        
+        print 'Finished:', netfilepath, 'in', delta.seconds + 1e-6 * delta.microseconds
                 
 
     
