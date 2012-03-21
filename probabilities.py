@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 21 13:36:41 2012 (+0530)
+# Last-Updated: Wed Mar 21 14:49:12 2012 (+0530)
 #           By: subha
-#     Update #: 365
+#     Update #: 379
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -127,7 +127,7 @@ class SpikeCondProb(object):
             post_vs = self.ampa_graph.vs.select(type_eq=post_type)
             indices = range(len(post_vs))
             index = np.random.randint(len(post_vs))
-            while post_vs[index].index in forbidden:
+            while post_vs[index].index in forbidden or '%s-%s' % (pre_vertex['name'], post_vs[index]['name']) in spike_prob_unconnected:
                 index = np.random.randint(len(post_vs))
             precell = pre_vertex['name']
             postcell = post_vs[index]['name']
@@ -145,6 +145,7 @@ class SpikeCondProb(object):
             precell = self.get_excitatory_subgraph().vs[edge.source]['name']
             postcell = self.get_excitatory_subgraph().vs[edge.target]['name']
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
+            print '$', precell, postcell
         return spike_prob
 
     def calc_spike_prob_excitatory_unconnected(self, width, delay):
@@ -158,11 +159,12 @@ class SpikeCondProb(object):
             post_vs = self.get_excitatory_subgraph().vs.select(type_eq=post['type'])
             indices = range(len(post_vs))
             index = np.random.randint(len(post_vs))
-            while post_vs[index].index in forbidden:
+            while post_vs[index].index in forbidden or '%s-%s' % (pre['name'], post_vs[index]['name']) in spike_prob:
                 index = np.random.randint(len(post_vs))
             precell = pre['name']
-            postcell = post['name']
+            postcell = post_vs[index]['name']
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
+            print '#', precell, post['name'], postcell
         return spike_prob
 
 
@@ -202,7 +204,7 @@ def run_on_files(filelist, windowlist, delaylist):
         start = datetime.now()
         netfilepath = datafilepath.replace('/data_', '/network_')
         print 'Netfile path', netfilepath
-        outfilepath = datafilepath.replace('/data_', '/exc_hist_').replace('.h5', '.png')
+        outfilepath = datafilepath.replace('/data_', '/exc_hist_').replace('.h5', '.pdf')
         dataoutpath = datafilepath.replace('/data_', '/exc_prob_')
         dataout = h5.File(dataoutpath, 'w')
         grp = dataout.create_group('/spiking_prob')
@@ -218,18 +220,18 @@ def run_on_files(filelist, windowlist, delaylist):
             ii = 0
             for delay in delaylist:
                 connected_prob = prob_counter.calc_spike_prob_excitatory_connected(window, delay)
-                dset = grp.create_dataset('conn_window_%d_delta_%d' % (jj, ii), data=np.asarray(connected_prob.items(), dtype=('|S35,f')))
+                dset = grp.create_dataset('conn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(connected_prob.items(), dtype=('|S35,f')))
                 values = np.asarray(connected_prob.values())
-                pyplot.subplot(rows, cols, ii)
+                pyplot.subplot(rows, cols, ii+1)
                 pyplot.hist(values, normed=True, label='conn w:%g,d:%g' % (window, delay))
                 pyplot.legend(prop={'size':'xx-small'})
                 unconnected_prob = prob_counter.calc_spike_prob_excitatory_unconnected(window, delay)
-                dset = grp.create_dataset('unconn_window_%d_delta_%d' % (jj, ii), data=np.asarray(unconnected_prob.items(), dtype=('|S35,f')))            
+                dset = grp.create_dataset('unconn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(unconnected_prob.items(), dtype=('|S35,f')))            
                 values = np.asarray(unconnected_prob.values())
-                pyplot.subplot(rows, cols, ii+1)
+                pyplot.subplot(rows, cols, ii+2)
                 pyplot.hist(values, normed=True, label='unconn w:%g,d:%g' % (window, delay))
                 pyplot.legend(prop={'size':'xx-small'})
-                ii += 1
+                ii += 2
                 print 'finished delay:', delay
             jj += 1
             print 'finished window', window
@@ -239,7 +241,7 @@ def run_on_files(filelist, windowlist, delaylist):
         outfile.close()
         end = datetime.now()
         delta = end - start        
-        print 'Finished:', netfilepath, 'in', delta.seconds + 1e-6 * delta.microseconds
+        print 'Finished:', netfilepath, 'in', (delta.seconds + 1e-6 * delta.microseconds)
                 
 
     
