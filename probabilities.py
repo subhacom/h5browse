@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 20 18:55:01 2012 (+0530)
+# Last-Updated: Wed Mar 21 10:31:35 2012 (+0530)
 #           By: subha
-#     Update #: 276
+#     Update #: 324
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -31,6 +31,16 @@
 import numpy as np
 import h5py as h5
 import igraph as ig
+
+excitatory_celltypes = [
+    'SupPyrRS',
+    'SupPyrFRB',
+    'SpinyStellate',
+    'TuftedIB',
+    'TuftedRS',
+    'NontuftedRS',
+    'TCR'
+    ]
 
 class SpikeCondProb(object):
     def __init__(self, datafilepath, netfilepath, netfilepath_new=None):
@@ -122,6 +132,38 @@ class SpikeCondProb(object):
             postcell = post_vs[index]['name']
             spike_prob_unconnected['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
         return spike_prob_unconnected
+
+    def get_excitatory_subgraph(self):
+        if not hasattr(self, 'excitatory_subgraph'):
+            self.excitatory_subgraph = self.amp_graph.subgraph(self.ampa_graph.vs.select(lambda v: v['type'] in excitatory_celltypes))
+        return self.excitatory_subgraph
+        
+    def calc_spike_probe_excitatory_connected(self, width, delay=0.0):
+        spike_prob = {}
+        for edge in self.get_excitatory_subgraph().es:
+            precell = self.get_excitatory_subgraph().vs[edge.source]['name']
+            postcell = self.get_excitatory_subgraph().vs[edge.target]['name']
+            spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
+        return spike_prob
+
+    def calc_spike_probe_excitatory_unconnected(self, width, delay):
+        spike_prob = {}
+        for edge in self.get_excitatory_subgraph().es:
+            pre = self.get_excitatory_subgraph().vs[edge.source]
+            post = self.get_excitatory_subgraph().vs[edge.target]
+            forbidden = set([post.index])
+            for nn in self.get_excitatory_subgraph().neighbors(edge.source, ig.OUT):
+                forbidden.add(nn)
+            post_vs = self.get_excitatory_subgraph().vs.select(type_eq=post['type'])
+            indices = range(len(post_vs))
+            index = np.random.randint(len(post_vs))
+            while post_vs[index].index in forbidden:
+                index = np.random.randint(len(post_vs))
+            precell = pre['name']
+            postcell = post['name']
+            spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
+        return spike_prob
+
 
 import pylab    
 def test_main():
