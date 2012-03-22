@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 21 17:08:45 2012 (+0530)
+# Last-Updated: Thu Mar 22 22:22:48 2012 (+0530)
 #           By: subha
-#     Update #: 397
+#     Update #: 413
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -167,6 +167,22 @@ class SpikeCondProb(object):
             # print '#', precell, post['name'], postcell
         return spike_prob
 
+    def calc_prespike_prob_excitatory_connected(self, width, delay):
+        """Calculate the probability of a presyanptic spike for each
+        post synaptic cell.  This is done by computing the fraction of
+        spikes in the presynaptic cell that fall within a window of
+        width {width} at {delay} time ahead of the post synaptic
+        spike.
+        """
+        prespike_prob = {}
+        for edge in self.get_excitatory_subgraph.es:
+            precell = self.get_excitatory_subgraph().vs[edge.source]['name']
+            postcell = self.get_excitatory_subgraph().vs[edge.target]['name']
+            spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(postcell, precell, width, -delay)
+        return spike_prob
+            
+
+        
 
 import pylab    
 def test_main():
