@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Mar 23 11:23:10 2012 (+0530)
+# Last-Updated: Fri Mar 23 11:48:35 2012 (+0530)
 #           By: subha
-#     Update #: 422
+#     Update #: 449
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -74,7 +74,7 @@ class SpikeCondProb(object):
             self.cells.extend(['%s_%d' % (celltype, ii) for ii in range(count)])
             celltype_list.extend([celltype] * count)
             start_index += count
-        print len(self.cells), start_index
+        assert(len(self.cells) == start_index)
         graph = ig.Graph(0, directed=True)
         graph.add_vertices(start_index)
         graph.vs['name'] = self.cells
@@ -82,7 +82,7 @@ class SpikeCondProb(object):
         ampa_syn = np.asarray(self.netfile['/network/cellnetwork/gampa'])
         sources =  np.array(ampa_syn[:,0], dtype=int)
         targets = np.array(ampa_syn[:,1], dtype=int)
-        print sources.shape, targets.shape
+        print 'Number of AMPA synapse:', sources.shape
         edges = zip(sources.tolist(), targets.tolist())
         graph.add_edges(edges)
         self.ampa_graph = graph
@@ -123,10 +123,6 @@ class SpikeCondProb(object):
             forbidden = set([edge.source])
             for nn in self.ampa_graph.neighbors(edge.source, ig.OUT):
                 forbidden.add(nn)
-            print 'Adjacent vertices:'
-            for nn in forbidden:
-                print self.ampa_graph.vs[nn]['name']
-                
             post_type = self.ampa_graph.vs[edge.target]['type']
             post_vs = self.ampa_graph.vs.select(type_eq=post_type)
             indices = range(len(post_vs))
@@ -158,9 +154,7 @@ class SpikeCondProb(object):
         for edge in self.get_excitatory_subgraph().es:
             pre = self.get_excitatory_subgraph().vs[edge.source]
             post = self.get_excitatory_subgraph().vs[edge.target]
-            forbidden = set([post.index])
-            for nn in self.get_excitatory_subgraph().neighbors(edge.source, ig.OUT):
-                forbidden.add(nn)
+            forbidden = set(self.get_excitatory_subgraph().neighbors(edge.source, ig.OUT))
             post_vs = self.get_excitatory_subgraph().vs.select(type_eq=post['type'])
             indices = range(len(post_vs))
             index = np.random.randint(len(post_vs))
@@ -186,7 +180,24 @@ class SpikeCondProb(object):
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(postcell, precell, width, -delay)
         return spike_prob
             
-
+    def calc_prespike_prob_excitatory_unconnected(self, width, delay):
+        """Calculate the probability of a random unconnected cell
+        spiking within a window of width {width} {delay} period before
+        spiking in a cell."""
+        spike_prob = {}
+        for edge in self.get_excitatory_subgraph().es:
+            pre = self.get_excitatory_subgraph().vs[edge.source]
+            post = self.get_excitatory_subgraph().vs[edge.target]
+            forbidden = set(self.get_excitatory_subgraph().neighbors(edge.target, ig.IN))
+            pre_vs = self.get_excitatory_subgraph().vs.select(type_eq=pre['type'])
+            indices = range(len(pre_vs))
+            index = np.random.randint(len(pre_vs))
+            while pre_vs[index].index in forbidden or '%s-%s' % (pre_vs[index]['name'], post['name']) in spike_prob:
+                index = np.random.randint(len(pre_vs))
+            precell = pre_vs[index]['name']
+            postcell = post['name']
+            spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(postcell, precell, width, -delay)
+        return spike_prob
         
 
 import pylab    
