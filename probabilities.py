@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Mar 23 10:49:37 2012 (+0530)
+# Last-Updated: Fri Mar 23 11:23:10 2012 (+0530)
 #           By: subha
-#     Update #: 420
+#     Update #: 422
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -179,8 +179,8 @@ class SpikeCondProb(object):
         width {width} at {delay} time ahead of the post synaptic
         spike.
         """
-        prespike_prob = {}
-        for edge in self.get_excitatory_subgraph.es:
+        spike_prob = {}
+        for edge in self.get_excitatory_subgraph().es:
             precell = self.get_excitatory_subgraph().vs[edge.source]['name']
             postcell = self.get_excitatory_subgraph().vs[edge.target]['name']
             spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(postcell, precell, width, -delay)

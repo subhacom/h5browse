@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 22 15:05:41 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Mar 23 10:50:04 2012 (+0530)
+# Last-Updated: Fri Mar 23 11:20:58 2012 (+0530)
 #           By: subha
-#     Update #: 16
+#     Update #: 23
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -65,6 +65,12 @@ class TestSpikeCondProb(unittest.TestCase):
     def test_calc_spike_prob_all_unconnected(self):
         spike_prob = self.test_object.calc_spike_prob_all_unconnected(10e-3, 10e-3)
         self.assertAlmostEqual(spike_prob['TCR_0-SupPyrRS_0'], 0.2)
+        
+    def test_calc_prespike_prob_excitatory_connected(self):
+        # Only 5 entries in TCR_0 are within (-15 ms, -5 ms) of spike
+        # time in SupPyrRS.
+        spike_prob = self.test_object.calc_prespike_prob_excitatory_connected(10e-3, 15e-3)
+        self.assertAlmostEqual(spike_prob['TCR_0-SupPyrRS_1'], 0.5)
 
 
 if __name__ == '__main__':
