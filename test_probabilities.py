@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 22 15:05:41 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 22 22:22:32 2012 (+0530)
+# Last-Updated: Fri Mar 23 10:50:04 2012 (+0530)
 #           By: subha
-#     Update #: 7
+#     Update #: 16
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,6 +46,7 @@
 # Code:
 
 import unittest
+from probabilities import SpikeCondProb
 
 class TestSpikeCondProb(unittest.TestCase):
     def setUp(self):
@@ -53,11 +54,21 @@ class TestSpikeCondProb(unittest.TestCase):
         self.netfilepath = 'test_data/network.h5'
         self.test_object = SpikeCondProb(self.datafilepath, self.netfilepath)
 
+    def test_calc_spike_prob(self):
+        spike_prob = self.test_object.calc_spike_prob('TCR_0', 'SupPyrRS_1', 10e-3, 10e-3)
+        self.assertAlmostEqual(spike_prob, 0.5)
+
     def test_calc_spike_prob_all_connected(self):
         spike_prob = self.test_object.calc_spike_prob_all_connected(10e-3, 10e-3)
-        self.assertAlmostEqual(spike_prob['TCR_2-SupPyrRS_4'], 0.5)
+        self.assertAlmostEqual(spike_prob['TCR_0-SupPyrRS_1'], 0.5)
+
+    def test_calc_spike_prob_all_unconnected(self):
+        spike_prob = self.test_object.calc_spike_prob_all_unconnected(10e-3, 10e-3)
+        self.assertAlmostEqual(spike_prob['TCR_0-SupPyrRS_0'], 0.2)
 
 
+if __name__ == '__main__':
+    unittest.main()
 
 
 # 

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 22 22:22:48 2012 (+0530)
+# Last-Updated: Fri Mar 23 10:49:37 2012 (+0530)
 #           By: subha
-#     Update #: 413
+#     Update #: 420
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -123,6 +123,10 @@ class SpikeCondProb(object):
             forbidden = set([edge.source])
             for nn in self.ampa_graph.neighbors(edge.source, ig.OUT):
                 forbidden.add(nn)
+            print 'Adjacent vertices:'
+            for nn in forbidden:
+                print self.ampa_graph.vs[nn]['name']
+                
             post_type = self.ampa_graph.vs[edge.target]['type']
             post_vs = self.ampa_graph.vs.select(type_eq=post_type)
             indices = range(len(post_vs))
@@ -131,6 +135,7 @@ class SpikeCondProb(object):
                 index = np.random.randint(len(post_vs))
             precell = pre_vertex['name']
             postcell = post_vs[index]['name']
+            print 'Selected unconnected cell pair:', precell, postcell
             spike_prob_unconnected['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
         return spike_prob_unconnected
 
@@ -192,12 +197,12 @@ def test_main():
     delay = 10e-3
     cond_prob = SpikeCondProb(datafilepath, netfilepath)
     spike_prob = cond_prob.calc_spike_prob_all_connected(window, delay)
-    print 'TCR_2->SupPyrRS_4: spike following probability', spike_prob
+    print 'TCR_0->SupPyrRS_1: spike following probability', spike_prob
     pylab.subplot(2,1,1)
     pylab.hist(spike_prob.values(), normed=True)
     pylab.subplot(2,1,2)
-    spike_unconn_prob_0 = cond_prob.calc_spike_prob('TCR_2', 'SupPyrRS_0', window, delay)
-    print 'TCR_2->SupPyrRS_0: probability of spike following', spike_unconn_prob_0
+    spike_unconn_prob_0 = cond_prob.calc_spike_prob('TCR_0', 'SupPyrRS_0', window, delay)
+    print 'TCR_0->SupPyrRS_0: probability of spike following', spike_unconn_prob_0
     spike_unconn_prob = cond_prob.calc_spike_prob_all_unconnected(30e-3)
     print spike_unconn_prob
     pylab.hist(spike_unconn_prob.values(), normed=True)
@@ -263,9 +268,9 @@ def run_on_files(filelist, windowlist, delaylist):
 
     
 if __name__ == '__main__':
-    # test_main()
-    files = [line.strip().replace('.new', '') for line in open('recent_data_files_20120320.txt', 'r')]
-    run_on_files(files, [10e-3], [0, 10e-3, 20e-3, 30e-3, 40e-3, 50e-3])
+    test_main()
+    # files = [line.strip().replace('.new', '') for line in open('recent_data_files_20120320.txt', 'r')]
+    # run_on_files(files, [10e-3], [0, 10e-3, 20e-3, 30e-3, 40e-3, 50e-3])
     
 # 
 # probabilities.py ends here
