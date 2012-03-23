@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Mar 23 11:48:35 2012 (+0530)
+# Last-Updated: Fri Mar 23 12:13:37 2012 (+0530)
 #           By: subha
-#     Update #: 449
+#     Update #: 452
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -236,8 +236,8 @@ def run_on_files(filelist, windowlist, delaylist):
         start = datetime.now()
         netfilepath = datafilepath.replace('/data_', '/network_')
         print 'Netfile path', netfilepath
-        outfilepath = datafilepath.replace('/data_', '/exc_hist_').replace('.h5', '.pdf')
-        dataoutpath = datafilepath.replace('/data_', '/exc_prob_')
+        outfilepath = datafilepath.replace('/data_', '/exc_pre_hist_').replace('.h5', '.pdf')
+        dataoutpath = datafilepath.replace('/data_', '/exc_pre_prob_')
         dataout = h5.File(dataoutpath, 'w')
         grp = dataout.create_group('/spiking_prob')
         outfile = PdfPages(outfilepath)
@@ -251,9 +251,9 @@ def run_on_files(filelist, windowlist, delaylist):
             figure = pyplot.figure()
             ii = 0
             for delay in delaylist:
-                connected_prob = prob_counter.calc_spike_prob_excitatory_connected(window, delay)
+                connected_prob = prob_counter.calc_prespike_prob_excitatory_connected(window, delay)
                 dset = grp.create_dataset('conn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(connected_prob.items(), dtype=('|S35,f')))
-                unconnected_prob = prob_counter.calc_spike_prob_excitatory_unconnected(window, delay)
+                unconnected_prob = prob_counter.calc_prespike_prob_excitatory_unconnected(window, delay)
                 dset = grp.create_dataset('unconn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(unconnected_prob.items(), dtype=('|S35,f')))            
 
                 data = [np.asarray(connected_prob.values()), np.asarray(unconnected_prob.values())]
@@ -279,9 +279,9 @@ def run_on_files(filelist, windowlist, delaylist):
 
     
 if __name__ == '__main__':
-    test_main()
-    # files = [line.strip().replace('.new', '') for line in open('recent_data_files_20120320.txt', 'r')]
-    # run_on_files(files, [10e-3], [0, 10e-3, 20e-3, 30e-3, 40e-3, 50e-3])
+    # test_main()
+    files = [line.strip().replace('.new', '') for line in open('recent_data_files_20120320.txt', 'r')]
+    run_on_files(files, [10e-3], [0, 10e-3, 20e-3, 30e-3, 40e-3, 50e-3])
     
 # 
 # probabilities.py ends here
