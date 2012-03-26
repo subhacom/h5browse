@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 22 15:05:41 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Mar 23 11:45:24 2012 (+0530)
+# Last-Updated: Mon Mar 26 17:12:36 2012 (+0530)
 #           By: subha
-#     Update #: 26
+#     Update #: 56
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -75,6 +75,33 @@ class TestSpikeCondProb(unittest.TestCase):
     def test_calc_prespike_prob_excitatory_unconnected(self):
         spike_prob = self.test_object.calc_prespike_prob_excitatory_unconnected(5e-3, 10e-3)
         self.assertAlmostEqual(spike_prob['TCR_1-SupPyrRS_1'], 0.1)
+
+    def test_calc_spike_prob_after_bgstim(self):
+        """For this test data.h5 file has a /stimulus/stim_bg with
+        stimulus from 1.498 s to 1.5 s, second stimulus from 3.0 to
+        3.02 s and a third stimulus from 4.75 s to 4.77 s. Only the
+        spike after the first one (at 1.513 s) and the third one will be counted."""
+        spike_prob = self.test_object.calc_spike_prob_after_bgstim('SupPyrRS_1', 0.02, 0.01)
+        self.assertAlmostEqual(spike_prob, 1.0)
+
+    def test_calc_spike_prob_after_probestim(self):
+        spike_prob = self.test_object.calc_spike_prob_after_probestim('SupPyrRS_1', 0.02, 0.01)
+        self.assertAlmostEqual(spike_prob, 0.0)
+
+    def test_calc_spikecount_avg_after_bgstim(self):
+        """In the spike train there is 1 spiek after 1.51 s and two
+        spikes after 4.78 s (4.78575 s and 4.82025 s, which is between
+        0.4 s amd 0.5 s after the window start."""
+        spike_count_avg = self.test_object.calc_spikecount_avg_after_bgstim('SupPyrRS_1', 0.05, 0.01)
+        self.assertAlmostEqual(spike_count_avg, 1.5)
+
+    def test_calc_spikecount_avg_after_probestim(self):
+        """In the spike train there is 1 spike at 3.52325 s. The probe
+        stimulus ends at 3.0 s. So a delay of 0.5 s with width of 0.05
+        s captures this."""
+        spike_count_avg = self.test_object.calc_spikecount_avg_after_probestim('SupPyrRS_1', 0.05, 0.5)
+        self.assertAlmostEqual(spike_count_avg, 1.0)
+        
 
 
 if __name__ == '__main__':
