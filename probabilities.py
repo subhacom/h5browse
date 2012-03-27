@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 27 17:32:45 2012 (+0530)
+# Last-Updated: Tue Mar 27 17:54:34 2012 (+0530)
 #           By: subha
-#     Update #: 724
+#     Update #: 749
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -220,7 +220,7 @@ class SpikeCondProb(object):
         bg_spike_prob = 0
         only_bg_count = len(self.bg_times) - len(self.probe_times)
         if only_bg_count <= 0:
-            return 0.0
+            return -1.0
         # print 'bg_times', self.bg_times
         ii = 0
         while ii  < len(self.bg_times):
@@ -237,9 +237,11 @@ class SpikeCondProb(object):
 
     def calc_spikecount_avg_after_bgstim(self, cell, width, delay):
         """Calculate the probability of spike following a background
-        stimulus"""
+        stimulus"""        
         spike_count = 0.0
         only_bg_count = len(self.bg_times) - len(self.probe_times)
+        if only_bg_count <= 0:
+            return -1.0
         # print 'only_bg_count:', only_bg_count
         if only_bg_count <= 0:
             return 0.0
@@ -256,6 +258,8 @@ class SpikeCondProb(object):
     def calc_spike_prob_after_probestim(self, cell, width, delay):
         """Calculate the probability of spike following a background
         stimulus"""
+        if len(self.probe_times) == 0:
+            return -1.0
         probe_spike_prob = 0
         # print 'probe_times:', self.probe_times
         for ii in range(len(self.probe_times)):
@@ -271,6 +275,8 @@ class SpikeCondProb(object):
     def calc_spikecount_avg_after_probestim(self, cell, width, delay):
         """Calculate the probability of spike following a background
         stimulus"""
+        if len(self.probe_times) == 0:
+            return -1.0
         spike_count = 0.0
         for ii in range(len(self.probe_times)):
             spike_count += len(np.nonzero((self.spikes[cell] > (self.probe_times[ii] + delay)) & 
@@ -393,7 +399,9 @@ def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
     netfilelist = [line.strip().replace('/data_', '/network_') for line in datafilelist]
     for datafilepath, netfilepath in zip(datafilelist, netfilelist):
         outfilepath = datafilepath.replace('/data_', '/exc_stim_prob_')
-        plotfilepath = datafilepath.replace('/data_', '/exc_stim_hist_')
+        print 'Outfilepath:', outfilepath
+        plotfilepath = datafilepath.replace('/data_', '/exc_stim_hist_').replace('.h5', '.pdf')
+        print 'Plotfile path:', plotfilepath
         dataout = h5.File(outfilepath, 'w')
         grp = dataout.create_group('/spiking_prob')
         grp.attrs['NOTE'] = 'Probability of spiking after a stimulus within a specified time window.'
@@ -407,7 +415,6 @@ def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
                 prob_post_probe = [prob_counter.calc_spike_prob_after_probestim(cell, window, delay) for cell in prob_counter.cells]
                 spike_avg_post_bg = [prob_counter.calc_spikecount_avg_after_bgstim(cell, window, delay) for cell in prob_counter.cells]
                 spike_avg_post_probe = [prob_counter.calc_spikecount_avg_after_probestim(cell, window, delay) for cell in prob_counter.cells]
-
                 # Save data into hdf5 file
                 data = zip(prob_counter.cells, prob_post_bg, prob_post_probe, spike_avg_post_bg, spike_avg_post_probe)
                 dtype=np.dtype([('cell', '|S35'), ('prob_bg', 'f4'), ('prob_probe', 'f4'), ('spike_avg_bg', 'f4'), ('spike_avg_probe', 'f4')])
@@ -415,14 +422,16 @@ def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
                 dataset = grp.create_dataset('prob_window_%d_delta_%d' % (ii, jj), data=array_data)
                 dataset.attrs['delay'] = delay
                 dataset.attrs['window'] = window
-
+                if len(prob_post_probe) == 0 or min(prob_post_probe) == max(prob_post_probe):
+                    continue
                 # Now plot the data
                 figure = pyplot.figure()
                 pyplot.title('window: %g, delay: %g' % (window, delay))                
                 pyplot.hist([prob_post_bg, prob_post_probe], bins=np.arange(0, 1.1, 0.1), normed=True, histtype='bar', label=['prob-bg', 'prob-probe'])
-                pyplot.ylim([0, 10.0])
-                pyplot.xlim([0, 10.0])
+                pyplot.ylim([0.0, 10.0])
+                pyplot.xlim([0.0, 1.1])
                 pyplot.legend(prop={'size':'xx-small'})
+                # pyplot.show()
                 print 'finished delay:', delay
                 plotfile.savefig(figure)
                 figure.clf()
@@ -430,13 +439,10 @@ def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
             ii += 1
             print 'finished window:', window
         print 'Finished', netfilepath, datafilepath
-    plotfile.close()
-    dataout.close()
+        plotfile.close()
+        dataout.close()
 
 def do_run_dump_stimulus_linked_probabilities(filelistfile):
-    if len(args) < 1:
-        print 'need the filelist file.'
-        return
     files = [line.strip() for line in open(filelistfile, 'r')]
     windows = np.arange(0, 0.05, 10e-3)
     dump_stimulus_linked_probabilities(files, windows, [0.0])
