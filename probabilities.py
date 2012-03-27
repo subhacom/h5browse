@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 27 17:17:08 2012 (+0530)
+# Last-Updated: Tue Mar 27 17:31:20 2012 (+0530)
 #           By: subha
-#     Update #: 713
+#     Update #: 723
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -433,22 +433,30 @@ def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
     plotfile.close()
     dataout.close()
 
+def do_run_dump_stimulus_linked_probabilities(filelistfile):
+    if len(args) < 1:
+        print 'need the filelist file.'
+        return
+    files = [line.strip().replace('.new', '').replace('network_', 'data_') for line in open(filelistfile, 'r')]
+    windows = np.arange(0, 0.05, 10e-3)
+    dump_stimulus_linked_probabilities(files, windows, [0.0])
 
 import sys
     
 if __name__ == '__main__':
+    do_run_dump_stimulus_linked_probabilities(sys.argv[1])
     # test_main()
-    if len(sys.argv) < 3:
-        print 'Usage:', sys.argv[0], 'filelist mode'
-        print 'where file list is a text file with one data file path in each line. mode can be \'pre\' or \'post\'. Dumps pre/post synaptic spike probabilities from spike train data.'
-        sys.exit(0)
-    files = [line.strip().replace('.new', '') for line in open(sys.argv[1], 'r')]
-    if sys.argv[2] == 'pre':
-        delays = np.arange(11e-3, 51e-3, 10e-3)
-    else:
-        delays = np.arange(1e-3, 41e-3, 10e-3)
+    # if len(sys.argv) < 3:
+    #     print 'Usage:', sys.argv[0], 'filelist mode'
+    #     print 'where file list is a text file with one data file path in each line. mode can be \'pre\' or \'post\'. Dumps pre/post synaptic spike probabilities from spike train data.'
+    #     sys.exit(0)
+    # files = [line.strip().replace('.new', '') for line in open(sys.argv[1], 'r')]
+    # if sys.argv[2] == 'pre':
+    #     delays = np.arange(11e-3, 51e-3, 10e-3)
+    # else:
+    #     delays = np.arange(1e-3, 41e-3, 10e-3)
 
-    run_on_files(files, [10e-3], delays, sys.argv[2])
+    # run_on_files(files, [10e-3], delays, sys.argv[2])
     
 # 
 # probabilities.py ends here
