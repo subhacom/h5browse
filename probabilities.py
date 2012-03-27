@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 27 17:54:34 2012 (+0530)
+# Last-Updated: Tue Mar 27 18:52:07 2012 (+0530)
 #           By: subha
-#     Update #: 749
+#     Update #: 750
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -398,9 +398,9 @@ def run_on_files(filelist, windowlist, delaylist, mode):
 def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
     netfilelist = [line.strip().replace('/data_', '/network_') for line in datafilelist]
     for datafilepath, netfilepath in zip(datafilelist, netfilelist):
-        outfilepath = datafilepath.replace('/data_', '/exc_stim_prob_')
+        outfilepath = datafilepath.replace('/data_', '/stim_prob_')
         print 'Outfilepath:', outfilepath
-        plotfilepath = datafilepath.replace('/data_', '/exc_stim_hist_').replace('.h5', '.pdf')
+        plotfilepath = datafilepath.replace('/data_', '/stim_hist_').replace('.h5', '.pdf')
         print 'Plotfile path:', plotfilepath
         dataout = h5.File(outfilepath, 'w')
         grp = dataout.create_group('/spiking_prob')
