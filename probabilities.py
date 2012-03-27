@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 27 17:31:20 2012 (+0530)
+# Last-Updated: Tue Mar 27 17:32:45 2012 (+0530)
 #           By: subha
-#     Update #: 723
+#     Update #: 724
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -437,7 +437,7 @@ def do_run_dump_stimulus_linked_probabilities(filelistfile):
     if len(args) < 1:
         print 'need the filelist file.'
         return
-    files = [line.strip().replace('.new', '').replace('network_', 'data_') for line in open(filelistfile, 'r')]
+    files = [line.strip() for line in open(filelistfile, 'r')]
     windows = np.arange(0, 0.05, 10e-3)
     dump_stimulus_linked_probabilities(files, windows, [0.0])
 
