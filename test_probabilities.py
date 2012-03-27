@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 22 15:05:41 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 26 17:12:36 2012 (+0530)
+# Last-Updated: Tue Mar 27 16:38:33 2012 (+0530)
 #           By: subha
-#     Update #: 56
+#     Update #: 62
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,7 +46,7 @@
 # Code:
 
 import unittest
-from probabilities import SpikeCondProb
+from probabilities import SpikeCondProb, dump_stimulus_linked_probabilities
 
 class TestSpikeCondProb(unittest.TestCase):
     def setUp(self):
@@ -102,7 +102,9 @@ class TestSpikeCondProb(unittest.TestCase):
         spike_count_avg = self.test_object.calc_spikecount_avg_after_probestim('SupPyrRS_1', 0.05, 0.5)
         self.assertAlmostEqual(spike_count_avg, 1.0)
         
-
+    def test_dump_stimulus_linked_probabilities(self):        
+        filelist = ['/data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_114922_24526.h5']
+        dump_stimulus_linked_probabilities(filelist, [0.01, 0.02, 0.03, 0.04, 0.05], [0.0, 0.05])
 
 if __name__ == '__main__':
     unittest.main()
