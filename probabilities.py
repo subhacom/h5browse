@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 21 17:08:45 2012 (+0530)
+# Last-Updated: Mon Mar 26 17:10:16 2012 (+0530)
 #           By: subha
-#     Update #: 397
+#     Update #: 626
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,8 +50,17 @@ class SpikeCondProb(object):
         if netfilepath_new:
             self.netfile_new = h5.File(netfilepath_new, 'r')
 
+        self.schedinfo = {}
+        for row in self.datafile['/runconfig/scheduling']:
+            try:
+                value = float(row[1])
+                self.schedinfo[row[0]] = value
+            except ValueError:
+                pass
+
         self.__load_ampa_graph()
         self.__load_spiketrains()
+        self.__load_stimuli()
         
     def __del__(self):
         if hasattr(self, 'datafile'):
@@ -74,7 +83,7 @@ class SpikeCondProb(object):
             self.cells.extend(['%s_%d' % (celltype, ii) for ii in range(count)])
             celltype_list.extend([celltype] * count)
             start_index += count
-        print len(self.cells), start_index
+        assert(len(self.cells) == start_index)
         graph = ig.Graph(0, directed=True)
         graph.add_vertices(start_index)
         graph.vs['name'] = self.cells
@@ -82,7 +91,7 @@ class SpikeCondProb(object):
         ampa_syn = np.asarray(self.netfile['/network/cellnetwork/gampa'])
         sources =  np.array(ampa_syn[:,0], dtype=int)
         targets = np.array(ampa_syn[:,1], dtype=int)
-        print sources.shape, targets.shape
+        print 'Number of AMPA synapse:', sources.shape
         edges = zip(sources.tolist(), targets.tolist())
         graph.add_edges(edges)
         self.ampa_graph = graph
@@ -91,6 +100,12 @@ class SpikeCondProb(object):
         self.spikes = {}
         for cellname in self.datafile['/spikes']:
             self.spikes[cellname] = np.asarray(self.datafile['/spikes'][cellname])
+
+    def __load_stimuli(self):
+        self.bg_stim = self.datafile['stimulus/stim_bg'][:]
+        self.probe_stim = self.datafile['stimulus/stim_probe'][:]
+        self.bg_times = (np.nonzero(np.diff(self.bg_stim) < 0)[0] + 1.0) * self.schedinfo['simdt'] # extract the indices where bg stim went from hi->lo
+        self.probe_times = (np.nonzero(np.diff(self.probe_stim) < 0)[0] + 1.0) * self.schedinfo['simdt']
 
     def calc_spike_prob(self, precell, postcell, window_width, delay=0.0):
         """Calculate the fraction of spikes in precell for which
@@ -131,6 +146,7 @@ class SpikeCondProb(object):
                 index = np.random.randint(len(post_vs))
             precell = pre_vertex['name']
             postcell = post_vs[index]['name']
+            print 'Selected unconnected cell pair:', precell, postcell
             spike_prob_unconnected['%s-%s' % (precell, postcell)] = self.calc_spike_prob(precell, postcell, width, delay)
         return spike_prob_unconnected
 
@@ -153,9 +169,7 @@ class SpikeCondProb(object):
         for edge in self.get_excitatory_subgraph().es:
             pre = self.get_excitatory_subgraph().vs[edge.source]
             post = self.get_excitatory_subgraph().vs[edge.target]
-            forbidden = set([post.index])
-            for nn in self.get_excitatory_subgraph().neighbors(edge.source, ig.OUT):
-                forbidden.add(nn)
+            forbidden = set(self.get_excitatory_subgraph().neighbors(edge.source, ig.OUT))
             post_vs = self.get_excitatory_subgraph().vs.select(type_eq=post['type'])
             indices = range(len(post_vs))
             index = np.random.randint(len(post_vs))
@@ -167,6 +181,102 @@ class SpikeCondProb(object):
             # print '#', precell, post['name'], postcell
         return spike_prob
 
+    def calc_prespike_prob_excitatory_connected(self, width, delay):
+        """Calculate the probability of a presyanptic spike for each
+        post synaptic cell.  This is done by computing the fraction of
+        spikes in the presynaptic cell that fall within a window of
+        width {width} at {delay} time ahead of the post synaptic
+        spike.
+        """
+        spike_prob = {}
+        for edge in self.get_excitatory_subgraph().es:
+            precell = self.get_excitatory_subgraph().vs[edge.source]['name']
+            postcell = self.get_excitatory_subgraph().vs[edge.target]['name']
+            spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(postcell, precell, width, -delay)
+        return spike_prob
+            
+    def calc_prespike_prob_excitatory_unconnected(self, width, delay):
+        """Calculate the probability of a random unconnected cell
+        spiking within a window of width {width} {delay} period before
+        spiking in a cell."""
+        spike_prob = {}
+        for edge in self.get_excitatory_subgraph().es:
+            pre = self.get_excitatory_subgraph().vs[edge.source]
+            post = self.get_excitatory_subgraph().vs[edge.target]
+            forbidden = set(self.get_excitatory_subgraph().neighbors(edge.target, ig.IN))
+            pre_vs = self.get_excitatory_subgraph().vs.select(type_eq=pre['type'])
+            indices = range(len(pre_vs))
+            index = np.random.randint(len(pre_vs))
+            while pre_vs[index].index in forbidden or '%s-%s' % (pre_vs[index]['name'], post['name']) in spike_prob:
+                index = np.random.randint(len(pre_vs))
+            precell = pre_vs[index]['name']
+            postcell = post['name']
+            spike_prob['%s-%s' % (precell, postcell)] = self.calc_spike_prob(postcell, precell, width, -delay)
+        return spike_prob
+
+    def calc_spike_prob_after_bgstim(self, cell, width, delay):
+        """Calculate the probability of spike following a background
+        stimulus"""
+        bg_spike_prob = 0
+        only_bg_count = len(self.bg_times) - len(self.probe_times)
+        if only_bg_count <= 0:
+            return 0.0
+        # print 'bg_times', self.bg_times
+        ii = 0
+        while ii  < len(self.bg_times):
+            win_start = self.bg_times[ii] + delay
+            win_end = win_start + width
+            # print win_start, win_end
+            spike_count = np.nonzero((self.spikes[cell] > win_start) & 
+                                     (self.spikes[cell] <= win_end))[0]
+            # print spike_count
+            if spike_count > 0:
+                bg_spike_prob += 1.0
+            ii += 2
+        return bg_spike_prob / only_bg_count
+
+    def calc_spikecount_avg_after_bgstim(self, cell, width, delay):
+        """Calculate the probability of spike following a background
+        stimulus"""
+        spike_count = 0.0
+        only_bg_count = len(self.bg_times) - len(self.probe_times)
+        # print 'only_bg_count:', only_bg_count
+        if only_bg_count <= 0:
+            return 0.0
+        ii = 0
+        while ii < len(self.bg_times):
+            win_start = self.bg_times[ii] + delay
+            win_end = win_start + width
+            # print win_start, win_end
+            spike_count += len(np.nonzero((self.spikes[cell] > win_start) & 
+                                      (self.spikes[cell] <= win_end))[0])
+            ii += 2
+        return spike_count / only_bg_count
+
+    def calc_spike_prob_after_probestim(self, cell, width, delay):
+        """Calculate the probability of spike following a background
+        stimulus"""
+        probe_spike_prob = 0
+        # print 'probe_times:', self.probe_times
+        for ii in range(len(self.probe_times)):
+            win_start = self.probe_times[ii] + delay
+            win_end = win_start + width
+            # print win_start, win_end
+            spike_count = np.nonzero((self.spikes[cell] > win_start) & 
+                                      (self.spikes[cell] <= win_end))[0]
+            if spike_count > 0:
+                probe_spike_prob += 1.0
+        return probe_spike_prob / len(self.probe_times)
+
+    def calc_spikecount_avg_after_probestim(self, cell, width, delay):
+        """Calculate the probability of spike following a background
+        stimulus"""
+        spike_count = 0.0
+        for ii in range(len(self.probe_times)):
+            spike_count += len(np.nonzero((self.spikes[cell] > (self.probe_times[ii] + delay)) & 
+                                      (self.spikes[cell] <= (self.probe_times[ii] + delay + width)))[0])
+        return spike_count / len(self.probe_times)
+        
 
 import pylab    
 def test_main():
@@ -176,12 +286,12 @@ def test_main():
     delay = 10e-3
     cond_prob = SpikeCondProb(datafilepath, netfilepath)
     spike_prob = cond_prob.calc_spike_prob_all_connected(window, delay)
-    print 'TCR_2->SupPyrRS_4: spike following probability', spike_prob
+    print 'TCR_0->SupPyrRS_1: spike following probability', spike_prob
     pylab.subplot(2,1,1)
     pylab.hist(spike_prob.values(), normed=True)
     pylab.subplot(2,1,2)
-    spike_unconn_prob_0 = cond_prob.calc_spike_prob('TCR_2', 'SupPyrRS_0', window, delay)
-    print 'TCR_2->SupPyrRS_0: probability of spike following', spike_unconn_prob_0
+    spike_unconn_prob_0 = cond_prob.calc_spike_prob('TCR_0', 'SupPyrRS_0', window, delay)
+    print 'TCR_0->SupPyrRS_0: probability of spike following', spike_unconn_prob_0
     spike_unconn_prob = cond_prob.calc_spike_prob_all_unconnected(30e-3)
     print spike_unconn_prob
     pylab.hist(spike_unconn_prob.values(), normed=True)
@@ -197,15 +307,43 @@ params = {'font.size' : 10,
           'xtick.labelsize' : 8,
           'ytick.labelsize' : 8}
 
-def run_on_files(filelist, windowlist, delaylist):
-    """Go through specified datafiles and dump the probability historgrams"""
+def run_on_files(filelist, windowlist, delaylist, mode):
+    """Go through specified datafiles and dump the probability
+    historgrams.
+
+    For each entry in window list it goes through all delay values in
+    delaylist.
+
+    Mode decides what to calculate: 
+
+    mode='pre' calculates the probability of a spike preceding a post
+    synaptic spike by delay interval within a window of width
+    specified in windowlist. Same calculation is done for a randomly
+    chosen non adjacent cell. The data is dumped in files named
+    'exc_pre_hist_{ID}.pdf' as plot and 'exc_pre_prob_{ID}.h5' as
+    table.
+
+    mode='post' calculates the probability of a spike following a
+    presynaptic spike by delay interval within a window of width
+    specified in windowlist. Same calculation is done for a randomly
+    chosen unconnected cells. The data is dumped in files named
+    'exc_hist_{ID}.pdf' as plot and 'exc_prob_{ID}.h5' as table.
+    """
     pyplot.rcParams.update(params)
+    unconn_fun = SpikeCondProb.calc_spike_prob_excitatory_unconnected
+    conn_fun = SpikeCondProb.calc_spike_prob_excitatory_connected
+    file_prefix = 'exc'
+    if mode == 'pre':
+        unconn_fun = SpikeCondProb.calc_prespike_prob_excitatory_unconnected
+        conn_fun = SpikeCondProb.calc_prespike_prob_excitatory_connected
+        file_prefix = 'exc_pre'
+    
     for datafilepath in filelist:
         start = datetime.now()
         netfilepath = datafilepath.replace('/data_', '/network_')
         print 'Netfile path', netfilepath
-        outfilepath = datafilepath.replace('/data_', '/exc_hist_').replace('.h5', '.pdf')
-        dataoutpath = datafilepath.replace('/data_', '/exc_prob_')
+        outfilepath = datafilepath.replace('/data_', '/%s_hist_' % (file_prefix)).replace('.h5', '.pdf')
+        dataoutpath = datafilepath.replace('/data_', '/%s_prob_' % (file_prefix))
         dataout = h5.File(dataoutpath, 'w')
         grp = dataout.create_group('/spiking_prob')
         outfile = PdfPages(outfilepath)
@@ -219,19 +357,26 @@ def run_on_files(filelist, windowlist, delaylist):
             figure = pyplot.figure()
             ii = 0
             for delay in delaylist:
-                connected_prob = prob_counter.calc_spike_prob_excitatory_connected(window, delay)
+                connected_prob = conn_fun(prob_counter, window, delay)
                 dset = grp.create_dataset('conn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(connected_prob.items(), dtype=('|S35,f')))
-                unconnected_prob = prob_counter.calc_spike_prob_excitatory_unconnected(window, delay)
+                dset.attrs['delay'] = delay
+                dset.attrs['window'] = window
+                unconnected_prob = unconn_fun(prob_counter, window, delay)
                 dset = grp.create_dataset('unconn_window_%d_delta_%d' % (jj, ii/2), data=np.asarray(unconnected_prob.items(), dtype=('|S35,f')))            
-
+                dset.attrs['delay'] = delay
+                dset.attrs['window'] = window
                 data = [np.asarray(connected_prob.values()), np.asarray(unconnected_prob.values())]
                 labels = ['conn w:%g,d:%g' % (window, delay), 'unconn w:%g,d:%g' % (window, delay)]
-                pyplot.subplot(rows, cols, ii+1)
-                pyplot.hist(data, bins=np.arange(0, 1, 0.1), normed=True, histtype='bar', label=labels)
+                axes = pyplot.subplot(rows, cols, ii+1)
+                pyplot.hist(data, bins=np.arange(0, 1.1, 0.1), normed=True, histtype='bar', label=labels)
                 pyplot.legend(prop={'size':'xx-small'})
-                pyplot.subplot(rows, cols, ii+2)
-                pyplot.hist(data, bins=np.arange(0, 1, 0.1), normed=True, histtype='step', cumulative=True, label=labels)
+                pyplot.ylim([0, 10.0])
+                pyplot.xlim([0, 1.1])
+                axes = pyplot.subplot(rows, cols, ii+2)
+                pyplot.hist(data, bins=np.arange(0, 1.1, 0.1), normed=True, histtype='step', cumulative=True, label=labels)
                 pyplot.legend(prop={'size':'xx-small'})
+                pyplot.ylim([0, 10.0])
+                pyplot.xlim([0, 1.1])
                 ii += 2
                 print 'finished delay:', delay
             jj += 1
@@ -245,11 +390,21 @@ def run_on_files(filelist, windowlist, delaylist):
         print 'Finished:', netfilepath, 'in', (delta.seconds + 1e-6 * delta.microseconds)
                 
 
+import sys
     
 if __name__ == '__main__':
     # test_main()
-    files = [line.strip().replace('.new', '') for line in open('recent_data_files_20120320.txt', 'r')]
-    run_on_files(files, [10e-3], [0, 10e-3, 20e-3, 30e-3, 40e-3, 50e-3])
+    if len(sys.argv) < 3:
+        print 'Usage:', sys.argv[0], 'filelist mode'
+        print 'where file list is a text file with one data file path in each line. mode can be \'pre\' or \'post\'. Dumps pre/post synaptic spike probabilities from spike train data.'
+        sys.exit(0)
+    files = [line.strip().replace('.new', '') for line in open(sys.argv[1], 'r')]
+    if sys.argv[2] == 'pre':
+        delays = np.arange(11e-3, 51e-3, 10e-3)
+    else:
+        delays = np.arange(1e-3, 41e-3, 10e-3)
+
+    run_on_files(files, [10e-3], delays, sys.argv[2])
     
 # 
 # probabilities.py ends here
