@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 27 18:52:07 2012 (+0530)
+# Last-Updated: Thu Mar 29 10:18:41 2012 (+0530)
 #           By: subha
-#     Update #: 750
+#     Update #: 890
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -32,6 +32,18 @@ import numpy as np
 import h5py as h5
 import igraph as ig
 from datetime import datetime
+from matplotlib import pyplot    
+from matplotlib.backends.backend_pdf import PdfPages
+
+def update_pyplot_config():
+    params = {'font.size' : 10,
+          'axes.labelsize' : 10,
+          'font.size' : 10,
+          'text.fontsize' : 10,
+          'legend.fontsize': 10,
+          'xtick.labelsize' : 8,
+          'ytick.labelsize' : 8}
+    pyplot.rcParams.update(params)
 
 excitatory_celltypes = [
     'SupPyrRS',
@@ -284,6 +296,110 @@ class SpikeCondProb(object):
         return spike_count / len(self.probe_times)
         
 
+def check_valid_files(filenames, celltype):
+    valid = []
+    invalid = []
+    for name in filenames:
+        df = h5.File(name, 'r')
+        data = [np.asarray(df['spiking_prob'][dset]) for dset in df['spiking_prob']]
+        ss_bg_prob = dict([(row[0], row[1]) for row in data[0] if row[0].startswith(celltype)])
+        orig_data_file_name = name.replace('stim_prob_', 'data_')
+        odf = h5.File(orig_data_file_name, 'r')
+        stim = odf['/stimulus/stim_bg'][:]
+        if max(ss_bg_prob.values()) == -1.0:
+            invalid.append(odf.filename)
+            if len(np.nonzero(np.diff(stim)<0)) > 0:
+                print 'Warning:', odf.filename, 'has stimulus but no related spike'
+            else:
+                print df.filename, 'has no stimulus'
+        else:
+            if len(np.nonzero(np.diff(stim)<0)) == 0:
+                print 'Warning:', odf.filename, 'has NO stimulus but stim related spikes. Look for inconsistencies.'
+            else:
+                valid.append(df.filename)
+        df.close()
+        odf.close()
+    return (valid, invalid)
+            
+
+from matplotlib import pyplot 
+
+def display_probability_plots(filelistfile, celltype):
+    """Display the peristimulus spiking probability values for cells
+    of celltype"""
+    probability_files = [line.strip() for line in open(filelistfile, 'r')]
+    valid_files, invalid_files, = check_valid_files(probability_files, celltype)
+    for filename in valid_files:
+        dataf = h5.File(filename, 'r')
+        num_datasets = len(dataf['spiking_prob'])
+        rowcount = int(num_datasets / 2.0 + 0.5)        
+        plotindex = 1
+        pyplot.figure(figsize=(8,11))
+        pyplot.clf()
+        for dataset_name in dataf['spiking_prob']:
+            dataset = dataf['spiking_prob'][dataset_name]
+            delay = dataset.attrs['delay']
+            window = dataset.attrs['window']
+            data = dataset[:]
+            cell_indices = np.nonzero(np.char.startswith(data['cell'], celltype))[0]
+            bgp = data['prob_bg'][cell_indices]     
+            bg_indices = np.nonzero(bgp >=0)[0]
+            probep = data['prob_probe'][cell_indices][bg_indices]
+            probe_indices = np.nonzero(probep >=0)[0]
+            bgp = bgp[probe_indices]
+            probep = probep[probe_indices]
+            deltap = probep - bgp
+            pyplot.subplot(rowcount, 2, plotindex)
+            plotindex += 1
+            pyplot.bar(np.arange(0,len(deltap), 1.0), deltap)
+            pyplot.title('delay:%g width:%g' % (delay, window))
+            # pyplot.legend()
+        pyplot.suptitle('P(spike/probe) - P(spike/background)\nFile: %s' % (filename))
+        figfile = '%s' % (filename.replace('.h5', '.png').replace('stim_prob_', 'stim_delprob_%s' % (celltype)))
+        pyplot.savefig(figfile)
+        print 'Figure saved in:', figfile        
+        dataf.close()
+        pyplot.show()
+        
+def display_delp_with_distance(filelistfile, celltype):
+    """Display the correlation between distance from probe-stimulated
+    cells and increase in spiking probability due to probe
+    stimulus."""
+    probability_files = [line.strip() for line in open(filelistfile, 'r')]
+    valid_files, invalid_files, = check_valid_files(probability_files, celltype)
+    for filename in valid_files:
+        dataf = h5.File(filename, 'r')
+        num_datasets = len(dataf['spiking_prob'])
+        rowcount = int(num_datasets / 2.0 + 0.5)        
+        plotindex = 1
+        pyplot.figure(figsize=(8,11))
+        pyplot.clf()
+        for dataset_name in dataf['spiking_prob']:
+            dataset = dataf['spiking_prob'][dataset_name]
+            delay = dataset.attrs['delay']
+            window = dataset.attrs['window']
+            data = dataset[:]
+            cell_indices = np.nonzero(np.char.startswith(data['cell'], celltype))[0]
+            bgp = data['prob_bg'][cell_indices]     
+            bg_indices = np.nonzero(bgp >=0)[0]
+            probep = data['prob_probe'][cell_indices][bg_indices]
+            probe_indices = np.nonzero(probep >=0)[0]
+            bgp = bgp[probe_indices]
+            probep = probep[probe_indices]
+            deltap = probep - bgp
+            pyplot.subplot(rowcount, 2, plotindex)
+            plotindex += 1
+            pyplot.bar(np.arange(0,len(deltap), 1.0), deltap)
+            pyplot.title('delay:%g width:%g' % (delay, window))
+            # pyplot.legend()
+        pyplot.suptitle('P(spike/probe) - P(spike/background)\nFile: %s' % (filename))
+        figfile = '%s' % (filename.replace('.h5', '.png').replace('stim_prob_', 'stim_delprob_%s' % (celltype)))
+        pyplot.savefig(figfile)
+        print 'Figure saved in:', figfile        
+        dataf.close()
+        pyplot.show()
+    
+
 import pylab    
 def test_main():
     datafilepath = 'test_data/data.h5'
@@ -303,15 +419,6 @@ def test_main():
     pylab.hist(spike_unconn_prob.values(), normed=True)
     pylab.show()
 
-from matplotlib import pyplot    
-from matplotlib.backends.backend_pdf import PdfPages
-params = {'font.size' : 10,
-          'axes.labelsize' : 10,
-          'font.size' : 10,
-          'text.fontsize' : 10,
-          'legend.fontsize': 10,
-          'xtick.labelsize' : 8,
-          'ytick.labelsize' : 8}
 
 def run_on_files(filelist, windowlist, delaylist, mode):
     """Go through specified datafiles and dump the probability
@@ -335,7 +442,6 @@ def run_on_files(filelist, windowlist, delaylist, mode):
     chosen unconnected cells. The data is dumped in files named
     'exc_hist_{ID}.pdf' as plot and 'exc_prob_{ID}.h5' as table.
     """
-    pyplot.rcParams.update(params)
     unconn_fun = SpikeCondProb.calc_spike_prob_excitatory_unconnected
     conn_fun = SpikeCondProb.calc_spike_prob_excitatory_connected
     file_prefix = 'exc'
