@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 15:22:26 2012 (+0530)
+# Last-Updated: Mon Apr  2 16:11:03 2012 (+0530)
 #           By: subha
-#     Update #: 1563
+#     Update #: 1606
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -394,14 +394,14 @@ spike_avg_probe is teh average spike count after background + probe.'
         if not hasattr(self, 'stimprobfile'):
             self.stimprobfile = h5.File(outfilepath, 'r')
         
-    def get_stim_p(self, celltype='', windowlist=WINDOWS, delaylist=DELAYS, overwrite=False):
+    def get_stim_p(self, celltype='', windows=WINDOWS, delays=DELAYS, overwrite=False):
         """Calculate the stimulus linked probability increase due to
         probe stimulus from background for each window sizes at all
         given delays."""        
         ret = []
         # Now actually load and return the data
         if not hasattr(self, 'stimprobfile') or self.stimprobfile is None:
-           self.dump_stim_p(windowlist, delaylist, overwrite)
+           self.dump_stim_p(windows, delays, overwrite)
         grp = self.stimprobfile['spiking_prob']
         cells = None
         cellindices = None
@@ -409,7 +409,18 @@ spike_avg_probe is teh average spike count after background + probe.'
             dset = grp[dsetname]
             delay = dset.attrs['delay']
             window = dset.attrs['window']
-            if  len(delaylist) == 0 or  len(windowlist) == 0 or (delay in delaylist and window in windowlist):
+            # print 'Original dataset:', delay, window
+            delay_in = False
+            for entry in delays:
+                if np.allclose([delay], [entry]):
+                    delay_in = True
+                    break
+            window_in = False
+            for entry in windows:
+                if np.allclose([window], [entry]):
+                    window_in = True
+                    break
+            if  (len(delays) == 0) or (len(windows) == 0) or (window_in and delay_in):
                 data = dset[:]
             else:
                 continue
@@ -418,11 +429,13 @@ spike_avg_probe is teh average spike count after background + probe.'
                 cellindices = np.nonzero(np.char.startswith(cells, celltype))[0]
                 cells = cells[cellindices]
             bgp = data[cellindices]['prob_bg']
-            bgindices = np.nonzero(bgp >= 0.0)[0]
-            probep = data[cellindices]['prob_probe'][bgindices]
-            probeindices = np.nonzero(probep >= 0.0)[0]
-            bgp = bgp[bgindices][probeindices]
-            probep = probep[probeindices]
+            assert(bgp.shape == cells.shape)
+            if max(bgp) == 0.0:
+                print 'Warning:', self.datafile.filename, ', window:', window, ', delay:', delay, ': bgp is all 0'
+            probep = data[cellindices]['prob_probe']
+            assert(probep.shape == cells.shape)
+            if max(probep) == 0.0:
+                print 'Warning:', self.datafile.filename, ', window:', window, ', delay:', delay, ': probep is all 0'            
             ret.append((window, delay, bgp, probep))
         return (cells, ret)
 
@@ -516,7 +529,6 @@ spike_avg_probe is teh average spike count after background + probe.'
             for vprobe in self.probe_vertices:                
                 try:
                     new_val = probepathlenmap[vprobe.index][vtarget.index]
-                    # print '==', vprobe['name'], vtarget['name'], new_val
                     if new_val < probeshortest[ii]:
                         probeshortest[ii] = new_val
                 except KeyError:
@@ -525,33 +537,18 @@ spike_avg_probe is teh average spike count after background + probe.'
             ii += 1
         mask = np.nonzero(probeshortest < np.inf)[0]
         for (window, delay, del_p) in del_p_list:
-            # print '############### 1 ####################'
-            # print 'mask:', mask
-            # print 'probeshortest', probeshortest[mask]
-            # print 'del_p', del_p[mask]
+            if max(del_p) == 0.0:
+                print 'Warning:', self.datafile.filename, ', window:', window, ', delay:', delay, ': del_p is all zero'
+                continue
             plt.plot(probeshortest[mask], del_p[mask], 'x')
             plt.show()
             corrcoef = np.corrcoef(probeshortest[mask], del_p[mask])
-            ret.append((window, delay, corrcoef))
+            # corrcoef is a 2x2 matrix for 1 D arrays where the
+            # antidiagonal elements correspond to cross coreelation
+            # and diagonal elements are autocorrelation. So we take
+            # the first antidiagonal element (the other is identical).
+            ret.append((window, delay, corrcoef[0,1]))
         return (cells, ret)
-
-    # def calc_distance_del_p_corrceof(self, pathlengthmap, cells, del_p_list):
-    #     """Utility function to compute correlation between a dict
-    #     mapping cells to some sort of path length and the del_p values
-    #     which must be in the same order as cells.
-        
-
-    #     pathlengthmap is a dict mapping cells to corresponding
-    #     pathlength."""
-    #     ret = []
-    #     for (window, delay, del_p) in del_p_list:
-    #         # We list the vertices in the order of the cells. Also
-    #         # checkin for equality if faster than checking membership.
-    #         vs = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
-    #         pathlengths = [pathlengthmap[cell] for cell in cells]
-    #         corrcoef = np.corrcoef(pathlengths, del_p)
-    #         ret.append((window, delay, corrcoef))
-    #     return ret
 
     def calc_stim_distance_del_p_corrrelation(sellf, celltype='', windows=WINDOWS, delay=DELAYS, overwrite=False):
         """Correlate the distance to the probe stimulated cells to
@@ -842,7 +839,9 @@ import sys
 if __name__ == '__main__':
     df = '2012_03_22/data_20120322_114922_24526.h5'    
     sp = SpikeCondProb(df)
-    x = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', WINDOWS, DELAYS)
+    x = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', windows=WINDOWS, delays=DELAYS, overwrite=True)
+    for window, delay, correlation in x[1]:
+        print 'Window:', window, 'Delay:', delay, 'CorrCoef:', correlation
     # do_run_dump_stimulus_linked_probabilities(sys.argv[1])
     # test_main()
     # if len(sys.argv) < 3:
