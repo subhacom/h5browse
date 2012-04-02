@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 16:11:03 2012 (+0530)
+# Last-Updated: Mon Apr  2 16:22:32 2012 (+0530)
 #           By: subha
-#     Update #: 1606
+#     Update #: 1616
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -833,6 +833,14 @@ def do_run_dump_stimulus_linked_probabilities(filelistfile):
     files = [line.strip() for line in open(filelistfile, 'r')]
     windows = np.arange(0, 0.05, 10e-3)
     dump_stimulus_linked_probabilities(files, windows, [0.0])
+
+def do_dump_stim_shortest_distance_delp_corr(filelistfile):
+    for line in filelistfile:
+        datafilename = line.strip()
+        sp = SpikeCondProb(datafilename)
+        xx = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', windows=WINDOWS, delays=DELAYS, overwrite=True)
+        for window, delay, corrcoef in xx:
+            print 'filename:', datafilename, 'window:', window, 'delay:', delay, 'corrcoef:', corrcoef
 
 import sys
     
