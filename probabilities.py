@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 29 20:28:48 2012 (+0530)
+# Last-Updated: Mon Apr  2 09:50:01 2012 (+0530)
 #           By: subha
-#     Update #: 1187
+#     Update #: 1416
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -28,6 +28,9 @@
 
 # Code:
 
+from collections import defaultdict
+
+import os
 import numpy as np
 import h5py as h5
 import igraph as ig
@@ -78,11 +81,13 @@ class SpikeCondProb(object):
                 pass
         # A few boolean variables to keep track of what operations are possible on this set of data
         self.valid_bg_stimulus = True        
-        self.valid_probe_stimulus = True        
+        self.valid_probe_stimulus = True     
+        self._bg_shortest_paths = None
+        self._probe_shortest_paths = None
+        self.__check_validities()
         self.__load_ampa_graph()
         self.__load_spiketrains()
         self.__load_stimuli()
-        self.__check_validities()
         
     def __del__(self):
         if hasattr(self, 'datafile'):
@@ -126,10 +131,25 @@ class SpikeCondProb(object):
             self.spikes[cellname] = np.asarray(self.datafile['/spikes'][cellname])
 
     def __load_stimuli(self):
+        if not self.valid_bg_stimulus or not self.valid_probe_stimulus:
+            return
         self.bg_stim = self.datafile['stimulus/stim_bg'][:]
         self.probe_stim = self.datafile['stimulus/stim_probe'][:]
         self.bg_times = (np.nonzero(np.diff(self.bg_stim) < 0)[0] + 1.0) * self.schedinfo['simdt'] # extract the indices where bg stim went from hi->lo
         self.probe_times = (np.nonzero(np.diff(self.probe_stim) < 0)[0] + 1.0) * self.schedinfo['simdt']
+        self.bg_targets = []
+        self.probe_targets = []
+        stimdata = self.netfile_new['/stimulus/connection'][:]
+        bg_indices = np.char.equal(stimdata['f0'], '/stim/stim_bg')
+        # The target compartment path is saved in field[1], which has the form: /model/net/cell/comp
+        # split('/') will return ['', 'model', 'net', 'cell', 'comp']
+        self.bg_targets = [token[3] for token in np.char.split(stimdata['f1'][bg_indices], '/')]
+        probe_indices = np.char.equal(stimdata['f0'], '/stim/stim_probe')
+        self.probe_targets = [token[3] for token in np.char.split(stimdata['f1'][probe_indices], '/')]
+        print 'Background stimulus targets', self.bg_targets
+        print 'Probe stimulus targets', self.probe_targets
+            
+        
 
     def __check_validities(self):
         try:
@@ -151,6 +171,8 @@ class SpikeCondProb(object):
         if len(np.nonzero(np.diff(probestim)<0)[0]) == 0:
             print 'Warning: No probe stimulus applied in this dataset:', self.datafile.filename
             self.valid_probe_stimulus = False
+        print 'Probe stimulus valid?', self.valid_probe_stimulus
+        print 'Background stimulus valid?', self.valid_bg_stimulus
         
         
     def calc_spike_prob(self, precell, postcell, window_width, delay=0.0):
@@ -332,15 +354,14 @@ class SpikeCondProb(object):
             spike_count += len(np.nonzero((self.spikes[cell] > (self.probe_times[ii] + delay)) & 
                                       (self.spikes[cell] <= (self.probe_times[ii] + delay + width)))[0])
         return spike_count / len(self.probe_times)
-        
-    def get_stim_p(self, windowlist, delaylist, overwrite=False):
-        """Calculate the stimulus linked probability increase due to
-        probe stimulus from background for each window sizes at all
-        given delays."""        
+
+    def dump_stim_p(self, windowlist, delaylist, overwrite=False):
         outfilepath = self.datafile.filename.replace('/data_', '/stim_prob_')
         if not os.path.exists(outfilepath) or overwrite:
+            if hasattr(self, 'stimprobfile'):
+                self.stimprobfile.close()
             self.stimprobfile = h5.File(outfilepath, 'w')
-            grp = self.stimprobfile.craete_group('/spiking_prob')
+            grp = self.stimprobfile.create_group('/spiking_prob')
             grp.attrs['NOTE'] = 'prob_bg is probability of spiking after \
 only background stimulus. prob_probe is that after background + probe stimulus. \
 spike_avg_bg is the average spike count after background only stimulus. \
@@ -353,17 +374,46 @@ spike_avg_probe is teh average spike count after background + probe.'
                     probe_p = [self.calc_spike_prob_after_probestim(cell, window, delay) for cell in self.cells]
                     bg_spikeavg = [self.calc_spikecount_avg_after_bgstim(cell, window, delay) for cell in self.cells]
                     probe_spikeavg = [self.calc_spikecount_avg_after_probestim(cell, window, delay) for cell in self.cells]
-                    data = zip(self.cells, bg_p, probe_p, bg_spike_avg, probe_spikeavg)
+                    data = zip(self.cells, bg_p, probe_p, bg_spikeavg, probe_spikeavg)
                     dtype = np.dtype([('cell', '|S35'), ('prob_bg', 'f4'), ('prob_probe', 'f4'), ('spike_avg_bg', 'f4'), ('spike_avg_probe', 'f4')])
                     data = np.asarray(data, dtype=dtype)
-                    dset = grp.create_dataset('prob_window_%d_delta_%d' % (ii, jj), data=array_data)
-                    dataset.attrs['delay'] = delay
-                    dataset.attrs['window'] = window
+                    dset = grp.create_dataset('prob_window_%d_delta_%d' % (ii, jj), data=data)
+                    dset.attrs['delay'] = delay
+                    dset.attrs['window'] = window
                     jj += 1
                 ii += 1
             self.stimprobfile.close()
-        self.stimprobfile = h5.File(outfilepath, 'r')
-
+            self.stimprobfile = h5.File(outfilepath, 'r')
+        
+    def get_stim_p(self, celltype='', windowlist=[], delaylist=[], overwrite=False):
+        """Calculate the stimulus linked probability increase due to
+        probe stimulus from background for each window sizes at all
+        given delays."""        
+        ret = []
+        # Now actually load and return the data
+        if not hasattr(self, 'stimprobfile') or self.stimprobfile is None:
+           self.dump_stim_p(windowlist, delaylist, overwrite)
+        grp = self.stimprobfile['spiking_prob']
+        cells = None
+        for dsetname in grp:
+            dset = grp[dsetname]
+            delay = dset.attrs['delay']
+            window = dset.attrs['window']
+            if not delaylist or not windowlist or (delay in delaylist and window in windowlist):
+                data = dset[:]
+            else:
+                continue
+            cellindices = np.nonzero(np.char.startswith(data['cell'], celltype))[0]
+            bgp = data[cellindices]['prob_bg']
+            bgindices = np.nonzero(bgp >= 0.0)[0]
+            probep = data[cellindices]['prob_probe'][bgindices]
+            probeindices = np.nonzero(probep >= 0.0)[0]
+            bgp = bgp[bgindices][probeindices]
+            probep = probep[probeindices]
+            if cells is None:
+                cells = data[cellindices][bgindices][probeindices]['cell']
+            ret.append((window, delay, bgp, probep))
+        return (cells, ret)
 
     def get_stim_del_p(self, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
         """Goes through stimulus linked probability file and picks up
@@ -376,80 +426,102 @@ spike_avg_probe is teh average spike count after background + probe.'
         If overwrite is True then it recomputes all the proebabilities
         and overwrites existing file.
 
-        Return a list of tuples containing each window, delay, list of
-        cells, list of del P (probe-bg) corresponding to the list of
-        cells.
+        Return  (list of cells, list of tuples each containing window, delay, list of del P (probe-bg) corresponding to the list of
+        cells).
 
         """
+        WINDOW = 0
+        DELAY = 1
+        BGP = 2
+        PROBEP = 3
         ret = []
         if not self.valid_probe_stimulus or not self.valid_bg_stimulus:
             return ret
         if overwrite or not hasattr(self, 'stimprobfile'):
             # We calculate the following default case with window
             # sizes increasing by 10 ms and 0 delay.
-            self.get_stim_p(windows, delays, overwrite)
-            grp = self.stimprobfile['spiking_prob']
-            for dsetname in grp:
-                dset = grp[dsetname]
-                delay = dset.attrs['delay']
-                window = dset.attrs['window']
-                data = dset[:]
-                cellindices = np.nonzero(np.char.startswith(data['cell'], celltype))[0]
-                bgp = data[cellindices]['prob_bg']
-                bgindices = np.nonzero(bgp >= 0.0)[0]
-                probep = data[cellindices]['prob_probe'][bgindices]
-                probeindices = np.nonzero(probep >= 0.0)[0]
-                bgp = bgp[bgindices][probeindices]
-                probep = probep[probeindices]
-                cells = data[cellindices][bgindices][probeindices]['cell']
-                ret.append((window, delay, cells, probep-bgp))
-        return ret
+            cells, datalist, = self.get_stim_p(celltype, windows, delays, overwrite)
+        for data in datalist:
+            ret.append((data[WINDOW], data[DELAY], data[PROBEP] - data[BGP]))
+        return (cells, ret)
 
-    def get_pathlengths_to_stimulation(self, celltype=''):
-        bgmap = {}
-        probemap = {}
-        if not self.valid_bg_stimulus or not self.valid_probe_stimulus:
-            return (bgmap, probemap)
-        stimdata = self.netfile_new['/stimulus/connection'][:]
-        bg_indices = np.char.equal(stimdata['f0'], '/stim/stim_bg')
-        # The target compartment path is saved in field[1], which has the form: /model/net/cell/comp
-        self.bg_targets = [token[2] for token in np.char.split(stimdata['f1'][bg_indices], '/')]
-        probe_indices = np.char.equal(stimdata['f0'], '/stim/stim_probe')
-        self.probe_targets = [token[2] for token in np.char.split(stimdata['f1'][probe_indices], '/')]
-        cells = [cell for cell in self.cells if cell.startswith(celltype)]
-        vertices = self.ampa_graph.vs.select(name_in=cells)
-        for vertex in vertices:
-            bgpathlen = []
-            probepathlen = []
-            # Get the shortest distances of each stimulated cell
-            ii = self.ampa_graph.bfsiter(self.ampa_graph.vs.select(name_eq=cell)[0], mode=ig.IN, advanced=True)
-            for bfsnode in ii:
-                if bfsnode[0]['name'] in self.bg_targets:
-                    bgpathlen.append(bfsnode[1])
-                if bfsnode[0]['name'] in self.probe_targets:
-                    probepathlen.append(bfsnode[1])
-            bgmap[vertex['name']] = bgpathlen
-            probemap[vertex['name']] = probepathlen
-        return (bgmap, probemap)
+    def get_bg_shortest_path_lengths(self):
+        if hasattr(self, 'bg_paths'):
+            return self.bg_paths
+        self.bg_vertices = self.ampa_graph.vs.select(name_in=self.bg_targets)
+        self.bg_paths = defaultdict(dict)
+        if self._bg_shortest_paths is None:
+            self._bg_shortest_paths = {}
+            for vv in self.bg_vertices:
+                paths = self.ampa_graph.get_all_shortest_paths(vv.index, mode=ig.OUT)
+                self._bg_shortest_paths[vv['name']] = paths
+                for path in paths:
+                    self.bg_paths[vv.index][path[-1]] = len(path) - 1
         
-    def calc_stim_distance_del_p_correlation(self, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
-        """Correlate the average distance of a cell from the
+    def get_probe_shortest_path_lengths(self):
+        """Calculate the shortest paths from probe cells to every
+        other cell.
+
+        Return a dictionary of dictionaries. self.bg_path[v1][v2] ==
+        pathlength from vertex with index v1 to that with index v2.
+        """
+        if hasattr(self, 'probe_paths'):
+            return self.probe_path_lengths
+        self.probe_vertices = self.ampa_graph.vs.select(name_in=self.probe_targets)
+        self.probe_path_lengthss = defaultdict(dict)
+        if self._probe_shortest_paths is None:
+            self._probe_shortest_paths = {}
+            for vv in self.probe_vertices:
+                paths = self.ampa_graph.get_all_shortest_paths(vv.index, mode=ig.OUT)
+                self._probe_shortest_paths[vv['name']] = paths
+                for path in paths:
+                    self.probe_path_lengths[vv.index][path[-1]] =  len(path) - 1
+        return self.probe_path_lengths
+
+    def calc_stim_shortest_distance_del_p_correlation(self, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
+        """Correlate the shortest distance of a cell from the
         stimulated set. This does not (yet) take synaptic strength
         into account."""
         ret = []
-        bgpathlenmap, probepathlenmap, = self.get_pathlengths_to_stimulation(celltype)
-        # bgshortestmap = dict([(cell, min(pathlen)) for cell, pathlen in bgpathlenmap.items()])
+        bgpathlenmap = self.get_bg_shortest_paths()
+        probepathlenmap = self.get_probe_shortest_path_lengths()        
         probeshortestmap = dict([(cell, min(pathlen)) for cell, pathlen in probepathlenmap.items()])
-        del_p_list = self.get_stim_del_p(celltype, windows, delays, overwrite)
-        for (window, delay, cells, del_p) in del_p_list:
-            # bgshortest = np.array([bgshortestmap[cell] for cell in cells])
-            probeshortest = np.array([probeshortestmap[cell] for cell in cells])
-            # diff = bgshortest - probeshortest
-            corrcoef = np.corrcoef(probeshortest, del_p)
-            ret.append((window, delay, cells, corrcoef))
+        cells, del_p_list, = self.get_stim_del_p(celltype, windows, delays, overwrite)
+        vs = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
+        for (window, delay, del_p) in del_p_list:
+            probeshortest = []
+            for vc in vs:
+                lengths = [probepathlenmap[vp.index][vc.index] for vp in self.probe_vertices]
+                probeshortest.append(min(lengths))
+            corrcoef = np.corrcoef(probeshortest, del_p, rowvar=False)
+            ret.append((window, delay, corrcoef))
+        return (cells, ret)
+
+    def calc_distance_del_p_corrceof(self, pathlengthmap, cells, del_p_list):
+        ret = []
+        for (window, delay, del_p) in del_p_list:
+            # We list the vertices in the order of the cells. Also
+            # checkin for equality if faster than checking membership.
+            vs = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
+            pathlengths = [pathlengthmap[cell] for cell in cells]
+            corrcoef = np.corrcoef(pathlengths, del_p)
+            ret.append((window, delay, corrcoef))
         return ret
 
+    def calc_stim_distance_del_p_corrrelation(sellf, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
+        """Correlate the distance to the probe stimulated cells to
+        del_p. I measure the distance as resistance in parallel:
+        
+        1/equivalent = 1/d1 + 1/d2 + 1/d3 + ...
 
+        The situation is intuitively similar to parallel resistors
+        where each different path gives an additional route for signal
+        to reach the target."""
+        probepathlenmap = {}
+        for cell, pathlengths in self.__calc_probe_shortest_paths().items():
+            probepathlenmap[cell] = 1.0/sum([1.0/length for length in pathlengths])
+        
+            
     
                                 
         
