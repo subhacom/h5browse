@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 22 15:05:41 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 27 16:38:33 2012 (+0530)
+# Last-Updated: Mon Apr  2 11:04:13 2012 (+0530)
 #           By: subha
-#     Update #: 62
+#     Update #: 66
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -105,6 +105,10 @@ class TestSpikeCondProb(unittest.TestCase):
     def test_dump_stimulus_linked_probabilities(self):        
         filelist = ['/data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_114922_24526.h5']
         dump_stimulus_linked_probabilities(filelist, [0.01, 0.02, 0.03, 0.04, 0.05], [0.0, 0.05])
+
+    def test_get_bg_shortest_path_lengths(self):
+        lengths = self.test_object.get_bg_shortest_path_lengths()
+        self.assertEqual(len(lengths), 2)
 
 if __name__ == '__main__':
     unittest.main()

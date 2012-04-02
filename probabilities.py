@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 09:50:01 2012 (+0530)
+# Last-Updated: Mon Apr  2 11:08:19 2012 (+0530)
 #           By: subha
-#     Update #: 1416
+#     Update #: 1431
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -59,15 +59,20 @@ excitatory_celltypes = [
     ]
 
 class SpikeCondProb(object):
-    def __init__(self, datafilepath, netfilepath, netfilepath_new=None):
+    def __init__(self, datafilepath, netfilepath=None, netfilepath_new=None):
         self.datafile = h5.File(datafilepath, 'r')
+        if netfilepath is None:
+            netfilepath = datafilepath.replace('/data_', '/network_')
+
         self.netfile = h5.File(netfilepath, 'r')
 
         if netfilepath_new is None:
             netfilepath_new = netfilepath.replace('.h5', '.h5.new')
+            print 'Crearting netfile_new path:', netfilepath_new
 
         try:
             self.netfile_new = h5.File(netfilepath_new, 'r')
+            print 'Opened', self.netfilepath_new.filename
         except IOError:
             print 'Warning: no network file in new format:', 
             self.netfilepath_new = None
@@ -384,6 +389,8 @@ spike_avg_probe is teh average spike count after background + probe.'
                 ii += 1
             self.stimprobfile.close()
             self.stimprobfile = h5.File(outfilepath, 'r')
+        if not hasattr(self, 'stimprobfile'):
+            self.stimprobfile = h5.File(outfilepath, 'r')
         
     def get_stim_p(self, celltype='', windowlist=[], delaylist=[], overwrite=False):
         """Calculate the stimulus linked probability increase due to
@@ -437,26 +444,25 @@ spike_avg_probe is teh average spike count after background + probe.'
         ret = []
         if not self.valid_probe_stimulus or not self.valid_bg_stimulus:
             return ret
-        if overwrite or not hasattr(self, 'stimprobfile'):
-            # We calculate the following default case with window
-            # sizes increasing by 10 ms and 0 delay.
-            cells, datalist, = self.get_stim_p(celltype, windows, delays, overwrite)
+        # We calculate the following default case with window
+        # sizes increasing by 10 ms and 0 delay.
+        cells, datalist, = self.get_stim_p(celltype, windows, delays, overwrite)
         for data in datalist:
             ret.append((data[WINDOW], data[DELAY], data[PROBEP] - data[BGP]))
         return (cells, ret)
 
     def get_bg_shortest_path_lengths(self):
-        if hasattr(self, 'bg_paths'):
-            return self.bg_paths
+        if hasattr(self, 'bg_path_lengths'):
+            return self.bg_path_lengths
         self.bg_vertices = self.ampa_graph.vs.select(name_in=self.bg_targets)
-        self.bg_paths = defaultdict(dict)
+        self.bg_path_lengths = defaultdict(dict)
         if self._bg_shortest_paths is None:
             self._bg_shortest_paths = {}
             for vv in self.bg_vertices:
                 paths = self.ampa_graph.get_all_shortest_paths(vv.index, mode=ig.OUT)
                 self._bg_shortest_paths[vv['name']] = paths
                 for path in paths:
-                    self.bg_paths[vv.index][path[-1]] = len(path) - 1
+                    self.bg_path_lengths[vv.index][path[-1]] = len(path) - 1
         
     def get_probe_shortest_path_lengths(self):
         """Calculate the shortest paths from probe cells to every
@@ -465,10 +471,10 @@ spike_avg_probe is teh average spike count after background + probe.'
         Return a dictionary of dictionaries. self.bg_path[v1][v2] ==
         pathlength from vertex with index v1 to that with index v2.
         """
-        if hasattr(self, 'probe_paths'):
+        if hasattr(self, 'probe_path_lengths'):
             return self.probe_path_lengths
         self.probe_vertices = self.ampa_graph.vs.select(name_in=self.probe_targets)
-        self.probe_path_lengthss = defaultdict(dict)
+        self.probe_path_lengths = defaultdict(dict)
         if self._probe_shortest_paths is None:
             self._probe_shortest_paths = {}
             for vv in self.probe_vertices:
@@ -483,7 +489,6 @@ spike_avg_probe is teh average spike count after background + probe.'
         stimulated set. This does not (yet) take synaptic strength
         into account."""
         ret = []
-        bgpathlenmap = self.get_bg_shortest_paths()
         probepathlenmap = self.get_probe_shortest_path_lengths()        
         probeshortestmap = dict([(cell, min(pathlen)) for cell, pathlen in probepathlenmap.items()])
         cells, del_p_list, = self.get_stim_del_p(celltype, windows, delays, overwrite)
