@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 22 15:05:41 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 11:04:13 2012 (+0530)
+# Last-Updated: Mon Apr  2 11:24:55 2012 (+0530)
 #           By: subha
-#     Update #: 66
+#     Update #: 78
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,7 +52,8 @@ class TestSpikeCondProb(unittest.TestCase):
     def setUp(self):
         self.datafilepath = 'test_data/data.h5'
         self.netfilepath = 'test_data/network.h5'
-        self.test_object = SpikeCondProb(self.datafilepath, self.netfilepath)
+        self.netfile_new_path = 'test_data/network_new.h5'
+        self.test_object = SpikeCondProb(self.datafilepath, self.netfilepath, self.netfile_new_path)
 
     def test_calc_spike_prob(self):
         spike_prob = self.test_object.calc_spike_prob('TCR_0', 'SupPyrRS_1', 10e-3, 10e-3)
@@ -107,8 +108,22 @@ class TestSpikeCondProb(unittest.TestCase):
         dump_stimulus_linked_probabilities(filelist, [0.01, 0.02, 0.03, 0.04, 0.05], [0.0, 0.05])
 
     def test_get_bg_shortest_path_lengths(self):
+        """The network_new.h5 file has only one TCR cell connected to a background stimulus.
+        This cell is connected to one of the 
+        """
         lengths = self.test_object.get_bg_shortest_path_lengths()
-        self.assertEqual(len(lengths), 2)
+        self.assertEqual(len(lengths), 1)
+        self.assertEqual(len(lengths[lengths.keys()[0]]), 2)
+
+    def test_get_probe_shortest_path_lengths(self):
+        """The network_new.h5 file has only one TCR cell (TCR_0)
+        connected to the probe stimulus.  This cell is connected to
+        one of the
+        """
+        lengths = self.test_object.get_probe_shortest_path_lengths()
+        self.assertEqual(len(lengths), 1)
+        self.assertEqual(len(lengths[lengths.keys()[0]]), 2)
+        
 
 if __name__ == '__main__':
     unittest.main()

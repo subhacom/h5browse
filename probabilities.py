@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 11:08:19 2012 (+0530)
+# Last-Updated: Mon Apr  2 13:39:48 2012 (+0530)
 #           By: subha
-#     Update #: 1431
+#     Update #: 1523
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -58,6 +58,8 @@ excitatory_celltypes = [
     'TCR'
     ]
 
+WINDOWS = [10e-3, 20e-3, 30e-3, 40e-3]
+DELAYS = [0.0, 10e-3, 20e-3, 30e-3, 40e-3]
 class SpikeCondProb(object):
     def __init__(self, datafilepath, netfilepath=None, netfilepath_new=None):
         self.datafile = h5.File(datafilepath, 'r')
@@ -72,7 +74,7 @@ class SpikeCondProb(object):
 
         try:
             self.netfile_new = h5.File(netfilepath_new, 'r')
-            print 'Opened', self.netfilepath_new.filename
+            print 'Opened', self.netfile_new.filename
         except IOError:
             print 'Warning: no network file in new format:', 
             self.netfilepath_new = None
@@ -392,7 +394,7 @@ spike_avg_probe is teh average spike count after background + probe.'
         if not hasattr(self, 'stimprobfile'):
             self.stimprobfile = h5.File(outfilepath, 'r')
         
-    def get_stim_p(self, celltype='', windowlist=[], delaylist=[], overwrite=False):
+    def get_stim_p(self, celltype='', windowlist=WINDOWS, delaylist=DELAYS, overwrite=False):
         """Calculate the stimulus linked probability increase due to
         probe stimulus from background for each window sizes at all
         given delays."""        
@@ -406,11 +408,13 @@ spike_avg_probe is teh average spike count after background + probe.'
             dset = grp[dsetname]
             delay = dset.attrs['delay']
             window = dset.attrs['window']
-            if not delaylist or not windowlist or (delay in delaylist and window in windowlist):
+            if  len(delaylist) == 0 or  len(windowlist) == 0 or (delay in delaylist and window in windowlist):
                 data = dset[:]
             else:
                 continue
-            cellindices = np.nonzero(np.char.startswith(data['cell'], celltype))[0]
+            cells = data['cell']
+            print cells.shape, cells.dtype
+            cellindices = np.nonzero(np.char.startswith(cells, celltype))[0]
             bgp = data[cellindices]['prob_bg']
             bgindices = np.nonzero(bgp >= 0.0)[0]
             probep = data[cellindices]['prob_probe'][bgindices]
@@ -422,7 +426,7 @@ spike_avg_probe is teh average spike count after background + probe.'
             ret.append((window, delay, bgp, probep))
         return (cells, ret)
 
-    def get_stim_del_p(self, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
+    def get_stim_del_p(self, celltype='', windows=WINDOWS, delays=DELAYS, overwrite=False):
         """Goes through stimulus linked probability file and picks up
         the window delay and increase in probability from
         background-only to background+probe stimulus
@@ -433,7 +437,8 @@ spike_avg_probe is teh average spike count after background + probe.'
         If overwrite is True then it recomputes all the proebabilities
         and overwrites existing file.
 
-        Return  (list of cells, list of tuples each containing window, delay, list of del P (probe-bg) corresponding to the list of
+        Return (list of cells, list of tuples each containing window,
+        delay, list of del P (probe-bg) corresponding to the list of
         cells).
 
         """
@@ -452,7 +457,15 @@ spike_avg_probe is teh average spike count after background + probe.'
         return (cells, ret)
 
     def get_bg_shortest_path_lengths(self):
-        if hasattr(self, 'bg_path_lengths'):
+        """Returns a dictionary of dictionaries mapping
+        backgroun-stimulust-target to each cell to the length of the
+        shortest patrh between them.
+
+        Thus ret[x][y] == k where k is the the shortest distance from
+        vertex with index x to vertex with index y, where x the vertex
+        index of a cell stimulated by the background stimulus.
+        """
+        if hasattr(self, 'bg_path_lengths') and self.bg_path_lengths is not None:
             return self.bg_path_lengths
         self.bg_vertices = self.ampa_graph.vs.select(name_in=self.bg_targets)
         self.bg_path_lengths = defaultdict(dict)
@@ -463,6 +476,8 @@ spike_avg_probe is teh average spike count after background + probe.'
                 self._bg_shortest_paths[vv['name']] = paths
                 for path in paths:
                     self.bg_path_lengths[vv.index][path[-1]] = len(path) - 1
+
+        return self.bg_path_lengths
         
     def get_probe_shortest_path_lengths(self):
         """Calculate the shortest paths from probe cells to every
@@ -484,36 +499,53 @@ spike_avg_probe is teh average spike count after background + probe.'
                     self.probe_path_lengths[vv.index][path[-1]] =  len(path) - 1
         return self.probe_path_lengths
 
-    def calc_stim_shortest_distance_del_p_correlation(self, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
+    def calc_stim_shortest_distance_del_p_correlation(self, celltype='', windows=WINDOWS, delays=DELAYS, overwrite=False):
         """Correlate the shortest distance of a cell from the
         stimulated set. This does not (yet) take synaptic strength
         into account."""
         ret = []
         probepathlenmap = self.get_probe_shortest_path_lengths()        
-        probeshortestmap = dict([(cell, min(pathlen)) for cell, pathlen in probepathlenmap.items()])
         cells, del_p_list, = self.get_stim_del_p(celltype, windows, delays, overwrite)
-        vs = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
+        vseq = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
+        probeshortest = []
+        # Collect the shortest of the distances to cells in the
+        # probe-stimulated set in the same order as in del_p list
+        ii = 0
+        probeshortest = np.ones(len(cells)) * np.inf
+        for vtarget in vseq:            
+            for vprobe in self.probe_vertices:                
+                try:
+                    new_val = probepathlenmap[vprobe.index][vtarget.index]
+                    if new_val < probeshortest[ii]:
+                        probeshortest[ii] = new_val
+                except KeyError:
+                    print "Cell pair not connected:", vprobe['name'], vtarget['name']
+                    print 'Vertex connectivity:', self.ampa_graph.vertex_connectivity(vprobe.index, vtarget.index)            
+        mask = (probeshortest < np.inf)
         for (window, delay, del_p) in del_p_list:
-            probeshortest = []
-            for vc in vs:
-                lengths = [probepathlenmap[vp.index][vc.index] for vp in self.probe_vertices]
-                probeshortest.append(min(lengths))
-            corrcoef = np.corrcoef(probeshortest, del_p, rowvar=False)
+            corrcoef = np.corrcoef(probeshortest[mask], del_p[mask], rowvar=False)
             ret.append((window, delay, corrcoef))
         return (cells, ret)
 
-    def calc_distance_del_p_corrceof(self, pathlengthmap, cells, del_p_list):
-        ret = []
-        for (window, delay, del_p) in del_p_list:
-            # We list the vertices in the order of the cells. Also
-            # checkin for equality if faster than checking membership.
-            vs = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
-            pathlengths = [pathlengthmap[cell] for cell in cells]
-            corrcoef = np.corrcoef(pathlengths, del_p)
-            ret.append((window, delay, corrcoef))
-        return ret
+    # def calc_distance_del_p_corrceof(self, pathlengthmap, cells, del_p_list):
+    #     """Utility function to compute correlation between a dict
+    #     mapping cells to some sort of path length and the del_p values
+    #     which must be in the same order as cells.
+        
 
-    def calc_stim_distance_del_p_corrrelation(sellf, celltype='', windows=[10e-3, 20e-3, 30e-3, 40e-3, 50e-3], delays=[0.0], overwrite=False):
+    #     pathlengthmap is a dict mapping cells to corresponding
+    #     pathlength."""
+    #     ret = []
+    #     for (window, delay, del_p) in del_p_list:
+    #         # We list the vertices in the order of the cells. Also
+    #         # checkin for equality if faster than checking membership.
+    #         vs = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
+    #         pathlengths = [pathlengthmap[cell] for cell in cells]
+    #         corrcoef = np.corrcoef(pathlengths, del_p)
+    #         ret.append((window, delay, corrcoef))
+    #     return ret
+
+    def calc_stim_distance_del_p_corrrelation(sellf, celltype='', windows=WINDOWS, delay=DELAYS, overwrite=False):
         """Correlate the distance to the probe stimulated cells to
         del_p. I measure the distance as resistance in parallel:
         
@@ -525,7 +557,7 @@ spike_avg_probe is teh average spike count after background + probe.'
         probepathlenmap = {}
         for cell, pathlengths in self.__calc_probe_shortest_paths().items():
             probepathlenmap[cell] = 1.0/sum([1.0/length for length in pathlengths])
-        
+        raise(NotImplementedError, 'TODO: finish this function def')
             
     
                                 
