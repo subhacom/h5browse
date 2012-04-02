@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 13:39:48 2012 (+0530)
+# Last-Updated: Mon Apr  2 15:22:26 2012 (+0530)
 #           By: subha
-#     Update #: 1523
+#     Update #: 1563
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -35,7 +35,7 @@ import numpy as np
 import h5py as h5
 import igraph as ig
 from datetime import datetime
-from matplotlib import pyplot    
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 def update_pyplot_config():
@@ -46,7 +46,7 @@ def update_pyplot_config():
           'legend.fontsize': 10,
           'xtick.labelsize' : 8,
           'ytick.labelsize' : 8}
-    pyplot.rcParams.update(params)
+    plt.rcParams.update(params)
 
 excitatory_celltypes = [
     'SupPyrRS',
@@ -404,6 +404,7 @@ spike_avg_probe is teh average spike count after background + probe.'
            self.dump_stim_p(windowlist, delaylist, overwrite)
         grp = self.stimprobfile['spiking_prob']
         cells = None
+        cellindices = None
         for dsetname in grp:
             dset = grp[dsetname]
             delay = dset.attrs['delay']
@@ -412,17 +413,16 @@ spike_avg_probe is teh average spike count after background + probe.'
                 data = dset[:]
             else:
                 continue
-            cells = data['cell']
-            print cells.shape, cells.dtype
-            cellindices = np.nonzero(np.char.startswith(cells, celltype))[0]
+            if cells is None:
+                cells = data['cell']
+                cellindices = np.nonzero(np.char.startswith(cells, celltype))[0]
+                cells = cells[cellindices]
             bgp = data[cellindices]['prob_bg']
             bgindices = np.nonzero(bgp >= 0.0)[0]
             probep = data[cellindices]['prob_probe'][bgindices]
             probeindices = np.nonzero(probep >= 0.0)[0]
             bgp = bgp[bgindices][probeindices]
             probep = probep[probeindices]
-            if cells is None:
-                cells = data[cellindices][bgindices][probeindices]['cell']
             ret.append((window, delay, bgp, probep))
         return (cells, ret)
 
@@ -516,14 +516,22 @@ spike_avg_probe is teh average spike count after background + probe.'
             for vprobe in self.probe_vertices:                
                 try:
                     new_val = probepathlenmap[vprobe.index][vtarget.index]
+                    # print '==', vprobe['name'], vtarget['name'], new_val
                     if new_val < probeshortest[ii]:
                         probeshortest[ii] = new_val
                 except KeyError:
                     print "Cell pair not connected:", vprobe['name'], vtarget['name']
-                    print 'Vertex connectivity:', self.ampa_graph.vertex_connectivity(vprobe.index, vtarget.index)            
-        mask = (probeshortest < np.inf)
+                    # print 'Vertex connectivity:', self.ampa_graph.vertex_connectivity(vprobe.index, vtarget.index)            
+            ii += 1
+        mask = np.nonzero(probeshortest < np.inf)[0]
         for (window, delay, del_p) in del_p_list:
-            corrcoef = np.corrcoef(probeshortest[mask], del_p[mask], rowvar=False)
+            # print '############### 1 ####################'
+            # print 'mask:', mask
+            # print 'probeshortest', probeshortest[mask]
+            # print 'del_p', del_p[mask]
+            plt.plot(probeshortest[mask], del_p[mask], 'x')
+            plt.show()
+            corrcoef = np.corrcoef(probeshortest[mask], del_p[mask])
             ret.append((window, delay, corrcoef))
         return (cells, ret)
 
@@ -602,8 +610,8 @@ def display_probability_plots(filelistfile, celltype):
         num_datasets = len(dataf['spiking_prob'])
         rowcount = int(num_datasets / 2.0 + 0.5)        
         plotindex = 1
-        pyplot.figure(figsize=(8,11))
-        pyplot.clf()
+        plt.figure(figsize=(8,11))
+        plt.clf()
         for dataset_name in dataf['spiking_prob']:
             dataset = dataf['spiking_prob'][dataset_name]
             delay = dataset.attrs['delay']
@@ -617,17 +625,17 @@ def display_probability_plots(filelistfile, celltype):
             bgp = bgp[probe_indices]
             probep = probep[probe_indices]
             deltap = probep - bgp
-            pyplot.subplot(rowcount, 2, plotindex)
+            plt.subplot(rowcount, 2, plotindex)
             plotindex += 1
-            pyplot.bar(np.arange(0,len(deltap), 1.0), deltap)
-            pyplot.title('delay:%g width:%g' % (delay, window))
-            # pyplot.legend()
-        pyplot.suptitle('P(spike/probe) - P(spike/background)\nFile: %s' % (filename))
+            plt.bar(np.arange(0,len(deltap), 1.0), deltap)
+            plt.title('delay:%g width:%g' % (delay, window))
+            # plt.legend()
+        plt.suptitle('P(spike/probe) - P(spike/background)\nFile: %s' % (filename))
         figfile = '%s' % (filename.replace('.h5', '.png').replace('stim_prob_', 'stim_delprob_%s' % (celltype)))
-        pyplot.savefig(figfile)
+        plt.savefig(figfile)
         print 'Figure saved in:', figfile        
         dataf.close()
-        pyplot.show()
+        plt.show()
         
 def display_delp_with_distance(filelistfile, celltype):
     """Display the correlation between distance from probe-stimulated
@@ -647,8 +655,8 @@ def display_delp_with_distance(filelistfile, celltype):
         num_datasets = len(dataf['spiking_prob'])
         rowcount = int(num_datasets / 2.0 + 0.5)        
         plotindex = 1
-        pyplot.figure(figsize=(8,11))
-        pyplot.clf()
+        plt.figure(figsize=(8,11))
+        plt.clf()
         for dataset_name in probf['spiking_prob']:
             dataset = dataf['spiking_prob'][dataset_name]
             delay = dataset.attrs['delay']
@@ -663,17 +671,17 @@ def display_delp_with_distance(filelistfile, celltype):
             probep = probep[probe_indices]
             deltap = probep - bgp
             cells = data['cell'][cell_indices][bg_indices][probe_indices]
-            pyplot.subplot(rowcount, 2, plotindex)
+            plt.subplot(rowcount, 2, plotindex)
             plotindex += 1
-            pyplot.bar(np.arange(0,len(deltap), 1.0), deltap)
-            pyplot.title('delay:%g width:%g' % (delay, window))
-            # pyplot.legend()
-        pyplot.suptitle('P(spike/probe) - P(spike/background)\nFile: %s' % (filename))
+            plt.bar(np.arange(0,len(deltap), 1.0), deltap)
+            plt.title('delay:%g width:%g' % (delay, window))
+            # plt.legend()
+        plt.suptitle('P(spike/probe) - P(spike/background)\nFile: %s' % (filename))
         figfile = '%s' % (filename.replace('.h5', '.png').replace('stim_prob_', 'stim_delprob_%s' % (celltype)))
-        pyplot.savefig(figfile)
+        plt.savefig(figfile)
         print 'Figure saved in:', figfile        
         dataf.close()
-        pyplot.show()
+        plt.show()
     
 
 import pylab    
@@ -742,7 +750,7 @@ def run_on_files(filelist, windowlist, delaylist, mode):
             cols = 2
             if rows * cols < len(delaylist):
                 rows += 1
-            figure = pyplot.figure()
+            figure = plt.figure()
             ii = 0
             for delay in delaylist:
                 connected_prob = conn_fun(prob_counter, window, delay)
@@ -755,16 +763,16 @@ def run_on_files(filelist, windowlist, delaylist, mode):
                 dset.attrs['window'] = window
                 data = [np.asarray(connected_prob.values()), np.asarray(unconnected_prob.values())]
                 labels = ['conn w:%g,d:%g' % (window, delay), 'unconn w:%g,d:%g' % (window, delay)]
-                axes = pyplot.subplot(rows, cols, ii+1)
-                pyplot.hist(data, bins=np.arange(0, 1.1, 0.1), normed=True, histtype='bar', label=labels)
-                pyplot.legend(prop={'size':'xx-small'})
-                pyplot.ylim([0, 10.0])
-                pyplot.xlim([0, 1.1])
-                axes = pyplot.subplot(rows, cols, ii+2)
-                pyplot.hist(data, bins=np.arange(0, 1.1, 0.1), normed=True, histtype='step', cumulative=True, label=labels)
-                pyplot.legend(prop={'size':'xx-small'})
-                pyplot.ylim([0, 10.0])
-                pyplot.xlim([0, 1.1])
+                axes = plt.subplot(rows, cols, ii+1)
+                plt.hist(data, bins=np.arange(0, 1.1, 0.1), normed=True, histtype='bar', label=labels)
+                plt.legend(prop={'size':'xx-small'})
+                plt.ylim([0, 10.0])
+                plt.xlim([0, 1.1])
+                axes = plt.subplot(rows, cols, ii+2)
+                plt.hist(data, bins=np.arange(0, 1.1, 0.1), normed=True, histtype='step', cumulative=True, label=labels)
+                plt.legend(prop={'size':'xx-small'})
+                plt.ylim([0, 10.0])
+                plt.xlim([0, 1.1])
                 ii += 2
                 print 'finished delay:', delay
             jj += 1
@@ -807,13 +815,13 @@ def dump_stimulus_linked_probabilities(datafilelist, windowlist, delaylist):
                 if len(prob_post_probe) == 0 or min(prob_post_probe) == max(prob_post_probe):
                     continue
                 # Now plot the data
-                figure = pyplot.figure()
-                pyplot.title('window: %g, delay: %g' % (window, delay))                
-                pyplot.hist([prob_post_bg, prob_post_probe], bins=np.arange(0, 1.1, 0.1), normed=True, histtype='bar', label=['prob-bg', 'prob-probe'])
-                pyplot.ylim([0.0, 10.0])
-                pyplot.xlim([0.0, 1.1])
-                pyplot.legend(prop={'size':'xx-small'})
-                # pyplot.show()
+                figure = plt.figure()
+                plt.title('window: %g, delay: %g' % (window, delay))                
+                plt.hist([prob_post_bg, prob_post_probe], bins=np.arange(0, 1.1, 0.1), normed=True, histtype='bar', label=['prob-bg', 'prob-probe'])
+                plt.ylim([0.0, 10.0])
+                plt.xlim([0.0, 1.1])
+                plt.legend(prop={'size':'xx-small'})
+                # plt.show()
                 print 'finished delay:', delay
                 plotfile.savefig(figure)
                 figure.clf()
@@ -832,7 +840,10 @@ def do_run_dump_stimulus_linked_probabilities(filelistfile):
 import sys
     
 if __name__ == '__main__':
-    do_run_dump_stimulus_linked_probabilities(sys.argv[1])
+    df = '2012_03_22/data_20120322_114922_24526.h5'    
+    sp = SpikeCondProb(df)
+    x = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', WINDOWS, DELAYS)
+    # do_run_dump_stimulus_linked_probabilities(sys.argv[1])
     # test_main()
     # if len(sys.argv) < 3:
     #     print 'Usage:', sys.argv[0], 'filelist mode'
