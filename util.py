@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun  5 13:59:40 2009 (+0530)
 # Version: 
-# Last-Updated: Sat Oct 29 18:29:25 2011 (+0530)
+# Last-Updated: Tue Apr  3 16:34:43 2012 (+0530)
 #           By: subha
-#     Update #: 35
+#     Update #: 72
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -44,6 +44,7 @@
 # 
 
 # Code:
+import h5py as h5
 from subprocess import call
 import pylab
 import gzip
@@ -78,6 +79,59 @@ def ncc(a, b):
     res = numpy.fft.fftshift(res)/(len(a) - 1)
     return res
 
+def print_diff(message, left, right, ldiff, rdiff):
+    print '%s: %s [%s] <-> %s [%s]' % (message, left.name, ldiff, right.name, rdiff)
+    
+def check_network_identity(left, right):
+    """Compare two hdf5 network files for equality."""
+    ret = True
+    if type(left) != type(right):
+        print_diff('Different types:', left, right, left.__class__.__name__, right.__class__.__name__)
+        return False
+    if isinstance(left, h5.Group):
+        lkeys = sorted(left.keys())
+        rkeys = sorted(right.keys())
+        if len(lkeys) != len(rkeys):
+            print_diff('Different childcount:', left, right,  len(lkeys), len(rkeys))
+            return False
+        for ii in range(len(lkeys)):
+            if lkeys[ii] != rkeys[ii]:
+                print_diff('Different children:', left, right, lkeys[ii], rkeys[ii])
+                ret = False
+            next_ret = check_network_identity(left[lkeys[ii]], right[rkeys[ii]])
+            if ret:
+                ret = next_ret
+        return ret
+    if isinstance(left, h5.Dataset):
+        if left.shape != right.shape:
+            print_diff('Datasets of unequal length:', left, right, len(left), len(right))
+            return False
+        ldata = left[:]
+        rdata = right[:]
+        if ldata.dtype != rdata.dtype:
+            print_diff('Datatypes don\'t match:', left, right, ldata.dtype, rdata.dtype)
+            ret = False
+        else:
+            fnames = ldata.dtype.names
+            if fnames is not None:
+                for fname in fnames:
+                    for ii in range(min(len(ldata), len(rdata))):
+                        res = ldata[fname][ii] == rdata[fname][ii]
+                        if isinstance(res, numpy.ndarray):
+                            res = res.all()
+                        if not res:
+                            print_diff('Entries do not match (%s[%d])' % (fname, ii), left, right, str(ldata[fname][ii]), str(rdata[fname][ii]))
+                            ret = False
+            else:
+                for ii in range(min(len(ldata), len(rdata))):
+                    res = ldata[ii] == rdata[ii]
+                    if isinstance(res, numpy.ndarray):
+                        res = res.all()
+                    if not res:
+                        print_diff('Entries do not match [%d])' % (ii), left, right, str(ldata[ii]), str(rdata[ii]))
+                        ret = False
+    return ret
+            
 
 
 

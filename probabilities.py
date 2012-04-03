@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Apr  2 16:22:32 2012 (+0530)
+# Last-Updated: Tue Apr  3 12:08:30 2012 (+0530)
 #           By: subha
-#     Update #: 1616
+#     Update #: 1694
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -540,29 +540,59 @@ spike_avg_probe is teh average spike count after background + probe.'
             if max(del_p) == 0.0:
                 print 'Warning:', self.datafile.filename, ', window:', window, ', delay:', delay, ': del_p is all zero'
                 continue
-            plt.plot(probeshortest[mask], del_p[mask], 'x')
-            plt.show()
+            # plt.plot(probeshortest[mask], del_p[mask], 'x')
+            # plt.show()
             corrcoef = np.corrcoef(probeshortest[mask], del_p[mask])
             # corrcoef is a 2x2 matrix for 1 D arrays where the
             # antidiagonal elements correspond to cross coreelation
             # and diagonal elements are autocorrelation. So we take
             # the first antidiagonal element (the other is identical).
-            ret.append((window, delay, corrcoef[0,1]))
+            ret.append((window, delay, corrcoef[0][1]))
         return (cells, ret)
 
-    def calc_stim_distance_del_p_corrrelation(sellf, celltype='', windows=WINDOWS, delay=DELAYS, overwrite=False):
-        """Correlate the distance to the probe stimulated cells to
-        del_p. I measure the distance as resistance in parallel:
+    def get_stim_eqv_distance(self):
+        """Equivalent distance to the probe stimulated cells. Measure
+        the distance as resistors in parallel:
         
         1/equivalent = 1/d1 + 1/d2 + 1/d3 + ...
 
         The situation is intuitively similar to parallel resistors
         where each different path gives an additional route for signal
         to reach the target."""
-        probepathlenmap = {}
-        for cell, pathlengths in self.__calc_probe_shortest_paths().items():
-            probepathlenmap[cell] = 1.0/sum([1.0/length for length in pathlengths])
-        raise(NotImplementedError, 'TODO: finish this function def')
+        probepathlenmap = defaultdict(float)
+        for pathlendict in self.get_probe_shortest_path_lengths().values():
+            for target_index, pathlength in pathlendict.items():
+                if pathlength != 0.0:
+                    probepathlenmap[target_index] += 1.0/pathlength
+                else:
+                    probepathlenmap[target_index] = np.inf
+        for key, value in probepathlenmap.items():
+            if value != 0.0:
+                probepathlenmap[key] = 1.0/value
+            else:
+                probepathlenmap[key] = np.inf
+        return probepathlenmap
+
+    def calc_stim_eqv_distance_del_p_correlation(self, celltype='', windows=WINDOWS, delays=DELAYS, overwrite=False):
+        """Correlate the distance to the probe stimulated cells to
+        del_p. """
+        ret = []
+        probepathlenmap = self.get_stim_eqv_distance()
+        cells, del_p_list, = self.get_stim_del_p(celltype, windows, delays, overwrite)
+        vseq = [self.ampa_graph.vs.select(name_eq=cell)[0] for cell in cells]
+        pathlengths = np.array([probepathlenmap[vv.index] for vv in vseq], dtype=float)
+        mask = np.nonzero(pathlengths < np.inf)[0]
+        for (window, delay, del_p) in del_p_list:
+            if max(del_p) == 0.0:
+                print 'Warning:', self.datafile.filename, ', window:', window, ', delay:', delay, ': del_p is all zero'
+                continue
+            corrcoef = np.corrcoef(pathlengths[mask], del_p[mask])
+            # corrcoef is a 2x2 matrix for 1 D arrays where the
+            # antidiagonal elements correspond to cross coreelation
+            # and diagonal elements are autocorrelation. So we take
+            # the first antidiagonal element (the other is identical).
+            ret.append((window, delay, corrcoef[0][1]))
+        return (cells, ret)
             
     
                                 
@@ -834,22 +864,47 @@ def do_run_dump_stimulus_linked_probabilities(filelistfile):
     windows = np.arange(0, 0.05, 10e-3)
     dump_stimulus_linked_probabilities(files, windows, [0.0])
 
-def do_dump_stim_shortest_distance_delp_corr(filelistfile):
-    for line in filelistfile:
-        datafilename = line.strip()
+def do_dump_stim_shortest_distance_delp_corr(filelist, celltype='', overwrite=False):
+    ret = {}
+    filenames = []
+    if isinstance(filelist, str):
+        filenames = [line.strip() for line in open(filelist, 'r')]
+    elif isinstance(filelist, list):
+        filenames = filelist
+    for datafilename in filenames:
         sp = SpikeCondProb(datafilename)
-        xx = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', windows=WINDOWS, delays=DELAYS, overwrite=True)
-        for window, delay, corrcoef in xx:
-            print 'filename:', datafilename, 'window:', window, 'delay:', delay, 'corrcoef:', corrcoef
+        xx = sp.calc_stim_shortest_distance_del_p_correlation(celltype, windows=WINDOWS, delays=DELAYS, overwrite=overwrite)
+        ret[datafilename] = xx
+        # for (window, delay, corrcoef) in xx[1]:
+        #     print 'filename:', datafilename, 'window:', window, 'delay:', delay, 'corrcoef:', corrcoef
+    return ret
+
+def do_dump_stim_eqv_distance_delp_corr(filelist, celltype='', overwrite=False):
+    """Calculate and print the correlation between equivalent distance
+    to probe stimulus set and del_p."""
+    ret = {}
+    filenames = []
+    if isinstance(filelist, str):
+        filenames = [line.strip() for line in open(filelist, 'r')]
+    elif isinstance(filelist, list):
+        filenames = filelist
+    for datafilename in filenames:
+        sp = SpikeCondProb(datafilename)
+        xx = sp.calc_stim_eqv_distance_del_p_correlation(celltype, windows=WINDOWS, delays=DELAYS, overwrite=overwrite)
+        ret[datafilename] = xx
+        # for (window, delay, corrcoef) in xx[1]:
+        #     print 'filename:', datafilename, 'window:', window, 'delay:', delay, 'corrcoef:', corrcoef
+    return ret
 
 import sys
     
 if __name__ == '__main__':
-    df = '2012_03_22/data_20120322_114922_24526.h5'    
-    sp = SpikeCondProb(df)
-    x = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', windows=WINDOWS, delays=DELAYS, overwrite=True)
-    for window, delay, correlation in x[1]:
-        print 'Window:', window, 'Delay:', delay, 'CorrCoef:', correlation
+    do_dump_stim_shortest_distance_delp_corr('datafiles.txt')
+    # df = '2012_03_22/data_20120322_114922_24526.h5'    
+    # sp = SpikeCondProb(df)
+    # x = sp.calc_stim_shortest_distance_del_p_correlation('SpinyStellate', windows=WINDOWS, delays=DELAYS, overwrite=True)
+    # for window, delay, correlation in x[1]:
+    #     print 'Window:', window, 'Delay:', delay, 'CorrCoef:', correlation
     # do_run_dump_stimulus_linked_probabilities(sys.argv[1])
     # test_main()
     # if len(sys.argv) < 3:
