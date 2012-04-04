@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar 19 23:25:51 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Apr  3 12:08:30 2012 (+0530)
+# Last-Updated: Tue Apr  3 20:47:13 2012 (+0530)
 #           By: subha
-#     Update #: 1694
+#     Update #: 1701
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -550,7 +550,7 @@ spike_avg_probe is teh average spike count after background + probe.'
             ret.append((window, delay, corrcoef[0][1]))
         return (cells, ret)
 
-    def get_stim_eqv_distance(self):
+    def get_stim_eqv_distance(self, stim='probe'):
         """Equivalent distance to the probe stimulated cells. Measure
         the distance as resistors in parallel:
         
@@ -560,7 +560,12 @@ spike_avg_probe is teh average spike count after background + probe.'
         where each different path gives an additional route for signal
         to reach the target."""
         probepathlenmap = defaultdict(float)
-        for pathlendict in self.get_probe_shortest_path_lengths().values():
+        if stim == 'probe':
+            pldicts = self.get_probe_shortest_path_lengths().values()
+        else:
+            pldicts = self.get_bg_shortest_path_lengths().values()
+
+        for pathlendict in pldicts:
             for target_index, pathlength in pathlendict.items():
                 if pathlength != 0.0:
                     probepathlenmap[target_index] += 1.0/pathlength
