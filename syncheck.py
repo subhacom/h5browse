@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Apr 25 10:45:32 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Apr 26 19:23:04 2012 (+0530)
+# Last-Updated: Thu Apr 26 20:10:58 2012 (+0530)
 #           By: subha
-#     Update #: 152
+#     Update #: 175
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -68,21 +68,26 @@ def plot_presynaptic(cellname, srctype, syntype, netfile, datafile, tstart, tend
     istart = int(tstart/plotdt)
     iend = int(tend/plotdt)
     for ii in range(len(precells)):
+        print 'Presynaptic cell:', precells[ii]
         pretype = precells[ii].split('_')[0]
         syndata_path = 'gk_%s_%s_from_%s' % (presynaptic['dest'][ii].replace('/', '_'),
                                              syntype,
                                              pretype)
         try:
-            gk = normalize(datafile['/synapse/' + syndata_path ][:])[istart:iend]
+            gk = np.asarray(datafile['/synapse/' + syndata_path ])
+            gk = normalize(gk)[istart:iend]
             # Shift the normalize plots around 0 so they don't overlap too much with the original
-            plt.plot(np.linspace(tstart, tend, len(gk)), 
+            l2d = plt.plot(np.linspace(tstart, tend, len(gk)), 
                      gk + ii - len(precells)/2, 
-                     color=celltype_color_dict[pretype], 
+                     # color=celltype_color_dict[pretype], 
+                     ls='-.',
                      label=syndata_path)
-            vm = normalize(datafile['/Vm/'+ precells[ii]])[istart:iend]
-            plt.plot(np.linspace(tstart, tend, plotdt), 
+            vm = np.asarray(datafile['/Vm/'+ precells[ii]])
+            vm = normalize(vm)[istart:iend]
+            plt.plot(np.linspace(tstart, tend, len(vm)), 
                      vm + ii - len(precells)/2, 
-                     color=celltype_color_dict[pretype], 
+                     color = l2d[0].get_color(),
+                     # color=celltype_color_dict[pretype],
                      label=precells[ii])
         except KeyError:
             print 'No synaptic Gk for', cellname, '<-', pretype
@@ -106,8 +111,8 @@ def test_conn(filename):
 if __name__ == '__main__':
     dfname = '/data/subha/cortical/py/data/2012_04_24/data_20120424_145719_7507.h5'
     nfname = '/data/subha/cortical/py/data/2012_04_24/network_20120424_145719_7507.h5.new'
-    cellname = 'SpinyStellate_0'
-    sourcetype = 'TCR'
+    cellname = 'SpinyStellate_21'
+    sourcetype = ''#'TCR'
     synapsetype = 'nmda'
     df = h5.File(dfname, 'r')
     nf = h5.File(nfname, 'r')
@@ -126,10 +131,12 @@ if __name__ == '__main__':
     plt.plot(np.linspace(0, simtime, len(vm)), 
              vm, 
              color=celltype_color_dict[cellname.split('_')[0]], 
+             ls=':',
              label=cellname)
     tstart = 6.0
     tend = 7.5
     plot_presynaptic(cellname, sourcetype, synapsetype, nf, df, tstart, tend)
+    plt.legend(loc='lower left')
     plt.show()
 
 # 
