@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Apr 25 10:45:32 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Apr 27 13:23:55 2012 (+0530)
+# Last-Updated: Fri Apr 27 16:57:24 2012 (+0530)
 #           By: subha
-#     Update #: 443
+#     Update #: 512
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -115,7 +115,7 @@ class SynAnalyzer(object):
                 # Shift the normalize plots around 0 so all of them don't
                 # overlap with the original
                 l2d = plt.plot(self.tseries, 
-                               vm + ii + 1,
+                               vm - ii - 1,
                                label=unique_precells[ii])
             except KeyError:
                 print 'No Vm for', unique_precells[ii]
@@ -131,7 +131,7 @@ class SynAnalyzer(object):
                     if len(gk) == 0:
                         continue
                     plt.plot(self.tseries,
-                             gk + ii + 1,
+                             gk - ii - 1,
                              color=l2d[0].get_color(),
                              ls=lstyles[syntab['type'][jj]],
                              label='%s:%s<-%s' % (syntab['type'][jj], 
@@ -139,6 +139,7 @@ class SynAnalyzer(object):
                                                   pretype))
             except ValueError:
                 pass
+        return unique_precells
 
     def plot_traces(self, cellname, targettime, historytime, srctype, syntype):
         """Plot traces of presynaptic data for cellname for `historytime`
@@ -152,9 +153,7 @@ class SynAnalyzer(object):
         vm = self.datafile['/Vm/' + cellname]        
         plt.plot(self.tseries, 
                  normalize(vm[self.istart:self.iend]),
-                 ls=':',
                  label=cellname)
-        self.plot_presynaptic(cellname, srctype, syntype)
         stimdata = np.asarray(self.datafile['/stimulus/stim_bg'])
         stim_start = int(self.tstart/self.simdt+0.5)
         stim_end = int(self.tend/self.simdt+0.5)
@@ -163,18 +162,65 @@ class SynAnalyzer(object):
                  normalize(stimdata),
                  'r--',                 
                  label='STIMULUS')
+        precells = self.plot_presynaptic(cellname, srctype, syntype)
+        return precells
 
-
+    def get_peak_Vm_time(self, cellname, tstart, tend):
+        """Return the time of the peak value for Vm of this cell"""
+        istart = int(tstart/self.plotdt+0.5)
+        iend = int(tend/self.plotdt+0.5)
+        data = self.datafile['/Vm/'+cellname][istart:iend]
+        peakindex = data.argmax()
+        peaktime = tstart + peakindex * self.plotdt
+        print 'peak time:', cellname, ':', peaktime
+        return peaktime
+        
 if __name__ == '__main__':
     dfname = '/data/subha/cortical/py/data/2012_04_24/data_20120424_145719_7507.h5'
     synan = SynAnalyzer(dfname)
-    synan.plot_traces('SpinyStellate_0', 
-                      7.0,
-                      0.05,
-                      '',
-                      '')
+    targettime = 7.0
+    contexttime = 0.05
+    targetcell = 'SpinyStellate_0'
+    precells = []
+    done_cells = set(['SpinyStellate_0'])
+    plt.clf()
+    pre = synan.plot_traces('SpinyStellate_0', 
+                            targettime,
+                            contexttime,
+                            '',
+                            '')
+    precells.append(pre)
     plt.legend()
+    plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
+    mgr = plt.get_current_fig_manager()
+    # if mgr.__class__.__name__.endswith('GTKAgg'):
+    #     mgr.full_screen_toggle()
     plt.show()
+    while precells:        
+        old_targettime = targettime
+        for precell in precells.pop(0):
+            if precell in done_cells:
+                continue
+            done_cells.add(precell)
+            targettime = synan.get_peak_Vm_time(precell, 
+                                                old_targettime-contexttime, 
+                                                old_targettime+contexttime)
+            pre = synan.plot_traces(precell,
+                                    targettime,
+                                    contexttime,
+                                    '',
+                                    '')
+            precells.append(pre)
+            plt.legend()
+            plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
+            mgr = plt.get_current_fig_manager()
+            # if mgr.__class__.__name__.endswith('GTKAgg'):
+            #     mgr.full_screen_toggle()
+            plt.show()
+        old_targettime -= contexttime
+        if old_targettime < 0:
+            break
+
     # nfname = '/data/subha/cortical/py/data/2012_04_24/network_20120424_145719_7507.h5.new'
     # cellname = 'SpinyStellate_21'
     # sourcetype = ''#'TCR'
