@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 12 11:02:00 2012 (+0530)
+# Last-Updated: Sat Apr 28 20:52:45 2012 (+0530)
 #           By: subha
-#     Update #: 3018
+#     Update #: 3080
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -816,33 +816,25 @@ class DataVizWidget(QtGui.QMainWindow):
         structure."""
         activePlot = self.mdiArea.activeSubWindow().widget()
         paths = activePlot.getDataPathsForSelectedCurves()
-        files = []
         for path in paths:
             filepath = self.h5tree.getOpenFileName(path)
             net_file_name = self.data_model_dict[filepath]
             self.h5tree.addH5Handle(net_file_name)
-            data = self.h5tree.getData(net_file_name + '/network/synapse')
+            syntab = self.h5tree.getData(net_file_name + '/network/synapse')[:]
             cell_name = path.rpartition('/')[-1]
             presyn_vm_paths = []
-            presyn_vm = []
-            for row in data:
-                if row[1].startswith(cell_name):
-                    print 'Presynaptic cell for', cell_name, 'is', row[0]
-                    tmp_path = '%s/Vm/%s' % (filepath, row[0].partition('/')[0])
-                    try:
-                        if tmp_path in presyn_vm_paths:
-                            continue
-                        tmp = self.h5tree.getData(tmp_path)
-                        ts = self.h5tree.getTimeSeries(tmp_path)
-                        presyn_vm_paths.append(tmp_path)
-                        vm = numpy.zeros(len(tmp))
-                        vm[:] = tmp[:]
-                        time = numpy.zeros(len(ts))
-                        time[:] = ts[:]
-                        presyn_vm.append((time, vm))
-                    except KeyError:
-                        print tmp_path, ': not available in Vm data'
-            activePlot.addPlotCurveList(presyn_vm_paths, presyn_vm, mode='curve')
+            presyn_ix = numpy.char.startswith(syntab['dest'], cell_name)
+            presyn_cell = set([item[0] for item in numpy.char.split(syntab['source'], '/')])
+            datafile = self.h5tree.fhandles[filepath]
+            valid_path = ['%s/Vm/%s' % (filepath, cell) for cell in presyn_cell if '/Vm/%s' % (cell) in datafile['Vm']]
+            vm = []
+            for pth in valid_path:
+                print pth
+                v = self.h5tree.getData(pth)
+                vm.append(v[:])
+            ts = self.h5tree.getTimeSeries(valid_path[0])
+            data = [(ts, v) for v in vm]
+            activePlot.addPlotCurveList(valid_path, data, mode='curve')
 
     def __plotPresynapticSpikes(self):
         """This is for easily displaying the data for presynaptic
