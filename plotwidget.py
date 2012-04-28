@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Mar 17 13:31:36 2012 (+0530)
+# Last-Updated: Sat Apr 28 21:18:24 2012 (+0530)
 #           By: subha
-#     Update #: 707
+#     Update #: 710
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -501,6 +501,7 @@ class PlotWidget(Qwt.QwtPlot):
             print 'Coloring', path
             if style != curve.NoCurve: # line plot, not raster
                 pen = curve.pen()
+                pen.setColor(self.celltype_color_dict[celltype])        
                 curve.setPen(pen)
             else:
                 pen = curve.symbol().pen()

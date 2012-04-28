@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Apr 28 20:52:45 2012 (+0530)
+# Last-Updated: Sat Apr 28 21:13:45 2012 (+0530)
 #           By: subha
-#     Update #: 3080
+#     Update #: 3084
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -818,6 +818,7 @@ class DataVizWidget(QtGui.QMainWindow):
         paths = activePlot.getDataPathsForSelectedCurves()
         for path in paths:
             filepath = self.h5tree.getOpenFileName(path)
+            datafile = self.h5tree.fhandles[filepath]
             net_file_name = self.data_model_dict[filepath]
             self.h5tree.addH5Handle(net_file_name)
             syntab = self.h5tree.getData(net_file_name + '/network/synapse')[:]
@@ -825,8 +826,9 @@ class DataVizWidget(QtGui.QMainWindow):
             presyn_vm_paths = []
             presyn_ix = numpy.char.startswith(syntab['dest'], cell_name)
             presyn_cell = set([item[0] for item in numpy.char.split(syntab['source'], '/')])
-            datafile = self.h5tree.fhandles[filepath]
-            valid_path = ['%s/Vm/%s' % (filepath, cell) for cell in presyn_cell if '/Vm/%s' % (cell) in datafile['Vm']]
+            available_cell = set(datafile['Vm'].keys())
+            valid_cell = presyn_cell & available_cell
+            valid_path = ['%s/Vm/%s' % (filepath, cell) for cell in valid_cell]
             vm = []
             for pth in valid_path:
                 print pth
