@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Apr 28 21:13:45 2012 (+0530)
+# Last-Updated: Mon Apr 30 16:14:41 2012 (+0530)
 #           By: subha
-#     Update #: 3084
+#     Update #: 3135
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -126,6 +126,33 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotConfig.setVisible(False)        
         self.__setupActions()
         self.__setupMenuBar()
+        self.__getPlotToolBar()
+        self.__getPlotSelectionToolbar()
+
+    def __getPlotSelectionToolbar(self):
+        if hasattr(self, 'plotSelectionToolBar'):
+            return self.plotSelectionToolBar
+        self.plotSelectionToolBar = self.addToolBar('Plot Selection')
+        self.plotSelectionToolBar.addAction(self.selectCurvesByRegexAction)
+        self.plotSelectionToolBar.addAction(self.selectAllCurvesAction)
+        self.plotSelectionToolBar.addAction(self.deselectAllCurvesAction)
+        self.plotSelectionToolBar.addAction(self.configurePlotAction)
+        self.plotSelectionToolBar.addAction(self.shiftSelectedCurvesAction)
+        self.plotSelectionToolBar.addAction(self.scaleSelectedCurvesAction)
+        self.plotSelectionToolBar.addAction(self.togglePlotVisibilityAction)
+
+    def __getPlotToolBar(self):
+        if hasattr(self, 'plotToolBar'):
+            return self.plotToolBar
+        self.plotToolBar = self.addToolBar('Create plot')
+        self.plotToolBar.addAction(self.newLinePlotAction)
+        self.plotToolBar.addAction(self.newLinePlotByRegexAction)
+        self.plotToolBar.addAction(self.plotAction)
+        self.plotToolBar.addAction(self.plotByRegexAction)
+        self.plotToolBar.addAction(self.newRasterPlotAction)
+        self.plotToolBar.addAction(self.newRasterPlotByRegexAction)
+        self.plotToolBar.addAction(self.rasterPlotAction)
+        self.plotToolBar.addAction(self.rasterPlotByRegexAction)
 
     def __setupActions(self):
         # Actions for File menu
@@ -164,31 +191,31 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
         
         # Actions for Plot menu
-        self.newLinePlotAction = QtGui.QAction('&New line plot', self)
+        self.newLinePlotAction = QtGui.QAction(QtGui.QIcon('icons/newlineplot.gif'), '&New line plot', self)
         self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlot)
 
-        self.newLinePlotByRegexAction = QtGui.QAction('&New line plot by regex', self)
+        self.newLinePlotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/newrelineplot.gif'), '&New line plot by regex', self)
         self.connect(self.newLinePlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
 
-        self.plotAction = QtGui.QAction('&Line plot in current subwindow', self)
+        self.plotAction = QtGui.QAction(QtGui.QIcon('icons/lineplot.gif'), '&Line plot in current subwindow', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
 
-        self.plotByRegexAction = QtGui.QAction('Line plot by regular expression in current subwindow', self)
+        self.plotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/relineplot.gif'), 'Line plot by regular expression in current subwindow', self)
         self.connect(self.plotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlotByRegex)
 
-        self.newRasterPlotAction = QtGui.QAction('&New raster plot', self)
+        self.newRasterPlotAction = QtGui.QAction(QtGui.QIcon('icons/newrasterplot.gif'), '&New raster plot', self)
         self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
 
         self.newSpectrogramAction = QtGui.QAction('&New spectrogram', self)
         self.connect(self.newSpectrogramAction, QtCore.SIGNAL('triggered()'), self.__plotSelectionsAsSpectrogram)
 
-        self.newRasterPlotByRegexAction = QtGui.QAction('&New raster plot by regex', self)
+        self.newRasterPlotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/newrerasterplot.gif'), '&New raster plot by regex', self)
         self.connect(self.newRasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
 
-        self.rasterPlotAction = QtGui.QAction('&Raster plot in current subwindow', self)
+        self.rasterPlotAction = QtGui.QAction(QtGui.QIcon('icons/rasterplot.gif'), '&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
 
-        self.rasterPlotByRegexAction = QtGui.QAction('Raster plot by regular expression in current subwindow', self)
+        self.rasterPlotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/rerasterplot.gif'), 'Raster plot by regular expression in current subwindow', self)
         self.connect(self.rasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlotByRegex)
 
         self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
@@ -209,25 +236,25 @@ class DataVizWidget(QtGui.QMainWindow):
         self.fitSelectedCurvesAction = QtGui.QAction(self.tr('Fit selected curves'), self)
         self.connect(self.fitSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__fitSelectedPlots)
         
-        self.shiftSelectedCurvesAction = QtGui.QAction('Shift selected curves vertically', self)
+        self.shiftSelectedCurvesAction = QtGui.QAction(QtGui.QIcon('icons/upcurve.gif'), 'Shift selected curves vertically', self)
         self.connect(self.shiftSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vShiftSelectedPlots)
 
-        self.scaleSelectedCurvesAction = QtGui.QAction('Scale selected curves vertically', self)
+        self.scaleSelectedCurvesAction = QtGui.QAction(QtGui.QIcon('icons/scalecurve.gif'), 'Scale selected curves vertically', self)
         self.connect(self.scaleSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vScaleSelectedPlots)
 
-        self.deselectAllCurvesAction = QtGui.QAction('Deselect all curves', self)
+        self.deselectAllCurvesAction = QtGui.QAction(QtGui.QIcon('icons/nocurve.gif'), 'Deselect all curves', self)
         self.connect(self.deselectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__deselectAllCurves)
         
-        self.selectAllCurvesAction =  QtGui.QAction('Select all curves', self)
+        self.selectAllCurvesAction =  QtGui.QAction(QtGui.QIcon('icons/allcurve.gif'), 'Select all curves', self)
         self.connect(self.selectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__selectAllCurves)
 
-        self.configurePlotAction = QtGui.QAction(self.tr('Configure selected plots'), self)
+        self.configurePlotAction = QtGui.QAction(QtGui.QIcon('icons/cfgcurve.gif'), self.tr('Configure selected plots'), self)
         self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
 
-        self.togglePlotVisibilityAction = QtGui.QAction(self.tr('Toggle selected plots'), self)
+        self.togglePlotVisibilityAction = QtGui.QAction(QtGui.QIcon('icons/togglecurve.gif'), self.tr('Toggle selected plots'), self)
         self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
         
-        self.selectCurvesByRegexAction = QtGui.QAction(self.tr('Select curves by regular expression'), self)
+        self.selectCurvesByRegexAction = QtGui.QAction(QtGui.QIcon('icons/recurve.gif'), self.tr('Select curves by regular expression'), self)
         self.connect(self.selectCurvesByRegexAction, QtCore.SIGNAL('triggered(bool)'), self.__selectCurvesByRegex)
         
         self.toggleCurveSelectionAction = QtGui.QAction(self.tr('Toggle selection'), self)
@@ -824,7 +851,8 @@ class DataVizWidget(QtGui.QMainWindow):
             syntab = self.h5tree.getData(net_file_name + '/network/synapse')[:]
             cell_name = path.rpartition('/')[-1]
             presyn_vm_paths = []
-            presyn_ix = numpy.char.startswith(syntab['dest'], cell_name)
+            presyn_ix = numpy.char.startswith(syntab['dest'], cell_name+'/')
+            syntab = syntab[presyn_ix]
             presyn_cell = set([item[0] for item in numpy.char.split(syntab['source'], '/')])
             available_cell = set(datafile['Vm'].keys())
             valid_cell = presyn_cell & available_cell
@@ -848,29 +876,35 @@ class DataVizWidget(QtGui.QMainWindow):
         # self.dataList.clear()
         for path in paths:
             filepath = self.h5tree.getOpenFileName(path)
+            datafile = self.h5tree.fhandles[filepath]
             net_file_name = self.data_model_dict[filepath]
             self.h5tree.addH5Handle(net_file_name)
-            data = self.h5tree.getData(net_file_name + '/network/synapse')
+            syntab = self.h5tree.getData(net_file_name + '/network/synapse')
             cell_name = path.rpartition('/')[-1]
-            presyn_spike_paths = []
-            presyn_spike = []
-            for row in data:
-                if row[1].startswith(cell_name):
-                    print 'Presynaptic cell for', cell_name, 'is', row[0]
-                    tmp_path = '%s/spikes/%s' % (filepath, row[0].partition('/')[0])
-                    try:
-                        if tmp_path in presyn_spike_paths:
-                            continue
-                        tmp = self.h5tree.getData(tmp_path)
-                        ts = self.h5tree.getTimeSeries(tmp_path)
-                        presyn_spike_paths.append(tmp_path)
-                        vm = numpy.zeros(len(tmp))
-                        vm[:] = tmp[:]
-                        time = numpy.zeros(len(ts))
-                        time[:] = ts[:]
-                        presyn_spike.append((time, vm))
-                    except KeyError:
-                        print tmp_path, ': not available in Vm data'
+            presyn_ix = numpy.char.startswith(syntab['dest'], cell_name+'/')
+            syntab = syntab[presyn_ix]
+            presyn_cell = set([item[0] for item in numpy.char.split(syntab['source'], '/')])
+            print presyn_cell
+            presyn_spike_paths = ['%s/spikes/%s' % (filepath, cell) for cell in presyn_cell]
+            ts = self.h5tree.getTimeSeries(presyn_spike_paths[0])[:]
+            presyn_spike = [(ts, self.h5tree.getData(path)[:]) for path in presyn_spike_paths]
+            # for row in syntab:
+            #     if row[1].startswith(cell_name):
+            #         print 'Presynaptic cell for', cell_name, 'is', row[0]
+            #         tmp_path = '%s/spikes/%s' % (filepath, row[0].partition('/')[0])
+            #         try:
+            #             if tmp_path in presyn_spike_paths:
+            #                 continue
+            #             tmp = self.h5tree.getData(tmp_path)
+            #             ts = self.h5tree.getTimeSeries(tmp_path)
+            #             presyn_spike_paths.append(tmp_path)
+            #             vm = numpy.zeros(len(tmp))
+            #             vm[:] = tmp[:]
+            #             time = numpy.zeros(len(ts))
+            #             time[:] = ts[:]
+            #             presyn_spike.append((time, vm))
+            #         except KeyError:
+            #             print tmp_path, ': not available in Vm data'
             activePlot.addPlotCurveList(presyn_spike_paths, presyn_spike, mode='raster')
 
     def __vShiftSelectedPlots(self):
