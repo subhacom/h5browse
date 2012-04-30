@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Apr 25 10:45:32 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Apr 27 16:57:24 2012 (+0530)
+# Last-Updated: Mon Apr 30 11:10:41 2012 (+0530)
 #           By: subha
-#     Update #: 512
+#     Update #: 614
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -78,7 +78,7 @@ class SynAnalyzer(object):
     def select_syninfo(self, cellname, srctype, syntype):
         """Return a view containing the presynaptic cells of `cellname` of
         type `srctype` with synapses of `syntype`"""
-        idx = np.char.startswith(self.syntab['dest'], cellname) & \
+        idx = np.char.startswith(self.syntab['dest'], cellname+'/') & \
             np.char.startswith(self.syntab['source'], srctype) & \
             np.char.startswith(self.syntab['type'], syntype)
         return self.syntab[idx]
@@ -104,42 +104,47 @@ class SynAnalyzer(object):
         lstyles = {'gaba':'-.', 'ampa':'--', 'nmda':':'}
         # If specified `syntype` is not empty string, it is the only one
         # to be looked at
+        precells_with_vm = []
+        shift = 1
         for ii in range(len(unique_precells)):
-            print 'Presynaptic cell:', precells[ii]
+            print 'Presynaptic cell', ii, precells[ii]
             pretype = unique_precells[ii].split('_')[0]
-            try:
+            if unique_precells[ii] in self.datafile['/Vm']:
                 vm = np.asarray(self.datafile['/Vm/'+ unique_precells[ii]])
+                precells_with_vm.append(unique_precells[ii])
                 print min(vm), max(vm)
                 vm = normalize(vm)[self.istart:self.iend]
                 print min(vm), max(vm)
                 # Shift the normalize plots around 0 so all of them don't
                 # overlap with the original
-                l2d = plt.plot(self.tseries, 
-                               vm - ii - 1,
+                l2d = plt.plot(self.tseries,
+                               vm - shift,
                                label=unique_precells[ii])
-            except KeyError:
-                print 'No Vm for', unique_precells[ii]
-                continue            
-            try:
-                jj = -1
-                while True:
-                    jj = precells.index(unique_precells[ii], jj+1)
-                    gk = self.get_normalized_gk_slice(
-                        syntab['dest'][jj].replace('/', '_'),
-                        pretype,
-                        syntab['type'][jj])
-                    if len(gk) == 0:
-                        continue
-                    plt.plot(self.tseries,
-                             gk - ii - 1,
-                             color=l2d[0].get_color(),
-                             ls=lstyles[syntab['type'][jj]],
-                             label='%s:%s<-%s' % (syntab['type'][jj], 
-                                                  syntab['dest'][jj].split('/')[0], 
-                                                  pretype))
-            except ValueError:
-                pass
-        return unique_precells
+            else:
+                continue
+            # Now plot the synaptic conductances
+            jj = -1
+            for kk in range(precells.count(unique_precells[ii])):
+                # Find the index of this cell in syntab
+                jj = precells.index(unique_precells[ii], jj+1)
+                # The synaptic conductances are saved as
+                # 'synapse/gk_cellname_compname_synapsetype_from_presynapticcelltype'            
+                gk = self.get_normalized_gk_slice(
+                    syntab['dest'][jj].replace('/', '_'),
+                    pretype,
+                    syntab['type'][jj])
+                if len(gk) == 0:
+                    continue
+                plt.plot(self.tseries,
+                         gk - shift,
+                         color=l2d[0].get_color(),
+                         ls=lstyles[syntab['type'][jj]],
+                         label='%s:%s<-%s' % (syntab['type'][jj], 
+                                              syntab['dest'][jj].split('/')[0], 
+                                              pretype))
+            shift += 1
+
+        return precells_with_vm
 
     def plot_traces(self, cellname, targettime, historytime, srctype, syntype):
         """Plot traces of presynaptic data for cellname for `historytime`
@@ -150,6 +155,8 @@ class SynAnalyzer(object):
         self.iend = int(self.tend / self.plotdt + 0.5)
         self.tseries = np.linspace(self.tstart, self.tend, 
                                  self.iend - self.istart)
+        if cellname not in self.datafile['/Vm']:
+            return []
         vm = self.datafile['/Vm/' + cellname]        
         plt.plot(self.tseries, 
                  normalize(vm[self.istart:self.iend]),
@@ -169,57 +176,97 @@ class SynAnalyzer(object):
         """Return the time of the peak value for Vm of this cell"""
         istart = int(tstart/self.plotdt+0.5)
         iend = int(tend/self.plotdt+0.5)
-        data = self.datafile['/Vm/'+cellname][istart:iend]
+        try:
+            data = self.datafile['/Vm/'+cellname][istart:iend]
+        except KeyError:
+            print 'get_peak_Vm_time: no Vm entry for', cellname
+            return -1
         peakindex = data.argmax()
         peaktime = tstart + peakindex * self.plotdt
         print 'peak time:', cellname, ':', peaktime
         return peaktime
+
+    def loop_plot_presyn(self, targetcells, targettime, contexttime, pretype, syntype):
+        precells = [targetcells]
+        done_cells = set()
+        timequeue = [[targettime] * len(targetcells)]
+        # mgr = plt.get_current_fig_manager()
+        # if mgr.__class__.__name__.endswith('GTKAgg'):
+        #     mgr.full_screen_toggle()
+        while precells:        
+            newtimes = []
+            for precell, targettime in zip(precells.pop(0), timequeue.pop(0)):
+                if precell in done_cells or targettime < 0:
+                    continue
+                pre = synan.plot_traces(precell,
+                                        targettime,
+                                        contexttime,
+                                        pretype,
+                                        syntype)
+                precells.append(pre)
+                done_cells.add(precell)
+                new_targettime = self.get_peak_Vm_time(precell, 
+                                                       targettime-contexttime, 
+                                                       targettime+contexttime)                
+                newtimes.append(new_targettime)
+                plt.legend()
+                plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
+                # mgr = plt.get_current_fig_manager()
+                # if mgr.__class__.__name__.endswith('GTKAgg'):
+                #     mgr.full_screen_toggle()
+                plt.show()
+            if newtimes:
+                timequeue.append(newtimes)
+        
         
 if __name__ == '__main__':
-    dfname = '/data/subha/cortical/py/data/2012_04_24/data_20120424_145719_7507.h5'
+    dfname = '/data/subha/cortical/py/data/2012_04_26/data_20120426_142251_7866.h5'
     synan = SynAnalyzer(dfname)
     targettime = 7.0
     contexttime = 0.05
-    targetcell = 'SpinyStellate_0'
-    precells = []
-    done_cells = set(['SpinyStellate_0'])
-    plt.clf()
-    pre = synan.plot_traces('SpinyStellate_0', 
-                            targettime,
-                            contexttime,
-                            '',
-                            '')
-    precells.append(pre)
-    plt.legend()
-    plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
-    mgr = plt.get_current_fig_manager()
-    # if mgr.__class__.__name__.endswith('GTKAgg'):
-    #     mgr.full_screen_toggle()
-    plt.show()
-    while precells:        
-        old_targettime = targettime
-        for precell in precells.pop(0):
-            if precell in done_cells:
-                continue
-            done_cells.add(precell)
-            targettime = synan.get_peak_Vm_time(precell, 
-                                                old_targettime-contexttime, 
-                                                old_targettime+contexttime)
-            pre = synan.plot_traces(precell,
-                                    targettime,
-                                    contexttime,
-                                    '',
-                                    '')
-            precells.append(pre)
-            plt.legend()
-            plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
-            mgr = plt.get_current_fig_manager()
-            # if mgr.__class__.__name__.endswith('GTKAgg'):
-            #     mgr.full_screen_toggle()
-            plt.show()
-        old_targettime -= contexttime
-        if old_targettime < 0:
-            break
+    targetcell = 'SpinyStellate_1'
+    presyn = '' # All pre synaptic celltypes
+    syntype = '' # All synapse types
+    synan.loop_plot_presyn([targetcell], targettime, contexttime, presyn, syntype)
+    # precells = []
+    # done_cells = set(['SpinyStellate_0'])
+    # plt.clf()
+    # pre = synan.plot_traces(['SpinyStellate_1'], 
+    #                         targettime,
+    #                         contexttime,
+    #                         '',
+    #                         '')
+    # precells.append(pre)
+    # plt.legend()
+    # plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
+    # mgr = plt.get_current_fig_manager()
+    # # if mgr.__class__.__name__.endswith('GTKAgg'):
+    # #     mgr.full_screen_toggle()
+    # plt.show()
+    # while precells:        
+    #     old_targettime = targettime
+    #     for precell in precells.pop(0):
+    #         if precell in done_cells:
+    #             continue
+    #         done_cells.add(precell)
+    #         targettime = synan.get_peak_Vm_time(precell, 
+    #                                             old_targettime-contexttime, 
+    #                                             old_targettime+contexttime)
+    #         pre = synan.plot_traces(precell,
+    #                                 targettime,
+    #                                 contexttime,
+    #                                 '',
+    #                                 '')
+    #         precells.append(pre)
+    #         plt.legend()
+    #         plt.setp(plt.gca().get_legend().get_texts(), fontsize='small')
+    #         mgr = plt.get_current_fig_manager()
+    #         # if mgr.__class__.__name__.endswith('GTKAgg'):
+    #         #     mgr.full_screen_toggle()
+    #         plt.show()
+    #     old_targettime -= contexttime
+    #     if old_targettime < 0:
+    #         break
 
     # nfname = '/data/subha/cortical/py/data/2012_04_24/network_20120424_145719_7507.h5.new'
     # cellname = 'SpinyStellate_21'
