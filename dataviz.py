@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed May  2 15:03:10 2012 (+0530)
+# Last-Updated: Wed May  2 17:56:17 2012 (+0530)
 #           By: subha
-#     Update #: 3239
+#     Update #: 3243
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -672,6 +672,8 @@ class DataVizWidget(QtGui.QMainWindow):
     def __makeNewLinePlotByRegex(self):
         self.dataList.model().clear()
         regex = self.__popupRegexTool()
+        if not regex:
+            return
         self.__selectDataByRegex(regex)
         plotWidget = PlotWidget()
         self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)        
@@ -695,6 +697,8 @@ class DataVizWidget(QtGui.QMainWindow):
     def __makeNewRasterPlotByRegex(self):
         self.dataList.model().clear()
         regex = self.__popupRegexTool()
+        if not regex:
+            return
         self.__selectDataByRegex(regex)
         plotWidget = PlotWidget()
         self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)        
@@ -718,6 +722,8 @@ class DataVizWidget(QtGui.QMainWindow):
     def __makeLinePlotByRegex(self):
         mdiChild = self.mdiArea.activeSubWindow()
         regex = self.__popupRegexTool()
+        if not regex:
+            return
         self.__selectDataByRegex(regex)
         pathlist = []
         datalist = []
@@ -1156,6 +1162,8 @@ class DataVizWidget(QtGui.QMainWindow):
         # we have to get the active subwindow before th dialog pops up, else it becomes NULL
         activeSubWindow = self.mdiArea.activeSubWindow()
         regex = self.__popupRegexTool()
+        if not regex:
+            return
         if activeSubWindow is None:
             print 'Active subwindow is empty!'
             return
