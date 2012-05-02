@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Wed May  2 15:24:13 2012 (+0530)
+# Last-Updated: Wed May  2 17:15:28 2012 (+0530)
 #           By: subha
-#     Update #: 496
+#     Update #: 497
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -121,7 +121,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
         try:
             regex = re.compile(pattern)
         except TypeError, e:
-            print p
+            print e
             print 'Received:', type(patterb), ': "', pattern, '"'
             return
         ret = {}
