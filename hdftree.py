@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Mar 12 10:17:44 2012 (+0530)
+# Last-Updated: Wed May  2 15:24:13 2012 (+0530)
 #           By: subha
-#     Update #: 494
+#     Update #: 496
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -118,7 +118,12 @@ class H5TreeWidget(QtGui.QTreeWidget):
         checks through all the currently selected files.
 
         """
-        regex = re.compile(pattern)
+        try:
+            regex = re.compile(pattern)
+        except TypeError, e:
+            print p
+            print 'Received:', type(patterb), ': "', pattern, '"'
+            return
         ret = {}
         for item in self.selectedItems():
             current = item

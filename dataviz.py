@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Apr 30 16:14:41 2012 (+0530)
+# Last-Updated: Wed May  2 15:03:10 2012 (+0530)
 #           By: subha
-#     Update #: 3135
+#     Update #: 3239
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -61,11 +61,16 @@ import numpy
 from collections import defaultdict
 from PyQt4 import QtCore, QtGui, Qt
 from PyQt4 import Qwt5 as Qwt
+
+from datavizresources import *
+
 from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
 from plotconfig import PlotConfig
 import analyzer
+
+
 default_settings = {
     'lfpfilter/cutoff': '450.0',
     'lfpfilter/rolloff': '45.0'
@@ -127,20 +132,23 @@ class DataVizWidget(QtGui.QMainWindow):
         self.__setupActions()
         self.__setupMenuBar()
         self.__getPlotToolBar()
-        self.__getPlotSelectionToolbar()
+        self.__getPlotConfigToolbar()
 
-    def __getPlotSelectionToolbar(self):
-        if hasattr(self, 'plotSelectionToolBar'):
-            return self.plotSelectionToolBar
-        self.plotSelectionToolBar = self.addToolBar('Plot Selection')
-        self.plotSelectionToolBar.addAction(self.selectCurvesByRegexAction)
-        self.plotSelectionToolBar.addAction(self.selectAllCurvesAction)
-        self.plotSelectionToolBar.addAction(self.deselectAllCurvesAction)
-        self.plotSelectionToolBar.addAction(self.configurePlotAction)
-        self.plotSelectionToolBar.addAction(self.shiftSelectedCurvesAction)
-        self.plotSelectionToolBar.addAction(self.scaleSelectedCurvesAction)
-        self.plotSelectionToolBar.addAction(self.togglePlotVisibilityAction)
+    def __getPlotConfigToolbar(self):
+        if hasattr(self, 'plotConfigToolBar'):
+            return self.plotConfigToolBar
+        self.plotConfigToolBar = self.addToolBar('Plot configuration')
+        for item in self.getPlotConfigActions():
+            self.plotConfigToolBar.addAction(item)
 
+    def enablePlotConfigActions(self):
+        for item in self.getPlotConfigActions():
+            item.setEnabled(True)
+    
+    def disablePlotConfigActions(self):
+        for item in self.getPlotConfigActions():
+            item.setEnabled(False)
+            
     def __getPlotToolBar(self):
         if hasattr(self, 'plotToolBar'):
             return self.plotToolBar
@@ -153,6 +161,152 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotToolBar.addAction(self.newRasterPlotByRegexAction)
         self.plotToolBar.addAction(self.rasterPlotAction)
         self.plotToolBar.addAction(self.rasterPlotByRegexAction)
+
+    def getPlotConfigActions(self):
+        if hasattr(self, 'plotConfigActions'):
+            return self.plotConfigActions
+        self.plotConfigActions = []
+        self.selectAllCurvesAction =  QtGui.QAction(
+            QtGui.QIcon(':/icons/allcurve.gif'), 
+            self.tr('Select all curves'), 
+            self)
+        self.connect(self.selectAllCurvesAction, 
+                     QtCore.SIGNAL('triggered()'), 
+                     self.__selectAllCurves)
+        self.plotConfigActions.append(self.selectAllCurvesAction)
+        self.selectCurvesByRegexAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/recurve.gif'), 
+            self.tr('Select curves by regular expression'),
+            self)
+        self.connect(self.selectCurvesByRegexAction, 
+                     QtCore.SIGNAL('triggered(bool)'),
+                     self.__selectCurvesByRegex)
+        self.plotConfigActions.append(self.selectCurvesByRegexAction)
+        self.toggleCurveSelectionAction = QtGui.QAction(
+            self.tr('Toggle selection'), 
+            self)
+        self.connect(self.toggleCurveSelectionAction, 
+                     QtCore.SIGNAL('triggered(bool)'), 
+                     self.__toggleCurveSelection)
+        self.keepPreviousSelectionAction = QtGui.QAction(
+            QtGui.QIcon(':icons/keepselec.gif'),
+            self.tr('Keep previous selection'), 
+            self)
+        self.keepPreviousSelectionAction.setCheckable(True)
+        self.connect(self.keepPreviousSelectionAction, 
+                     QtCore.SIGNAL('triggered(bool)'), 
+                     self.__keepPreviousSelection)
+        self.plotConfigActions.append(self.keepPreviousSelectionAction)
+        self.deselectAllCurvesAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/nocurve.gif'), 
+            self.tr('Deselect all curves'),
+            self)
+        self.connect(self.deselectAllCurvesAction, 
+                     QtCore.SIGNAL('triggered()'), 
+                     self.__deselectAllCurves)
+        self.plotConfigActions.append(self.deselectAllCurvesAction)
+        self.colorCurvesByCelltypeAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/colorcelltype.gif'),
+            self.tr('&Color plots by celltype'), 
+            self)
+        self.connect(self.colorCurvesByCelltypeAction, 
+                     QtCore.SIGNAL('triggered()'),
+                     self.__colorCurvesByCelltype)
+        self.plotConfigActions.append(self.colorCurvesByCelltypeAction)
+        self.shiftSelectedCurvesAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/upcurve.gif'),
+            self.tr('Shift selected curves vertically'),
+            self)
+        self.connect(self.shiftSelectedCurvesAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self.__vShiftSelectedPlots)
+        self.plotConfigActions.append(self.shiftSelectedCurvesAction)
+        self.scaleSelectedCurvesAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/scalecurve.gif'),
+            'Scale selected curves vertically',
+            self)
+        self.connect(self.scaleSelectedCurvesAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self.__vScaleSelectedPlots)
+        self.plotConfigActions.append(self.scaleSelectedCurvesAction)
+        self.configurePlotAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/cfgcurve.gif'),
+            self.tr('Configure selected plots'),
+            self)
+        self.connect(self.configurePlotAction,
+                     QtCore.SIGNAL('triggered(bool)'),
+                     self.__configurePlots)
+        self.plotConfigActions.append(self.configurePlotAction)
+        self.togglePlotVisibilityAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/togglecurve.gif'),
+            self.tr('Toggle selected plots'),
+            self)
+        self.connect(self.togglePlotVisibilityAction,
+                     QtCore.SIGNAL('triggered(bool)'),
+                     self.__togglePlotVisibility)
+        self.plotConfigActions.append(self.togglePlotVisibilityAction)
+        self.displayLegendAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/showlegend.gif'),
+            self.tr('Display legend'),
+            self)
+        self.displayLegendAction.setCheckable(True)
+        self.displayLegendAction.setChecked(True)
+        self.displayLegendAction.setEnabled(False)
+        self.connect(self.displayLegendAction,
+                     QtCore.SIGNAL('triggered(bool)'),
+                     self.__displayLegend)
+        self.plotConfigActions.append(self.displayLegendAction)
+        self.editPlotTitleAction = QtGui.QAction(
+            QtGui.QIcon(':icons/plottitle.gif'),
+            self.tr('Edit plot title '),
+            self)
+        self.connect(self.editPlotTitleAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self.__editPlotTitle)
+        self.plotConfigActions.append(self.editPlotTitleAction)
+        self.overlayAction = QtGui.QAction('Overlay plots',
+                                           self)
+        self.overlayAction.setCheckable(True)
+        self.overlayAction.setChecked(True)
+        self.connect(self.overlayAction,
+                     QtCore.SIGNAL('triggered(bool)'),
+                     self.__overlayPlots)
+        self.plotConfigActions.append(self.overlayAction)        
+        self.editLegendTextAction = QtGui.QAction(
+            QtGui.QIcon(':icons/editlegend.gif'),
+            self.tr('Edit legend text'),
+            self)
+        self.connect(self.editLegendTextAction,
+                     QtCore.SIGNAL('triggered(bool)'),
+                     self.__editLegendText)
+        self.plotConfigActions.append(self.editLegendTextAction)
+        self.editXLabelAction = QtGui.QAction(
+            QtGui.QIcon(':icons/xlabel.gif'),
+            self.tr('Edit X axis label'),
+            self)
+        self.connect(self.editXLabelAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self.__editXAxisLabel)
+        self.plotConfigActions.append(self.editXLabelAction)
+        self.editYLabelAction = QtGui.QAction(
+            QtGui.QIcon(':icons/ylabel.gif'),
+            self.tr('Edit Y axis label'),
+            self)
+        self.connect(self.editYLabelAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self.__editYAxisLabel)
+        self.plotConfigActions.append(self.editYLabelAction)
+        self.fitSelectedCurvesAction = QtGui.QAction(
+            QtGui.QIcon(':icons/fitcurves.gif'),
+            self.tr('Fit selected curves'),
+            self)
+        self.connect(self.fitSelectedCurvesAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self.__fitSelectedPlots)
+        self.plotConfigActions.append(self.fitSelectedCurvesAction)
+        for item in self.plotConfigActions:
+            item.setEnabled(False)
+        return self.plotConfigActions
 
     def __setupActions(self):
         # Actions for File menu
@@ -191,85 +345,40 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
         
         # Actions for Plot menu
-        self.newLinePlotAction = QtGui.QAction(QtGui.QIcon('icons/newlineplot.gif'), '&New line plot', self)
+        self.newLinePlotAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/newlineplot.gif'), '&New line plot', self)
         self.connect(self.newLinePlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlot)
 
-        self.newLinePlotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/newrelineplot.gif'), '&New line plot by regex', self)
+        self.newLinePlotByRegexAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/newrelineplot.gif'), '&New line plot by regex', self)
         self.connect(self.newLinePlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewLinePlotByRegex)
 
-        self.plotAction = QtGui.QAction(QtGui.QIcon('icons/lineplot.gif'), '&Line plot in current subwindow', self)
+        self.plotAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/lineplot.gif'), '&Line plot in current subwindow', self)
         self.connect(self.plotAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlot)
 
-        self.plotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/relineplot.gif'), 'Line plot by regular expression in current subwindow', self)
+        self.plotByRegexAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/relineplot.gif'), 'Line plot by regular expression in current subwindow', self)
         self.connect(self.plotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeLinePlotByRegex)
 
-        self.newRasterPlotAction = QtGui.QAction(QtGui.QIcon('icons/newrasterplot.gif'), '&New raster plot', self)
+        self.newRasterPlotAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/newrasterplot.gif'), '&New raster plot', self)
         self.connect(self.newRasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlot)
 
         self.newSpectrogramAction = QtGui.QAction('&New spectrogram', self)
         self.connect(self.newSpectrogramAction, QtCore.SIGNAL('triggered()'), self.__plotSelectionsAsSpectrogram)
 
-        self.newRasterPlotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/newrerasterplot.gif'), '&New raster plot by regex', self)
+        self.newRasterPlotByRegexAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/newrerasterplot.gif'), '&New raster plot by regex', self)
         self.connect(self.newRasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewRasterPlotByRegex)
 
-        self.rasterPlotAction = QtGui.QAction(QtGui.QIcon('icons/rasterplot.gif'), '&Raster plot in current subwindow', self)
+        self.rasterPlotAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/rasterplot.gif'), '&Raster plot in current subwindow', self)
         self.connect(self.rasterPlotAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlot)
 
-        self.rasterPlotByRegexAction = QtGui.QAction(QtGui.QIcon('icons/rerasterplot.gif'), 'Raster plot by regular expression in current subwindow', self)
+        self.rasterPlotByRegexAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/rerasterplot.gif'), 'Raster plot by regular expression in current subwindow', self)
         self.connect(self.rasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlotByRegex)
-
-        self.editPlotTitleAction = QtGui.QAction(self.tr('Edit plot title '), self)
-        self.connect(self.editPlotTitleAction, QtCore.SIGNAL('triggered()'), self.__editPlotTitle)
-
-        self.colorCurvesByCelltypeAction = QtGui.QAction('&Color plots by celltype', self)
-        self.connect(self.colorCurvesByCelltypeAction, QtCore.SIGNAL('triggered()'), self.__colorCurvesByCelltype)
-
-        self.editLegendTextAction = QtGui.QAction(self.tr('Edit legend text'), self)
-        self.connect(self.editLegendTextAction, QtCore.SIGNAL('triggered(bool)'), self.__editLegendText)
-
-        self.editXLabelAction = QtGui.QAction(self.tr('Edit X axis label'), self)
-        self.connect(self.editXLabelAction, QtCore.SIGNAL('triggered()'), self.__editXAxisLabel)
-
-        self.editYLabelAction = QtGui.QAction(self.tr('Edit Y axis label'), self)
-        self.connect(self.editYLabelAction, QtCore.SIGNAL('triggered()'), self.__editYAxisLabel)
-
-        self.fitSelectedCurvesAction = QtGui.QAction(self.tr('Fit selected curves'), self)
-        self.connect(self.fitSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__fitSelectedPlots)
-        
-        self.shiftSelectedCurvesAction = QtGui.QAction(QtGui.QIcon('icons/upcurve.gif'), 'Shift selected curves vertically', self)
-        self.connect(self.shiftSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vShiftSelectedPlots)
-
-        self.scaleSelectedCurvesAction = QtGui.QAction(QtGui.QIcon('icons/scalecurve.gif'), 'Scale selected curves vertically', self)
-        self.connect(self.scaleSelectedCurvesAction, QtCore.SIGNAL('triggered()'), self.__vScaleSelectedPlots)
-
-        self.deselectAllCurvesAction = QtGui.QAction(QtGui.QIcon('icons/nocurve.gif'), 'Deselect all curves', self)
-        self.connect(self.deselectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__deselectAllCurves)
-        
-        self.selectAllCurvesAction =  QtGui.QAction(QtGui.QIcon('icons/allcurve.gif'), 'Select all curves', self)
-        self.connect(self.selectAllCurvesAction, QtCore.SIGNAL('triggered()'), self.__selectAllCurves)
-
-        self.configurePlotAction = QtGui.QAction(QtGui.QIcon('icons/cfgcurve.gif'), self.tr('Configure selected plots'), self)
-        self.connect(self.configurePlotAction, QtCore.SIGNAL('triggered(bool)'), self.__configurePlots)
-
-        self.togglePlotVisibilityAction = QtGui.QAction(QtGui.QIcon('icons/togglecurve.gif'), self.tr('Toggle selected plots'), self)
-        self.connect(self.togglePlotVisibilityAction, QtCore.SIGNAL('triggered(bool)'), self.__togglePlotVisibility)
-        
-        self.selectCurvesByRegexAction = QtGui.QAction(QtGui.QIcon('icons/recurve.gif'), self.tr('Select curves by regular expression'), self)
-        self.connect(self.selectCurvesByRegexAction, QtCore.SIGNAL('triggered(bool)'), self.__selectCurvesByRegex)
-        
-        self.toggleCurveSelectionAction = QtGui.QAction(self.tr('Toggle selection'), self)
-        self.connect(self.toggleCurveSelectionAction, QtCore.SIGNAL('triggered(bool)'), self.__toggleCurveSelection)
-
-        self.displayLegendAction = QtGui.QAction('Display legend', self)
-        self.displayLegendAction.setCheckable(True)
-        self.displayLegendAction.setChecked(True)
-        self.displayLegendAction.setEnabled(False)
-        self.connect(self.displayLegendAction, QtCore.SIGNAL('triggered(bool)'), self.__displayLegend)
-
-        self.overlayAction = QtGui.QAction('Overlay plots', self)
-        self.overlayAction.setCheckable(True)
-        self.overlayAction.setChecked(True)
-        self.connect(self.overlayAction, QtCore.SIGNAL('triggered(bool)'), self.__overlayPlots)
 
         # Actions for Edit menu - works on HDFTree and DataList.
         self.removeSelectedAction = QtGui.QAction('Remove selected items', self)
@@ -339,6 +448,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.rasterPlotByRegexAction)
         self.plotMenu.addAction(self.newSpectrogramAction)
 
+        self.getPlotConfigActions()
         self.editPlotMenu = self.plotMenu.addMenu(self.tr('&Edit Plot'))
         self.editPlotMenu.addAction(self.colorCurvesByCelltypeAction)
         self.editPlotMenu.addAction(self.editPlotTitleAction)
@@ -415,7 +525,7 @@ class DataVizWidget(QtGui.QMainWindow):
         else:
             mdiChild = self.mdiArea.activeSubWindow()
             plotWidget = mdiChild.widget()
-        self.displayLegendAction.setEnabled(True)
+        self.enablePlotConfigActions()
         self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         datalist = []
         pathlist = [item.path() for item in self.h5tree.selectedItems() if item.childCount() == 0]
@@ -468,7 +578,6 @@ class DataVizWidget(QtGui.QMainWindow):
         else:
             mdiChild = self.mdiArea.activeSubWindow()
             plotWidget = mdiChild.widget()
-        self.displayLegendAction.setEnabled(True)
         self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         datalist = []
         pathlist = []
@@ -511,6 +620,7 @@ class DataVizWidget(QtGui.QMainWindow):
         print datalist
         plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='curve')
         mdiChild.showMaximized()
+        self.enablePlotConfigActions()
 
     def __makeNewLinePlot(self):
         self.dataList.model().clear()
@@ -623,12 +733,12 @@ class DataVizWidget(QtGui.QMainWindow):
             plotWidget = PlotWidget()
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
             mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
-            self.displayLegendAction.setEnabled(True)
             self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         else:
             plotWidget = mdiChild.widget()
         plotWidget.addPlotCurveList(pathlist, datalist, mode='curve')
         mdiChild.showMaximized()
+        self.enablePlotConfigActions()
         
     def __makeRasterPlotByRegex(self):
         mdiChild = self.mdiArea.activeSubWindow()
@@ -648,12 +758,12 @@ class DataVizWidget(QtGui.QMainWindow):
             plotWidget = PlotWidget()
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
             mdiChild.setWindowTitle('Raster %d' % len(self.mdiArea.subWindowList()))
-            self.displayLegendAction.setEnabled(True)
             self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         else:
             plotWidget = mdiChild.widget()
         plotWidget.addPlotCurveList(pathlist, datalist, mode='raster')
         mdiChild.showMaximized()
+        self.enablePlotConfigActions()
 
     def __editXAxisLabel(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
@@ -715,6 +825,7 @@ class DataVizWidget(QtGui.QMainWindow):
         mdiChild = self.mdiArea.addSubWindow(displayWidget)
         mdiChild.setWindowTitle(str(self.h5tree.currentItem().h5node.name))
         mdiChild.showMaximized()
+        self.disablePlotConfigActions()
 
     def __displayData(self, node, column):
         data = node.getHDF5Data()
@@ -739,6 +850,7 @@ class DataVizWidget(QtGui.QMainWindow):
         mdiChild = self.mdiArea.addSubWindow(tableWidget)
         mdiChild.showMaximized()
         mdiChild.setWindowTitle(str(node.h5node.name))
+        self.disablePlotConfigActions()
             
     def __displayCurrentlySelectedItemData(self):
         node = self.h5tree.currentItem().h5node
@@ -789,16 +901,16 @@ class DataVizWidget(QtGui.QMainWindow):
             self.connect(action, QtCore.SIGNAL('triggered()'), self.windowMapper, QtCore.SLOT('map()'))
             self.windowMapper.setMapping(action, window)
 
-
     def __subwindowActivatedSlot(self, window):
         if window is None:
             return
         widget = window.widget()
         if isinstance(widget, PlotWidget):
             legend = widget.legend()
-            self.displayLegendAction.setEnabled(True)
+            self.enablePlotConfigActions()
             self.displayLegendAction.setChecked(legend is not None)
             self.overlayAction.setChecked(widget.overlay())
+            self.keepPreviousSelectionAction.setChecked(widget.getKeepPreviousSelection())
 
     def __editLegendText(self):
         """Change the legend text."""
@@ -828,14 +940,17 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.toggleSelectedCurves()
 
+    def __keepPreviousSelection(self, enable):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.keepPreviousSelection(enable)
+
     def __deselectAllCurves(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.deselectAllCurves()
 
     def __selectAllCurves(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
-        activePlot.selectAllCurves()
-        
+        activePlot.selectAllCurves()        
 
     def __plotPresynapticVm(self):
         """This is for easily displaying the data for presynaptic
@@ -888,23 +1003,6 @@ class DataVizWidget(QtGui.QMainWindow):
             presyn_spike_paths = ['%s/spikes/%s' % (filepath, cell) for cell in presyn_cell]
             ts = self.h5tree.getTimeSeries(presyn_spike_paths[0])[:]
             presyn_spike = [(ts, self.h5tree.getData(path)[:]) for path in presyn_spike_paths]
-            # for row in syntab:
-            #     if row[1].startswith(cell_name):
-            #         print 'Presynaptic cell for', cell_name, 'is', row[0]
-            #         tmp_path = '%s/spikes/%s' % (filepath, row[0].partition('/')[0])
-            #         try:
-            #             if tmp_path in presyn_spike_paths:
-            #                 continue
-            #             tmp = self.h5tree.getData(tmp_path)
-            #             ts = self.h5tree.getTimeSeries(tmp_path)
-            #             presyn_spike_paths.append(tmp_path)
-            #             vm = numpy.zeros(len(tmp))
-            #             vm[:] = tmp[:]
-            #             time = numpy.zeros(len(ts))
-            #             time[:] = ts[:]
-            #             presyn_spike.append((time, vm))
-            #         except KeyError:
-            #             print tmp_path, ': not available in Vm data'
             activePlot.addPlotCurveList(presyn_spike_paths, presyn_spike, mode='raster')
 
     def __vShiftSelectedPlots(self):
@@ -920,7 +1018,6 @@ class DataVizWidget(QtGui.QMainWindow):
         if ok:
             activePlot.vScaleSelectedPlots(float(scale))
 
-        
     def __savePlot(self):
         if self.mdiArea.activeSubWindow() is None:
             return
@@ -931,7 +1028,6 @@ class DataVizWidget(QtGui.QMainWindow):
                                                      '%s.png' % (str(self.mdiArea.activeSubWindow().windowTitle())),
                                                      'Images (*.png *.jpg *.gif);; All files (*.*)')
             activePlot.savePlotImage(filename)
-
 
     def __saveScreenshot(self):
         activeSubWindow = self.mdiArea.activeSubWindow()
@@ -946,7 +1042,6 @@ class DataVizWidget(QtGui.QMainWindow):
                                                      'Images (*.png *.jpg *.gif);; All files (*.*)')
         pixmap.save(filename)
 
-
     def __fitSelectedPlots(self):
         """Do curve fitting on the selected plots."""
         activePlot = self.mdiArea.activeSubWindow().widget()
@@ -954,7 +1049,6 @@ class DataVizWidget(QtGui.QMainWindow):
         
     def __showStatusMessage(self, message):
         self.statusBar().showMessage(message)
-
 
     def __plotFilteredLFP(self):
         """Filter LFP at 450 Hz upper cutoff and plot"""
@@ -1076,8 +1170,6 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot = activeSubWindow.widget()
         activePlot.toggleCurveSelection()
         
-        
-        
     def __showPreferencesDialog(self):
         dialog = QtGui.QDialog(self)
         layout = QtGui.QGridLayout()
@@ -1166,6 +1258,7 @@ class DataVizWidget(QtGui.QMainWindow):
         plotWidget.setAxisTitle(2, 'Frequency (Hz)')
         plotWidget.setLogLogScale((0.1, 500.0), None)
         mdiChild.showMaximized()
+        self.enablePlotConfigActions()
 
     def __colorCurvesByCelltype(self):
         activeSubWindow = self.mdiArea.activeSubWindow()
@@ -1174,7 +1267,6 @@ class DataVizWidget(QtGui.QMainWindow):
             return
         activePlot = activeSubWindow.widget()
         activePlot.colorCurvesByCelltype()
-        
         
     def __plotPowerSpectrum(self):
         dialog = QtGui.QDialog(self)

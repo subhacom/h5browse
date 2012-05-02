@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sat Apr 28 21:18:24 2012 (+0530)
+# Last-Updated: Wed May  2 16:00:22 2012 (+0530)
 #           By: subha
-#     Update #: 710
+#     Update #: 737
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -108,6 +108,7 @@ class PlotWidget(Qwt.QwtPlot):
             'DeepLTS': Qt.Qt.darkCyan,
             'TCR': Qt.Qt.red,
             'nRT': Qt.Qt.darkRed }
+        self._prevSelection = False
         self.path_curve_dict = defaultdict(list)
         self.curve_path_dict = {}
         self.__colors = [Qt.Qt.red, Qt.Qt.green, Qt.Qt.blue, Qt.Qt.magenta, Qt.Qt.darkCyan, Qt.Qt.black]
@@ -236,6 +237,8 @@ class PlotWidget(Qwt.QwtPlot):
                 item.setStyle(style)
                 item.setCurveAttribute(attribute)
         self.replot()
+        if not self._prevSelection:
+            self.deselectAllCurves()
         
     def toggleSelectedCurves(self):
         # if self.legend() is None:
@@ -249,6 +252,8 @@ class PlotWidget(Qwt.QwtPlot):
         #     if isinstance(widget, Qwt.QwtLegendItem) and widget.isChecked():
         #         item.setVisible(not item.isVisible())
         self.replot()
+        if not self._prevSelection:
+            self.deselectAllCurves()
 
     def selectCurvesFromLegend(self):
         if self.legend() is None:
@@ -269,6 +274,8 @@ class PlotWidget(Qwt.QwtPlot):
         for item in self.__selectedCurves:
             item.setStyle(style)
         self.replot()
+        if not self._prevSelection:
+            self.deselectAllCurves()
 
     def fitSelectedCurves(self):
         for item in self.__selectedCurves:
@@ -277,6 +284,8 @@ class PlotWidget(Qwt.QwtPlot):
             fitter.setSplineSize(10)
             item.setCurveFitter(fitter)
         self.replot()
+        if not self._prevSelection:
+            self.deselectAllCurves()
                 
     def setSymbol(self, 
                        symbolStyle=None, 
@@ -408,6 +417,8 @@ class PlotWidget(Qwt.QwtPlot):
             item.setData(numpy.array(data.xData()), ydata)
         self.replot()
         self.clearZoomStack()
+        if not self._prevSelection:
+            self.deselectAllCurves()
 
     def vScaleSelectedPlots(self, scale):
         # print 'vScaleSelectedPlots'
@@ -417,6 +428,9 @@ class PlotWidget(Qwt.QwtPlot):
             item.setData(numpy.array(data.xData()), ydata)
         self.replot()
         self.clearZoomStack()
+        if not self._prevSelection:
+            self.deselectAllCurves()
+
         
     def updatePlots(self, curve_list, data_list):
         for curve, data in zip(curve_list, data_list):
@@ -428,6 +442,8 @@ class PlotWidget(Qwt.QwtPlot):
         dist = 10
         selected = None
         closest = -1
+        if not self._prevSelection:
+            self.deselectAllCurves()
         for item in self.itemList():
             if isinstance(item, Qwt.QwtPlotCurve):
                 p, d = item.closestPoint(Qt.QPoint(point.x(), point.y()))
@@ -457,6 +473,8 @@ class PlotWidget(Qwt.QwtPlot):
         
 
     def selectCurvesByRegex(self, pattern):
+        if not self._prevSelection:
+            self.deselectAllCurves()
         self.__selectedCurves = []
         regex = re.compile(pattern)
         for path in self.path_curve_dict.keys():
@@ -498,20 +516,30 @@ class PlotWidget(Qwt.QwtPlot):
         for curve, path in self.curve_path_dict.items():
             celltype = path.rpartition('/')[-1].rpartition('_')[0]
             style = curve.style()
-            print 'Coloring', path
-            if style != curve.NoCurve: # line plot, not raster
-                pen = curve.pen()
-                pen.setColor(self.celltype_color_dict[celltype])        
-                curve.setPen(pen)
-            else:
-                pen = curve.symbol().pen()
-                pen.setColor(self.celltype_color_dict[celltype])        
-                symbol = curve.symbol()
-                symbol.setPen(pen)
-                curve.setSymbol(symbol)
+            color = None
+            try:
+                color = self.celltype_color_dict[celltype]
+            except KeyError:
+                print celltype, 'not in celltype-color dict'
+                continue
+            # if style != curve.NoCurve: # line plot, not raster
+            pen = curve.pen()
+            pen.setColor(color)        
+            curve.setPen(pen)
+            # else:
+            pen = curve.symbol().pen()
+            pen.setColor(color)        
+            symbol = curve.symbol()
+            symbol.setPen(pen)
+            curve.setSymbol(symbol)
         self.replot()
+    
+    
+    def keepPreviousSelection(self, keep):
+        self._prevSelection = keep
 
-
+    def getKeepPreviousSelection(self):
+        return self._prevSelection
         
 # 
 # plotwidget.py ends here

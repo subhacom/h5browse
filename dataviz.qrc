@@ -1,0 +1,29 @@
+<!DOCTYPE RCC><RCC version="1.0">
+  <qresource prefix="/">
+    <file>icons/colorcelltype.gif</file>
+    <file>icons/fitcurves.gif</file>
+    <file>icons/plottitle.gif</file>
+    <file>icons/newrerasterplot.gif</file>
+    <file>icons/nocurve.gif</file>
+    <file>icons/cfgcurve.gif</file>
+    <file>icons/scalecurve.gif</file>
+    <file>icons/lineplot.gif</file>
+    <file>icons/sclaecurve.gif</file>
+    <file>icons/recurve.gif</file>
+    <file>icons/newrasterplot.gif</file>
+    <file>icons/showlegend.gif</file>
+    <file>icons/editlegend.gif</file>    
+    <file>icons/rerasterplot.gif</file>
+    <file>icons/ylabel.gif</file>
+    <file>icons/rasterplot.gif</file>
+    <file>icons/xlabel.gif</file>
+    <file>icons/newlineplot.gif</file>
+    <file>icons/upcurve.gif</file>
+    <file>icons/keepselec.gif</file>
+    <file>icons/newrelineplot.gif</file>
+    <file>icons/togglecurve.gif</file>
+    <file>icons/relineplot.gif</file>
+    <file>icons/allcurve.gif</file>
+  </qresource>
+</RCC>
+
