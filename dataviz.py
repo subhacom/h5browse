@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed May  2 17:56:17 2012 (+0530)
+# Last-Updated: Tue May  8 15:01:52 2012 (+0530)
 #           By: subha
-#     Update #: 3243
+#     Update #: 3290
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -308,6 +308,31 @@ class DataVizWidget(QtGui.QMainWindow):
             item.setEnabled(False)
         return self.plotConfigActions
 
+    def _getToolActions(self):
+        if hasattr(self, 'toolActions'):
+            return self.toolActions
+        self.toolActions = []
+        self.filterAction = QtGui.QAction('Plot filtered data', self)
+        self.connect(self.filterAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFP)
+        self.toolActions.append(self.filterAction)
+        self.plotPowerSpectrumAction = QtGui.QAction('Plot power spectrum', self)
+        self.connect(self.plotPowerSpectrumAction, QtCore.SIGNAL('triggered()'), self.__plotPowerSpectrum)
+        self.toolActions.append(self.plotPowerSpectrumAction)
+        self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
+        self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
+        self.toolActions.append(self.plotPresynapticVmAction)
+        self.plotPresynapticSpikesAction = QtGui.QAction('Plot presynaptic spikes', self)
+        self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
+        self.toolActions.append(self.plotPresynapticSpikesAction)
+        self.wrapPlotsByTimeWindowAction = QtGui.QAction(self.tr('Wrap plots over time'), self)
+        self.connect(self.wrapPlotsByTimeWindowAction, QtCore.SIGNAL('triggered()'), self.__wrapPlotsByTimeWindow)
+        self.toolActions.append(self.wrapPlotsByTimeWindowAction)
+        self.wrapPlotsOverEdgesAction = QtGui.QAction('Wrap plots over edges', self)
+        self.connect(self.wrapPlotsOverEdgesAction, QtCore.SIGNAL('triggered()'), self.__wrapPlotsOverEdges)
+        self.toolActions.append(self.wrapPlotsOverEdgesAction)
+        return self.toolActions
+        
+
     def __setupActions(self):
         # Actions for File menu
         self.quitAction = QtGui.QAction('&Quit', self)        
@@ -331,19 +356,8 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.editSettingsAction = QtGui.QAction('Preferences', self)
         self.connect(self.editSettingsAction, QtCore.SIGNAL('triggered()'), self.__showPreferencesDialog)
-
-        # Actions for Tools menu
-        self.filterAction = QtGui.QAction('Plot filtered data', self)
-        self.connect(self.filterAction, QtCore.SIGNAL('triggered()'), self.__plotFilteredLFP)
-        self.plotPowerSpectrumAction = QtGui.QAction('Plot power spectrum', self)
-        self.connect(self.plotPowerSpectrumAction, QtCore.SIGNAL('triggered()'), self.__plotPowerSpectrum)
-
-        self.plotPresynapticVmAction = QtGui.QAction('Plot presynaptic Vm', self)
-        self.connect(self.plotPresynapticVmAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticVm)
-
-        self.plotPresynapticSpikesAction = QtGui.QAction('Plot presynaptic spikes', self)
-        self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
-        
+        # Initialize actions for Tools menu        
+        self._getToolActions()
         # Actions for Plot menu
         self.newLinePlotAction = QtGui.QAction(
             QtGui.QIcon(':/icons/newlineplot.gif'), '&New line plot', self)
@@ -474,10 +488,8 @@ class DataVizWidget(QtGui.QMainWindow):
         # self.toolsMenu.addAction(self.firFilteredPlotAction)
         # self.toolsMenu.addAction(self.newBlackmannFilteredPlotAction)
         # self.toolsMenu.addAction(self.blackmannFilteredPlotAction)
-        self.toolsMenu.addAction(self.filterAction)
-        self.toolsMenu.addAction(self.plotPowerSpectrumAction)
-        self.toolsMenu.addAction(self.plotPresynapticVmAction)
-        self.toolsMenu.addAction(self.plotPresynapticSpikesAction)
+        for action in self._getToolActions():
+            self.toolsMenu.addAction(action)
 
         # These are custom context menus
         self.h5treeMenu = QtGui.QMenu(self.tr('Data Selection'), self.h5tree)
@@ -1010,6 +1022,16 @@ class DataVizWidget(QtGui.QMainWindow):
             ts = self.h5tree.getTimeSeries(presyn_spike_paths[0])[:]
             presyn_spike = [(ts, self.h5tree.getData(path)[:]) for path in presyn_spike_paths]
             activePlot.addPlotCurveList(presyn_spike_paths, presyn_spike, mode='raster')
+
+    def __wrapPlotsByTimeWindow(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        time, ok, = QtGui.QInputDialog.getText(self, 'Wrap plots over time', 'Time window for wrap')
+        if ok:
+            activePlot.wrapSelectedPlots(float(time), allifnone=True)
+
+    def __wrapPlotsOverEdges(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        activePlot.wrapPlotsOverEdges()
 
     def __vShiftSelectedPlots(self):
         """Shift the selected plots vertically"""

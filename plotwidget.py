@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Wed May  2 16:00:22 2012 (+0530)
+# Last-Updated: Tue May  8 17:33:04 2012 (+0530)
 #           By: subha
-#     Update #: 737
+#     Update #: 915
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -35,6 +35,7 @@ import numpy
 
 from PyQt4 import Qt, QtCore, QtGui
 from PyQt4 import Qwt5 as Qwt
+import analyzer
 
 class SpectrogramData(Qwt.QwtRasterData):
     def __init__(self, datalist):
@@ -254,6 +255,82 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
         if not self._prevSelection:
             self.deselectAllCurves()
+    
+    def wrapSelectedPlots(self, window, allifnone=True):
+        """Wrap the selected curves over specified time window.
+
+        Parameters:
+
+        window : float 
+        size of the timewindow to use for wrapping. the point at time
+        x = t will be plotted at x = (t % window)
+
+        allifnone : bool If True, when no curve is selected, all
+        curves will be wrapped. If False, then nothing will be done.
+        """
+        curves = []
+        if self.__selectedCurves:
+            curves = self.__selectedCurves
+        elif allifnone:
+            curves = self.itemList()
+        for item in curves:
+            xdata = numpy.array(item.data().xData())
+            ydata = numpy.array(item.data().yData())
+            xdata = xdata % window
+            item.setData(xdata, ydata)
+        self.replot()
+                
+    def wrapPlotsOverEdges(self):
+        """Wrap all plots at the edges of the specified curve (should
+        be a stimulus or a spiketrain."""
+        if not self.__selectedCurves:
+            return
+        wrapcurve = self.__selectedCurves[-1]
+        path = self.curve_path_dict[wrapcurve]
+        times = []
+        xdata = numpy.array(wrapcurve.data().xData())
+        ydata = numpy.array(wrapcurve.data().yData())
+        # It is a spike train, x values are spike times, wrap around those
+        if 'spikes' in path:
+            times = xdata
+        # It is a stimulus: take the leadin edges
+        elif 'stim' in path:
+            times = xdata[numpy.r_[False, numpy.diff(ydata) < 0].nonzero()[0]]
+        else:
+            ydata = analyzer.smooth(ydata)
+            mid = numpy.mean(ydata)
+            ydata = ydata[ydata > mid] # Threshold at midpoint
+            times = xdata[numpy.r_[True, ydata[1:] > ydata[:-1]] & numpy.r_[ydata[:-1] > ydata[1:], True]]
+        times = numpy.r_[0, times]
+        print 'Times for wrapping\n---\n', times
+        for curve in self.itemList():
+            ydata = numpy.array(curve.data().yData())
+            xdata = numpy.array(curve.data().xData())            
+            path = self.curve_path_dict[curve]
+            path_curve_list = self.path_curve_dict[path]
+            path_curve_list.pop(path_curve_list.index(curve))
+            self.curve_path_dict.pop(curve)
+            curve.detach()
+            start = 0
+            end = len(xdata)
+            for ii in range(-1, - len(times) - 1, -1):
+                points = numpy.nonzero(xdata >= times[ii])[0]
+                if len(points) == 0:
+                    continue
+                start = points[0]
+                xx = numpy.array(xdata[start:end] - times[ii])
+                xdata[start:end] = -1.0
+                new_curve = Qwt.QwtPlotCurve('%s #%d' % (curve.title().text(), len(times) + ii, ))
+                new_curve.setData(xx, ydata[start:end])
+                new_curve.setStyle(curve.style())
+                new_curve.setPen(QtGui.QPen(curve.pen()))
+                new_curve.setSymbol(Qwt.QwtSymbol(curve.symbol()))
+                new_curve.attach(self)
+                self.curve_path_dict[new_curve] = path
+                self.path_curve_dict[path].append(new_curve)
+                print 'start:', start, 'end:', end, new_curve.title(), xx
+                end = start                    
+        self.replot()
 
     def selectCurvesFromLegend(self):
         if self.legend() is None:
@@ -541,5 +618,7 @@ class PlotWidget(Qwt.QwtPlot):
     def getKeepPreviousSelection(self):
         return self._prevSelection
         
+
+
 # 
 # plotwidget.py ends here
