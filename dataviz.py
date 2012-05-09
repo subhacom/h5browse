@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue May  8 15:01:52 2012 (+0530)
+# Last-Updated: Wed May  9 18:50:04 2012 (+0530)
 #           By: subha
-#     Update #: 3290
+#     Update #: 3299
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -577,7 +577,6 @@ class DataVizWidget(QtGui.QMainWindow):
         widget.setLayout(layout)
         widget.exec_()
         if widget.result() == widget.Accepted:
-            print 'Accepted'
             return (x.currentIndex(), y.currentIndex())
         else:
             return (-1, -1)
@@ -598,14 +597,11 @@ class DataVizWidget(QtGui.QMainWindow):
             pathlist.append(path)
             data = self.h5tree.getData(path)
             tseries = None
-            print 'Shape of data', data.shape
             if len(data.shape) == 1:
                 # Handle 1 D array of compund records
                 if data.dtype.kind == 'V':
-                    print 'Record data'
                     if len(data.dtype.names) >= 2:
                         x,y, = self.__select_x_y_fields(data.dtype)
-                        print x, y
                         if x < 0 or y < 0:
                             return
                         if x == 0:
@@ -627,9 +623,6 @@ class DataVizWidget(QtGui.QMainWindow):
                 tseries = data[:,0]
                 for col in range(1, data.shape[1]):
                     datalist.append((tseries, data[:, col]))
-        print 'tseries:', len(tseries)
-        print 'data:', len(data), data[0]
-        print datalist
         plotWidget.addPlotCurveList(pathlist, datalist, curvenames=pathlist, mode='curve')
         mdiChild.showMaximized()
         self.enablePlotConfigActions()
@@ -992,7 +985,7 @@ class DataVizWidget(QtGui.QMainWindow):
             valid_path = ['%s/Vm/%s' % (filepath, cell) for cell in valid_cell]
             vm = []
             for pth in valid_path:
-                print pth
+                print 'Plotting presynaptic Vm:', pth
                 v = self.h5tree.getData(pth)
                 vm.append(v[:])
             ts = self.h5tree.getTimeSeries(valid_path[0])
@@ -1017,7 +1010,6 @@ class DataVizWidget(QtGui.QMainWindow):
             presyn_ix = numpy.char.startswith(syntab['dest'], cell_name+'/')
             syntab = syntab[presyn_ix]
             presyn_cell = set([item[0] for item in numpy.char.split(syntab['source'], '/')])
-            print presyn_cell
             presyn_spike_paths = ['%s/spikes/%s' % (filepath, cell) for cell in presyn_cell]
             ts = self.h5tree.getTimeSeries(presyn_spike_paths[0])[:]
             presyn_spike = [(ts, self.h5tree.getData(path)[:]) for path in presyn_spike_paths]
@@ -1168,8 +1160,6 @@ class DataVizWidget(QtGui.QMainWindow):
             for path in path_list:
                 tmp_data = self.h5tree.getData(path)
                 data = numpy.zeros(end_index-start_index)
-                # print len(data)
-                # print len(tmp_data[start_index:end_index])
                 data[:] = tmp_data[start_index:end_index]
                 data_list.append(data)
             
@@ -1225,7 +1215,6 @@ class DataVizWidget(QtGui.QMainWindow):
         dialog.exec_()
         if dialog.result() == dialog.Accepted:
             for key, textbox in textboxes.items():
-                print 'set', key, 'to', textbox.text()
                 self.settings.setValue(key, textbox.text())
 
     def __overlayPlots(self, value):

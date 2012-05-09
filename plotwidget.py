@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Tue May  8 17:33:04 2012 (+0530)
+# Last-Updated: Wed May  9 18:50:42 2012 (+0530)
 #           By: subha
-#     Update #: 915
+#     Update #: 918
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -220,7 +220,6 @@ class PlotWidget(Qwt.QwtPlot):
                 editDialog.setTextValue(widget.text().text())
                 if editDialog.exec_() == QtGui.QDialog.Accepted:
                     widget.setText(Qwt.QwtText(editDialog.textValue()))
-                    print 'Current title', item.title().text()
                     item.setTitle(Qwt.QwtText(editDialog.textValue()))
                     widget.setChecked(False)
 
@@ -246,7 +245,6 @@ class PlotWidget(Qwt.QwtPlot):
         #     return
         
         for item in self.__selectedCurves:
-            print 'toggling', self.curve_path_dict[item]
             item.setVisible(not item.isVisible())
         # for item in self.itemList():
         #     widget = self.legend().find(item)
@@ -328,7 +326,6 @@ class PlotWidget(Qwt.QwtPlot):
                 new_curve.attach(self)
                 self.curve_path_dict[new_curve] = path
                 self.path_curve_dict[path].append(new_curve)
-                print 'start:', start, 'end:', end, new_curve.title(), xx
                 end = start                    
         self.replot()
 
