@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Wed May  9 18:50:04 2012 (+0530)
+# Last-Updated: Fri May 11 16:07:29 2012 (+0530)
 #           By: subha
-#     Update #: 3299
+#     Update #: 3376
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -89,6 +89,38 @@ def compare_paths(x, y):
         except ValueError:
             print x, y
     return front_cmp
+
+class SaveImageDialog(QtGui.QFileDialog):
+    def __init__(self, *args, **kwargs):
+        QtGui.QFileDialog.__init__(self, *args, **kwargs)
+        self.setFileMode(QtGui.QFileDialog.AnyFile)
+        self._imw = 500
+        self._imh = 300
+        self.setNameFilter('Images (*.png *.jpg *.jpeg *.bmp *.ppm *.xbm *.xpm);; PDF (*.pdf);; Vector Graphics (*.svg)')
+        self.setDefaultSuffix('png')
+        self.setAcceptMode(QtGui.QFileDialog.AcceptSave)
+        self.setOption(QtGui.QFileDialog.DontUseNativeDialog)
+        self.setConfirmOverwrite(True)
+        self.imageControls = QtGui.QFrame(self)
+        layout = QtGui.QGridLayout()
+        self.widthEdit = QtGui.QLineEdit(self.imageControls)
+        self.widthEdit.setText(str(self._imw))
+        self.heightEdit = QtGui.QLineEdit(self.imageControls)
+        self.heightEdit.setText(str(self._imh))
+        layout.addWidget(QtGui.QLabel('Size:'), 0, 0)
+        layout.addWidget(self.widthEdit, 0, 1)
+        layout.addWidget(QtGui.QLabel('x'), 0, 2)
+        layout.addWidget(self.heightEdit, 0, 3)
+        self.imageControls.setLayout(layout)
+        self.layout().addWidget(self.imageControls)
+
+    @property 
+    def imsize(self):
+        """Image size specified in the text edits for size
+        as a tuple (width, height)"""
+        self._imw = int(str(self.widthEdit.text()))
+        self._imh = int(str(self.heightEdit.text()))
+        return (self._imw, self._imh)
 
 class DataVizWidget(QtGui.QMainWindow):
     def __init__(self, *args):
@@ -1043,11 +1075,15 @@ class DataVizWidget(QtGui.QMainWindow):
             return
         activePlot = self.mdiArea.activeSubWindow().widget()
         if isinstance(activePlot, PlotWidget):
-            filename = QtGui.QFileDialog.getSaveFileName(self,
-                                                     'Save plot as',
-                                                     '%s.png' % (str(self.mdiArea.activeSubWindow().windowTitle())),
-                                                     'Images (*.png *.jpg *.gif);; All files (*.*)')
-            activePlot.savePlotImage(filename)
+            dialog = SaveImageDialog(self)
+            dialog.setWindowTitle(self.tr('Save plot as'))
+            if dialog.exec_() == QtGui.QFileDialog.Accepted:
+                filename = dialog.selectedFiles()
+                if filename:
+                    filename = filename[0]
+                width, height, = dialog.imsize
+                print 'filename:', filename, width, height
+                activePlot.savePlotImage(filename, width, height)
 
     def __saveScreenshot(self):
         activeSubWindow = self.mdiArea.activeSubWindow()
