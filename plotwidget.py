@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Fri May 11 16:01:42 2012 (+0530)
+# Last-Updated: Fri May 11 16:23:24 2012 (+0530)
 #           By: subha
-#     Update #: 944
+#     Update #: 951
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -299,7 +299,8 @@ class PlotWidget(Qwt.QwtPlot):
             mid = numpy.mean(ydata)
             ydata = ydata[ydata > mid] # Threshold at midpoint
             times = xdata[numpy.r_[True, ydata[1:] > ydata[:-1]] & numpy.r_[ydata[:-1] > ydata[1:], True]]
-        times = numpy.r_[0, times]
+        # start from the first edge, ignoring everything before it
+        # and put end of simulation as the upper bound
         print 'Times for wrapping\n---\n', times
         for curve in self.itemList():
             ydata = numpy.array(curve.data().yData())
@@ -494,7 +495,6 @@ class PlotWidget(Qwt.QwtPlot):
         for item in self.__selectedCurves:
             ret.append(self.curve_path_dict[item])
         return ret
-
     
     def vShiftSelectedPlots(self, shift):
         for item in self.__selectedCurves:
@@ -516,7 +516,6 @@ class PlotWidget(Qwt.QwtPlot):
         self.clearZoomStack()
         if not self._prevSelection:
             self.deselectAllCurves()
-
         
     def updatePlots(self, curve_list, data_list):
         for curve, data in zip(curve_list, data_list):
