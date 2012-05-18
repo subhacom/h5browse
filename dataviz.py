@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri May 11 16:07:29 2012 (+0530)
-#           By: subha
-#     Update #: 3376
+# Last-Updated: Fri May 18 12:12:49 2012 (+0530)
+#           By: Subhasis Ray
+#     Update #: 3385
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -68,6 +68,7 @@ from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
 from plotconfig import PlotConfig
+from datasetmodel import HDFDatasetModel
 import analyzer
 
 
@@ -874,23 +875,12 @@ class DataVizWidget(QtGui.QMainWindow):
         data = node.getHDF5Data()
         if data is None:
             return
-        tableWidget = QtGui.QTableWidget()
-        tableWidget.setRowCount(len(data))
-        if data.dtype.type == numpy.void:            
-            tableWidget.setColumnCount(len(data.dtype.names))
-            tableWidget.setHorizontalHeaderLabels(QtCore.QStringList(data.dtype.names))
-            for row in range(len(data)):
-                for column in range(len(data.dtype.names)):
-                    item = QtGui.QTableWidgetItem(self.tr(str(data[row][column])))
-                    tableWidget.setItem(row, column, item)
-        else:
-            tableWidget.setColumnCount(1)
-            tableWidget.setHorizontalHeaderLabels(QtCore.QStringList(['value',]))
-            for row in range(len(data)):
-                item = QtGui.QTableWidgetItem(self.tr(str(data[row])))
-                tableWidget.setItem(row, 0, item)
-        tableWidget.setSortingEnabled(True)
-        mdiChild = self.mdiArea.addSubWindow(tableWidget)
+        model = HDFDatasetModel()
+        model.setDataset(data)
+        tableView = QtGui.QTableView()
+        tableView.setModel(model)
+        tableView.setSortingEnabled(True)
+        mdiChild = self.mdiArea.addSubWindow(tableView)
         mdiChild.showMaximized()
         mdiChild.setWindowTitle(str(node.h5node.name))
         self.disablePlotConfigActions()
