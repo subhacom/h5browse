@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Fri May 11 16:23:24 2012 (+0530)
-#           By: subha
-#     Update #: 951
+# Last-Updated: Fri May 18 21:25:33 2012 (+0530)
+#           By: Subhasis Ray
+#     Update #: 1027
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -170,7 +170,6 @@ class PlotWidget(Qwt.QwtPlot):
             if curve in self.__selectedCurves:
                 self.__selectedCurves.remove(curve)
 
-
     def overlay(self):
         return self.__overlay
 
@@ -253,6 +252,12 @@ class PlotWidget(Qwt.QwtPlot):
         self.replot()
         if not self._prevSelection:
             self.deselectAllCurves()
+
+    def getSelecteCurvePaths(self):
+        paths = []
+        for item in self.__selectedCurves:
+            paths.append(self.curve_path_dict[item])
+        return paths
     
     def wrapSelectedPlots(self, window, allifnone=True):
         """Wrap the selected curves over specified time window.
@@ -625,8 +630,49 @@ class PlotWidget(Qwt.QwtPlot):
 
     def getKeepPreviousSelection(self):
         return self._prevSelection
+
+    def plotSpikeTimeDistribution(self, stimpath, stimdata, spikesdict, simtime, offset, bins=10):
+        """Plot the distribution of spike times around a stimulus.
+
+        Bug in waiting: This should not be called for selections from
+        multiple files because simtime may vary.
+        """
+        stimdata = stimdata[:]
+        times = []
+        # It is a spike train, x values are spike times, wrap around those
+        if 'spikes' in stimpath:
+            times = stimdata
+        # It is a stimulus: take the leadin edges
+        elif 'stim' in stimpath:
+            times = numpy.linspace(0, simtime, stimdata.shape[0])[numpy.r_[False, numpy.diff(stimdata) < 0].nonzero()[0]]
+        else:
+            stimdata = analyzer.smooth(stimdata)
+            mid = numpy.mean(stimdata)
+            stimdata = stimdata[stimdata > mid] # Threshold at midpoint
+            times = numpy.linspace(0, simtime, stimdata.shape[0])[numpy.r_[True, stimdata[1:] > stimdata[:-1]] & numpy.r_[stimdata[:-1] > stimdata[1:], True]]
+        start = times - offset
+        end = numpy.zeros(times.shape)
+        end[:-1] = start[1:]
+        end[-1] = simtime - offset # We assume
+        for spikedata in spikesdict.values():
+            tpoints = spikedata[:]
+            data = numpy.ones(tpoints.shape)
+            current = 0
+            for ii in range(len(times)):
+                ix = numpy.nonzero((tpoints >= start[ii]) & (tpoints < end[ii]))[0]
+                data[current:len(ix)] = tpoints[ix] - start[ii]
+                current += len(ix)
+            data = numpy.resize(current)
+            new_curve = Qwt.QwtPlotCurve('%s' % (spikedata.name))
+            hist = numpy.histogram(data, bins=bins, density=True)
+                new_curve.setStyle(curve.style())
+                new_curve.setPen(QtGui.QPen(curve.pen()))
+                new_curve.setSymbol(Qwt.QwtSymbol(curve.symbol()))
+                new_curve.attach(self)
+                self.curve_path_dict[new_curve] = path
+                self.path_curve_dict[path].append(new_curve)
+                end = start                    
+        self.replot()
         
-
-
 # 
 # plotwidget.py ends here

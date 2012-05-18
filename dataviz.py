@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri May 18 12:12:49 2012 (+0530)
+# Last-Updated: Fri May 18 20:56:52 2012 (+0530)
 #           By: Subhasis Ray
-#     Update #: 3385
+#     Update #: 3481
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -363,6 +363,11 @@ class DataVizWidget(QtGui.QMainWindow):
         self.wrapPlotsOverEdgesAction = QtGui.QAction('Wrap plots over edges', self)
         self.connect(self.wrapPlotsOverEdgesAction, QtCore.SIGNAL('triggered()'), self.__wrapPlotsOverEdges)
         self.toolActions.append(self.wrapPlotsOverEdgesAction)
+        self.plotSpikeTimeDistributionByRegexAction = QtGui.QAction('Plots spike time distribution by regex', self)
+        self.connect(self.plotSpikeTimeDistributionByRegexAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self._plotSpikeTimeDistributionByRegex)
+        self.toolActions.append(self.plotSpikeTimeDistributionByRegexAction)
         return self.toolActions
         
 
@@ -1393,6 +1398,70 @@ class DataVizWidget(QtGui.QMainWindow):
                 end = None
             self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot)
 
+    def _plotSpikeTimeDistributionByRegex(self):
+        """Plot the distribution of spike times with respect to
+        stimulus time.
+
+        If a curve is selected 
+
+        """
+        stimcurve = None
+        selected = self.h5tree.selectedItems()
+        if selected:
+            stimcurve = selected[-1].path()
+        if stimcurve is None:
+            activeSubWindow = self.mdiArea.activeSubWindow()
+            stimcurve = None
+            if (stimcurve is None) and (activeSubWindow is not None):
+                activePlot = activeSubWindow.widget()
+                if isinstance(activePlot, PlotWidget):
+                    selected = activePlot.getSelecteCurvePaths()
+                    if selected:
+                        stimcurve = selected[-1]
+        if stimcurve is None:
+            return
+        dialog = QtGui.QDialog(self)
+        dialog.setWindowTitle('Plot spike time distribution')
+        infoLabel = QtGui.QLabel(dialog)
+        infoLabel.setText('Plot distribution of spike times by regular expression around edges' \
+                                 ' of:\n %s' % (stimcurve))
+        regexLabel = QtGui.QLabel(dialog)
+        regexLabel.setText('Regex for data')
+        regexEdit = QtGui.QLineEdit(dialog)
+        offsetLabel = QtGui.QLabel(dialog)
+        offsetLabel.setText('Offset from edges:')
+        offsetText = QtGui.QLineEdit(dialog)
+        offsetText.setText('0')
+        cancelButton = QtGui.QPushButton()
+        cancelButton.setText('Cancel')
+        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
+        okButton = QtGui.QPushButton()
+        okButton.setText('OK')
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), dialog.accept)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(infoLabel, 0, 0, 1, 4)
+        layout.addWidget(regexLabel, 1, 0)
+        layout.addWidget(regexEdit, 1, 2)
+        layout.addWidget(offsetLabel, 2, 0)
+        layout.addWidget(offsetText, 2, 2)
+        layout.addWidget(cancelButton, 3, 0)
+        layout.addWidget(okButton, 3, 4)
+        dialog.setLayout(layout)
+        dialog.exec_()
+        if not dialog.Accepted:
+            return
+        regex = '.*/spikes/%s' % (str(regexEdit.text()))
+        offset = float(str(offsetText.text()))
+        data = self.h5tree.getDataByRe(regex)
+        plotWidget = PlotWidget(self)
+        mdiChild = self.mdiArea.addSubWindow(plotWidget)
+        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        stimdata = self.h5tree.getData(stimcurve)
+        filepath = self.h5tree.getOpenFileName(stimcurve)
+        simtime = self.h5tree.get_simtime(filepath)
+        plotWidget.plotSpikeTimeDistribution(stimcurve, stimdata, data, simtime, offset)
+
+        
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     QtGui.qApp = app
