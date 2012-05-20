@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Fri May 18 21:25:33 2012 (+0530)
+# Last-Updated: Sun May 20 22:00:28 2012 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1027
+#     Update #: 1129
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -306,7 +306,6 @@ class PlotWidget(Qwt.QwtPlot):
             times = xdata[numpy.r_[True, ydata[1:] > ydata[:-1]] & numpy.r_[ydata[:-1] > ydata[1:], True]]
         # start from the first edge, ignoring everything before it
         # and put end of simulation as the upper bound
-        print 'Times for wrapping\n---\n', times
         for curve in self.itemList():
             ydata = numpy.array(curve.data().yData())
             xdata = numpy.array(curve.data().xData())            
@@ -631,12 +630,14 @@ class PlotWidget(Qwt.QwtPlot):
     def getKeepPreviousSelection(self):
         return self._prevSelection
 
-    def plotSpikeTimeDistribution(self, stimpath, stimdata, spikesdict, simtime, offset, bins=10):
+    def plotSpikeTimeDistribution(self, stimpath, stimdata, spikesdict, simtime, offset, bins=10, legendSuffix=''):
         """Plot the distribution of spike times around a stimulus.
 
         Bug in waiting: This should not be called for selections from
         multiple files because simtime may vary.
         """
+        if not spikesdict:
+            return
         stimdata = stimdata[:]
         times = []
         # It is a spike train, x values are spike times, wrap around those
@@ -650,28 +651,50 @@ class PlotWidget(Qwt.QwtPlot):
             mid = numpy.mean(stimdata)
             stimdata = stimdata[stimdata > mid] # Threshold at midpoint
             times = numpy.linspace(0, simtime, stimdata.shape[0])[numpy.r_[True, stimdata[1:] > stimdata[:-1]] & numpy.r_[stimdata[:-1] > stimdata[1:], True]]
-        start = times - offset
+        if  (times is None) or (len(times) == 0):
+            return
+        start = times + offset
         end = numpy.zeros(times.shape)
         end[:-1] = start[1:]
         end[-1] = simtime - offset # We assume
+        accumulated_data = []
         for spikedata in spikesdict.values():
             tpoints = spikedata[:]
-            data = numpy.ones(tpoints.shape)
-            current = 0
             for ii in range(len(times)):
                 ix = numpy.nonzero((tpoints >= start[ii]) & (tpoints < end[ii]))[0]
-                data[current:len(ix)] = tpoints[ix] - start[ii]
-                current += len(ix)
-            data = numpy.resize(current)
-            new_curve = Qwt.QwtPlotCurve('%s' % (spikedata.name))
-            hist = numpy.histogram(data, bins=bins, density=True)
-                new_curve.setStyle(curve.style())
-                new_curve.setPen(QtGui.QPen(curve.pen()))
-                new_curve.setSymbol(Qwt.QwtSymbol(curve.symbol()))
-                new_curve.attach(self)
-                self.curve_path_dict[new_curve] = path
-                self.path_curve_dict[path].append(new_curve)
-                end = start                    
+                accumulated_data = numpy.r_[accumulated_data, tpoints[ix] - times[ii]]
+        if len(accumulated_data) == 0:
+            return
+        # Todo : set the bins by splitting interstimulus interval
+        hist = numpy.histogram(accumulated_data, bins=bins, normed=True)
+        xx = (hist[1][:-1] + hist[1][1:])/2.0
+        yy = hist[0]
+        path = stimpath + '_psth' + legendSuffix
+        new_curve = Qwt.QwtPlotCurve(path)
+        new_curve.setData(xx, yy)
+        pen = Qt.QPen(Qt.Qt.blue, 1, Qt.Qt.DashDotLine)
+        new_curve.setStyle(Qwt.QwtPlotCurve.Lines)
+        new_curve.setPen(pen)
+        pen = Qt.QPen(Qt.Qt.red, 1)
+        new_curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.XCross,
+                                          Qt.QBrush(),
+                                          pen,
+                                          Qt.QSize(3,3)))        
+        new_curve.attach(self)
+        self.curve_path_dict[new_curve] = path
+        self.path_curve_dict[path].append(new_curve)
+        path = stimpath + '_bins' + legendSuffix
+        histmarkers = Qwt.QwtPlotCurve(path)
+        height = int(max(yy) + 0.5)
+        yy = numpy.ones(hist[1].shape) * height
+        histmarkers.setData(hist[1], yy)
+        pen = Qt.QPen(Qt.Qt.black, 1, Qt.Qt.DotLine)
+        histmarkers.setPen(pen)
+        histmarkers.setStyle(Qwt.QwtPlotCurve.Sticks)
+        histmarkers.attach(self)
+        self.curve_path_dict[histmarkers] = path
+        self.path_curve_dict[path].append(new_curve)
+        self.clearZoomStack()
         self.replot()
         
 # 
