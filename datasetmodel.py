@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed May 16 10:57:05 2012 (+0530)
 # Version: 
-# Last-Updated: Fri May 18 15:24:49 2012 (+0530)
-#           By: Subhasis Ray
-#     Update #: 240
+# Last-Updated: Fri May 18 15:12:54 2012 (+0530)
+#           By: subha
+#     Update #: 242
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,7 +47,6 @@ class HDFDatasetModel(QtCore.QAbstractTableModel):
 
     def setDataset(self, node):
         self._dset = node
-        print self._dset, self._dset.dtype
         self._cacheData(0)
 
     def _cacheData(self, start):
@@ -76,11 +75,9 @@ class HDFDatasetModel(QtCore.QAbstractTableModel):
         row = index.row()
         if row < 0 or row >= self._dset.shape[0]:
             return QtCore.QVariant()
-        print 'data: row', row
         if row < self._cacheStartIndex or row >= self._cacheStartIndex + self._cacheSize:
             self._cacheData(row - (self._cacheSize-1)/2)
         _row = row - self._cacheStartIndex
-        print 'retrieving:', _row
         colcnt = self.columnCount(QtCore.QModelIndex())
         if index.column() >= colcnt or colcnt < 1:
             return QtCore.QVariant()
@@ -88,7 +85,6 @@ class HDFDatasetModel(QtCore.QAbstractTableModel):
             _data = self._cache[_row]
         elif colcnt > 1:            
             _data = self._cache[_row][index.column()]
-        print 'Data[', _row, ',', index.column(), '] = ', _data
         return QtCore.QVariant(str(_data))
 
     def headerData(self, section, orientation, role):
