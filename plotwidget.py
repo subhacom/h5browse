@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Sun May 20 22:00:28 2012 (+0530)
+# Last-Updated: Mon May 21 19:50:33 2012 (+0530)
 #           By: Subhasis Ray
-#     Update #: 1129
+#     Update #: 1167
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -630,7 +630,16 @@ class PlotWidget(Qwt.QwtPlot):
     def getKeepPreviousSelection(self):
         return self._prevSelection
 
-    def plotSpikeTimeDistribution(self, stimpath, stimdata, spikesdict, simtime, offset, bins=10, legendSuffix=''):
+    def plotSpikeTimeDistribution(self, stimpath,
+                                  stimdata,
+                                  spikesdict,
+                                  simtime,
+                                  offset=0,
+                                  binsize=10e-3,
+                                  legendSuffix='',
+                                  rate=False,
+                                  normcells=True
+                                  ):
         """Plot the distribution of spike times around a stimulus.
 
         Bug in waiting: This should not be called for selections from
@@ -656,7 +665,7 @@ class PlotWidget(Qwt.QwtPlot):
         start = times + offset
         end = numpy.zeros(times.shape)
         end[:-1] = start[1:]
-        end[-1] = simtime - offset # We assume
+        end[-1] = simtime + offset # We assume
         accumulated_data = []
         for spikedata in spikesdict.values():
             tpoints = spikedata[:]
@@ -665,10 +674,18 @@ class PlotWidget(Qwt.QwtPlot):
                 accumulated_data = numpy.r_[accumulated_data, tpoints[ix] - times[ii]]
         if len(accumulated_data) == 0:
             return
-        # Todo : set the bins by splitting interstimulus interval
-        hist = numpy.histogram(accumulated_data, bins=bins, normed=True)
+        # set the bins by splitting interstimulus interval
+        interval = numpy.mean(numpy.diff(times))
+        bins = numpy.arange(offset, interval+offset, binsize)
+        bins = numpy.r_[bins, bins[-1] + binsize]
+        hist = numpy.histogram(accumulated_data, bins=bins)
         xx = (hist[1][:-1] + hist[1][1:])/2.0
-        yy = hist[0]
+        if rate:
+            yy = hist[0] / binsize
+        else:
+            yy = hist[0]
+        if normcells:
+            yy /= len(spikesdict)
         path = stimpath + '_psth' + legendSuffix
         new_curve = Qwt.QwtPlotCurve(path)
         new_curve.setData(xx, yy)

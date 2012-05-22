@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat May 19 17:18:18 2012 (+0530)
+# Last-Updated: Mon May 21 19:52:12 2012 (+0530)
 #           By: Subhasis Ray
-#     Update #: 3496
+#     Update #: 3522
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -1426,13 +1426,21 @@ class DataVizWidget(QtGui.QMainWindow):
         regexLabel.setText('Regex for data')
         regexEdit = QtGui.QLineEdit(dialog)
         offsetLabel = QtGui.QLabel(dialog)
-        offsetLabel.setText('Offset from edges:')
+        offsetLabel.setText('Offset from edges (second)')
         offsetText = QtGui.QLineEdit(dialog)
         offsetText.setText('0')
         binsLabel = QtGui.QLabel(dialog)
-        binsLabel.setText('Number of bins')
+        binsLabel.setText('Bin size (second)')
         binsText = QtGui.QLineEdit(dialog)
-        binsText.setText('10') # default bincount        
+        binsText.setText('0.1') # default bincount
+        rateLabel = QtGui.QLabel(dialog)
+        rateLabel.setText('Rate')
+        rateCheck = QtGui.QCheckBox(dialog)
+        rateCheck.setChecked(True)
+        normalizeLabel = QtGui.QLabel(dialog)
+        normalizeLabel.setText('Normalize with cell count')
+        normalizeCheck = QtGui.QCheckBox(dialog)
+        normalizeCheck.setChecked(True)
         cancelButton = QtGui.QPushButton()
         cancelButton.setText('Cancel')
         self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
@@ -1447,8 +1455,12 @@ class DataVizWidget(QtGui.QMainWindow):
         layout.addWidget(offsetText, 2, 2)
         layout.addWidget(binsLabel, 3, 0)
         layout.addWidget(binsText, 3, 2)
-        layout.addWidget(cancelButton, 4, 0)
-        layout.addWidget(okButton, 4, 4)
+        layout.addWidget(rateLabel, 4, 0)
+        layout.addWidget(rateCheck, 4, 2)        
+        layout.addWidget(normalizeLabel, 5, 0)
+        layout.addWidget(normalizeCheck, 5, 2)        
+        layout.addWidget(cancelButton, 6, 0)
+        layout.addWidget(okButton, 6, 4)
         dialog.setLayout(layout)
         dialog.exec_()
         if not dialog.Accepted:
@@ -1462,8 +1474,16 @@ class DataVizWidget(QtGui.QMainWindow):
         stimdata = self.h5tree.getData(stimcurve)
         filepath = self.h5tree.getOpenFileName(stimcurve)
         simtime = self.h5tree.get_simtime(filepath)
-        bins = float(str(binsText.text()))
-        plotWidget.plotSpikeTimeDistribution(stimcurve, stimdata, data, simtime, offset, bins=bins, legendSuffix=regex)
+        binsize = float(str(binsText.text()))
+        plotWidget.plotSpikeTimeDistribution(stimcurve,
+                                             stimdata,
+                                             data,
+                                             simtime,
+                                             offset,
+                                             binsize=binsize,
+                                             legendSuffix=regex,                                    
+         
+                                             rate=rateCheck.isChecked())
 
         
 if __name__ == '__main__':
