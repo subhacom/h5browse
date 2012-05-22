@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri May 18 20:56:52 2012 (+0530)
+# Last-Updated: Mon May 21 19:52:12 2012 (+0530)
 #           By: Subhasis Ray
-#     Update #: 3481
+#     Update #: 3522
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -635,7 +635,7 @@ class DataVizWidget(QtGui.QMainWindow):
             pathlist.append(path)
             data = self.h5tree.getData(path)
             tseries = None
-            if len(data.shape) == 1:
+            if (data is not None) and (len(data.shape) == 1):
                 # Handle 1 D array of compund records
                 if data.dtype.kind == 'V':
                     if len(data.dtype.names) >= 2:
@@ -1407,17 +1407,14 @@ class DataVizWidget(QtGui.QMainWindow):
         """
         stimcurve = None
         selected = self.h5tree.selectedItems()
-        if selected:
-            stimcurve = selected[-1].path()
-        if stimcurve is None:
-            activeSubWindow = self.mdiArea.activeSubWindow()
-            stimcurve = None
-            if (stimcurve is None) and (activeSubWindow is not None):
-                activePlot = activeSubWindow.widget()
-                if isinstance(activePlot, PlotWidget):
-                    selected = activePlot.getSelecteCurvePaths()
-                    if selected:
-                        stimcurve = selected[-1]
+        activeSubWindow = self.mdiArea.activeSubWindow()
+        stimcurve = None
+        if (stimcurve is None) and (activeSubWindow is not None):
+            activePlot = activeSubWindow.widget()
+            if isinstance(activePlot, PlotWidget):
+                selected = activePlot.getSelecteCurvePaths()
+                if selected:
+                    stimcurve = selected[-1]
         if stimcurve is None:
             return
         dialog = QtGui.QDialog(self)
@@ -1429,9 +1426,21 @@ class DataVizWidget(QtGui.QMainWindow):
         regexLabel.setText('Regex for data')
         regexEdit = QtGui.QLineEdit(dialog)
         offsetLabel = QtGui.QLabel(dialog)
-        offsetLabel.setText('Offset from edges:')
+        offsetLabel.setText('Offset from edges (second)')
         offsetText = QtGui.QLineEdit(dialog)
         offsetText.setText('0')
+        binsLabel = QtGui.QLabel(dialog)
+        binsLabel.setText('Bin size (second)')
+        binsText = QtGui.QLineEdit(dialog)
+        binsText.setText('0.1') # default bincount
+        rateLabel = QtGui.QLabel(dialog)
+        rateLabel.setText('Rate')
+        rateCheck = QtGui.QCheckBox(dialog)
+        rateCheck.setChecked(True)
+        normalizeLabel = QtGui.QLabel(dialog)
+        normalizeLabel.setText('Normalize with cell count')
+        normalizeCheck = QtGui.QCheckBox(dialog)
+        normalizeCheck.setChecked(True)
         cancelButton = QtGui.QPushButton()
         cancelButton.setText('Cancel')
         self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
@@ -1444,13 +1453,19 @@ class DataVizWidget(QtGui.QMainWindow):
         layout.addWidget(regexEdit, 1, 2)
         layout.addWidget(offsetLabel, 2, 0)
         layout.addWidget(offsetText, 2, 2)
-        layout.addWidget(cancelButton, 3, 0)
-        layout.addWidget(okButton, 3, 4)
+        layout.addWidget(binsLabel, 3, 0)
+        layout.addWidget(binsText, 3, 2)
+        layout.addWidget(rateLabel, 4, 0)
+        layout.addWidget(rateCheck, 4, 2)        
+        layout.addWidget(normalizeLabel, 5, 0)
+        layout.addWidget(normalizeCheck, 5, 2)        
+        layout.addWidget(cancelButton, 6, 0)
+        layout.addWidget(okButton, 6, 4)
         dialog.setLayout(layout)
         dialog.exec_()
         if not dialog.Accepted:
             return
-        regex = '.*/spikes/%s' % (str(regexEdit.text()))
+        regex = str(regexEdit.text())
         offset = float(str(offsetText.text()))
         data = self.h5tree.getDataByRe(regex)
         plotWidget = PlotWidget(self)
@@ -1459,7 +1474,16 @@ class DataVizWidget(QtGui.QMainWindow):
         stimdata = self.h5tree.getData(stimcurve)
         filepath = self.h5tree.getOpenFileName(stimcurve)
         simtime = self.h5tree.get_simtime(filepath)
-        plotWidget.plotSpikeTimeDistribution(stimcurve, stimdata, data, simtime, offset)
+        binsize = float(str(binsText.text()))
+        plotWidget.plotSpikeTimeDistribution(stimcurve,
+                                             stimdata,
+                                             data,
+                                             simtime,
+                                             offset,
+                                             binsize=binsize,
+                                             legendSuffix=regex,                                    
+         
+                                             rate=rateCheck.isChecked())
 
         
 if __name__ == '__main__':
