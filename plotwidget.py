@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Mon May 21 19:50:33 2012 (+0530)
-#           By: Subhasis Ray
-#     Update #: 1167
+# Last-Updated: Tue May 22 18:08:32 2012 (+0530)
+#           By: subha
+#     Update #: 1211
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -630,23 +630,23 @@ class PlotWidget(Qwt.QwtPlot):
     def getKeepPreviousSelection(self):
         return self._prevSelection
 
-    def plotSpikeTimeDistribution(self, stimpath,
-                                  stimdata,
-                                  spikesdict,
-                                  simtime,
-                                  offset=0,
-                                  binsize=10e-3,
-                                  legendSuffix='',
-                                  rate=False,
-                                  normcells=True
-                                  ):
-        """Plot the distribution of spike times around a stimulus.
+    def plotPSTH(self, stimpath,
+                 stimdata,
+                 spikesdict,
+                 simtime,
+                 offset=0,
+                 binsize=10e-3,
+                 legendSuffix='',
+                 rate=False,
+                 normcells=True
+                 ):
+        """Plot the distribution of spike times in a time window.
 
         Bug in waiting: This should not be called for selections from
         multiple files because simtime may vary.
         """
         if not spikesdict:
-            return
+            return 0
         stimdata = stimdata[:]
         times = []
         # It is a spike train, x values are spike times, wrap around those
@@ -661,7 +661,7 @@ class PlotWidget(Qwt.QwtPlot):
             stimdata = stimdata[stimdata > mid] # Threshold at midpoint
             times = numpy.linspace(0, simtime, stimdata.shape[0])[numpy.r_[True, stimdata[1:] > stimdata[:-1]] & numpy.r_[stimdata[:-1] > stimdata[1:], True]]
         if  (times is None) or (len(times) == 0):
-            return
+            return 0
         start = times + offset
         end = numpy.zeros(times.shape)
         end[:-1] = start[1:]
@@ -673,7 +673,7 @@ class PlotWidget(Qwt.QwtPlot):
                 ix = numpy.nonzero((tpoints >= start[ii]) & (tpoints < end[ii]))[0]
                 accumulated_data = numpy.r_[accumulated_data, tpoints[ix] - times[ii]]
         if len(accumulated_data) == 0:
-            return
+            return 0
         # set the bins by splitting interstimulus interval
         interval = numpy.mean(numpy.diff(times))
         bins = numpy.arange(offset, interval+offset, binsize)
@@ -713,6 +713,60 @@ class PlotWidget(Qwt.QwtPlot):
         self.path_curve_dict[path].append(new_curve)
         self.clearZoomStack()
         self.replot()
+        return 1
+
+    def plotSpikeTimeDistribution(self,
+                                  startTime,
+                                  endTime,
+                                  spikeDict,
+                                  binSize=0.1,
+                                  legendSuffix='',
+                                  rate=True,
+                                  normCells=True
+                                  ):
+        accumulated_data = []
+        bins = numpy.r_[numpy.arange(startTime, endTime, binSize), endTime]
+        for spikes in spikeDict.values():
+            data = spikes[:]
+            accumulated_data = numpy.r_[accumulated_data, data[(data > startTime) & (data <= endTime)]]
+        if len(accumulated_data) == 0:
+            return 0
+        hist = numpy.histogram(accumulated_data, bins=bins)
+        xx = (hist[1][:-1] + hist[1][1:])/2.0
+        if rate:
+            yy = hist[0] / binSize
+        else:
+            yy = hist[0]
+        if normCells:
+            yy /= len(spikeDict)
+        path = 'Spike_Time_Hist_' + legendSuffix
+        new_curve = Qwt.QwtPlotCurve(path)
+        new_curve.setData(xx, yy)
+        pen = Qt.QPen(Qt.Qt.blue, 1, Qt.Qt.DashDotLine)
+        new_curve.setStyle(Qwt.QwtPlotCurve.Lines)
+        new_curve.setPen(pen)
+        pen = Qt.QPen(Qt.Qt.red, 1)
+        new_curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.XCross,
+                                          Qt.QBrush(),
+                                          pen,
+                                          Qt.QSize(3,3)))        
+        new_curve.attach(self)
+        self.curve_path_dict[new_curve] = path
+        self.path_curve_dict[path].append(new_curve)
+        path = 'Spike_Time_Hist_bins_' + legendSuffix
+        histmarkers = Qwt.QwtPlotCurve(path)
+        height = int(max(yy) + 0.5)
+        yy = numpy.ones(hist[1].shape) * height
+        histmarkers.setData(hist[1], yy)
+        pen = Qt.QPen(Qt.Qt.black, 1, Qt.Qt.DotLine)
+        histmarkers.setPen(pen)
+        histmarkers.setStyle(Qwt.QwtPlotCurve.Sticks)
+        histmarkers.attach(self)
+        self.curve_path_dict[histmarkers] = path
+        self.path_curve_dict[path].append(new_curve)
+        self.clearZoomStack()
+        self.replot()
+        return 1
         
 # 
 # plotwidget.py ends here

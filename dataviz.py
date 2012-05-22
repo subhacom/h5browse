@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon May 21 19:52:12 2012 (+0530)
-#           By: Subhasis Ray
-#     Update #: 3522
+# Last-Updated: Tue May 22 18:02:11 2012 (+0530)
+#           By: subha
+#     Update #: 3566
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -363,7 +363,12 @@ class DataVizWidget(QtGui.QMainWindow):
         self.wrapPlotsOverEdgesAction = QtGui.QAction('Wrap plots over edges', self)
         self.connect(self.wrapPlotsOverEdgesAction, QtCore.SIGNAL('triggered()'), self.__wrapPlotsOverEdges)
         self.toolActions.append(self.wrapPlotsOverEdgesAction)
-        self.plotSpikeTimeDistributionByRegexAction = QtGui.QAction('Plots spike time distribution by regex', self)
+        self.plotPSTHByRegexAction = QtGui.QAction('Plots PSTH by regex', self)
+        self.connect(self.plotPSTHByRegexAction,
+                     QtCore.SIGNAL('triggered()'),
+                     self._plotPSTHByRegex)
+        self.toolActions.append(self.plotPSTHByRegexAction)
+        self.plotSpikeTimeDistributionByRegexAction = QtGui.QAction('Plot spiketime histogram by regex', self)
         self.connect(self.plotSpikeTimeDistributionByRegexAction,
                      QtCore.SIGNAL('triggered()'),
                      self._plotSpikeTimeDistributionByRegex)
@@ -1398,7 +1403,7 @@ class DataVizWidget(QtGui.QMainWindow):
                 end = None
             self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot)
 
-    def _plotSpikeTimeDistributionByRegex(self):
+    def _plotPSTHByRegex(self):
         """Plot the distribution of spike times with respect to
         stimulus time.
 
@@ -1469,22 +1474,105 @@ class DataVizWidget(QtGui.QMainWindow):
         offset = float(str(offsetText.text()))
         data = self.h5tree.getDataByRe(regex)
         plotWidget = PlotWidget(self)
-        mdiChild = self.mdiArea.addSubWindow(plotWidget)
-        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         stimdata = self.h5tree.getData(stimcurve)
         filepath = self.h5tree.getOpenFileName(stimcurve)
         simtime = self.h5tree.get_simtime(filepath)
         binsize = float(str(binsText.text()))
-        plotWidget.plotSpikeTimeDistribution(stimcurve,
-                                             stimdata,
-                                             data,
-                                             simtime,
-                                             offset,
-                                             binsize=binsize,
-                                             legendSuffix=regex,                                    
-         
-                                             rate=rateCheck.isChecked())
+        if plotWidget.plotPSTH(stimcurve,
+                            stimdata,
+                            data,
+                            simtime,
+                            offset,
+                            binsize=binsize,
+                            legendSuffix=regex,                                                                
+                            rate=rateCheck.isChecked()):
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        else:
+            del plotWidget
 
+
+    def _plotSpikeTimeDistributionByRegex(self):
+        selected = self.h5tree.selectedItems()
+        dialog = QtGui.QDialog(self)
+        dialog.setWindowTitle('Plot spike time distribution')
+        infoLabel = QtGui.QLabel(dialog)
+        infoLabel.setText('Plot distribution of spike times by regular expression')
+        regexLabel = QtGui.QLabel(dialog)
+        regexLabel.setText('Regex for data')
+        regexEdit = QtGui.QLineEdit(dialog)
+        startLabel = QtGui.QLabel(dialog)
+        startLabel.setText('Start time (second)')
+        startText = QtGui.QLineEdit(dialog)
+        startText.setText('0')
+        endLabel = QtGui.QLabel(dialog)
+        endLabel.setText('End time (second)')
+        endText = QtGui.QLineEdit(dialog)
+        endText.setText('-1')
+        binsLabel = QtGui.QLabel(dialog)
+        binsLabel.setText('Bin size (second)')
+        binsText = QtGui.QLineEdit(dialog)
+        binsText.setText('0.1') # default bincount
+        rateLabel = QtGui.QLabel(dialog)
+        rateLabel.setText('Rate')
+        rateCheck = QtGui.QCheckBox(dialog)
+        rateCheck.setChecked(True)
+        normalizeLabel = QtGui.QLabel(dialog)
+        normalizeLabel.setText('Normalize with cell count')
+        normalizeCheck = QtGui.QCheckBox(dialog)
+        normalizeCheck.setChecked(True)
+        cancelButton = QtGui.QPushButton()
+        cancelButton.setText('Cancel')
+        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
+        okButton = QtGui.QPushButton()
+        okButton.setText('OK')
+        self.connect(okButton, QtCore.SIGNAL('clicked()'), dialog.accept)
+        layout = QtGui.QGridLayout()
+        layout.addWidget(infoLabel, 0, 0, 1, 4)
+        layout.addWidget(regexLabel, 1, 0)
+        layout.addWidget(regexEdit, 1, 2)
+        layout.addWidget(startLabel, 2, 0)
+        layout.addWidget(startText, 2, 1)
+        layout.addWidget(endLabel, 2, 2)
+        layout.addWidget(endText, 2, 3)
+        layout.addWidget(binsLabel, 3, 0)
+        layout.addWidget(binsText, 3, 2)
+        layout.addWidget(rateLabel, 4, 0)
+        layout.addWidget(rateCheck, 4, 2)        
+        layout.addWidget(normalizeLabel, 5, 0)
+        layout.addWidget(normalizeCheck, 5, 2)        
+        layout.addWidget(cancelButton, 6, 0)
+        layout.addWidget(okButton, 6, 4)
+        dialog.setLayout(layout)
+        dialog.exec_()
+        if not dialog.Accepted:
+            return
+        regex = str(regexEdit.text())
+        start = float(str(startText.text()))
+        end = float(str(endText.text()))
+        data = self.h5tree.getDataByRe(regex)
+        if end < 0:
+            simtime = 1.0
+            for v in data.keys():
+                filepath = self.h5tree.getOpenFileName(v)
+                _simtime = self.h5tree.get_simtime(filepath)
+                if _simtime > simtime:
+                    simtime = _simtime
+        binsize = float(str(binsText.text()))
+        if end < 0:
+            end = simtime
+        plotWidget = PlotWidget(self)
+        if plotWidget.plotSpikeTimeDistribution(start,
+                                                end,
+                                                data,
+                                                binSize=binsize,
+                                                legendSuffix=regex,                                                                
+                                                rate=rateCheck.isChecked()):
+            mdiChild = self.mdiArea.addSubWindow(plotWidget)
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        else:
+            del plotWidget
+        
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
