@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Jun  7 16:29:46 2012 (+0530)
+# Last-Updated: Thu Jun  7 17:46:44 2012 (+0530)
 #           By: subha
-#     Update #: 390
+#     Update #: 426
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -188,15 +188,19 @@ def get_stim_aligned_spike_times(fhandles, cellnames):
     probe_spikes = defaultdict(list)
     for fh in fhandles:
         spike_times = get_spike_times(fh, cellnames)
-        simtime = float(dict(fh['runconfig/scheduling'][:])['simtime'])
         stiminfo = dict(fh['runconfig/stimulus'][:])
         stim_onset = float(stiminfo['onset'])
         # Probe stimulus is designed to align with every alternet bg
         # stmulus.
         interval = float(stiminfo['bg_interval'])
+        print fh.filename, 'stimulus interval', interval
         for cell, spikes in spike_times.items():
-            bg_spikes[cell] = np.r_[bg_spikes[cell], spikes[spikes > (stim_onset + interval)] % (2*interval)]
-            probe_spikes[cell] = np.r_[probe_spikes[cell], spikes[spikes > (stim_onset + 2 * interval)] % (2 * interval)]
+            binned_spikes = spikes[spikes > (stim_onset + interval)] % (2*interval)
+            binned_spikes = binned_spikes[binned_spikes < interval]
+            bg_spikes[cell] = np.r_[bg_spikes[cell], binned_spikes]
+            binned_spikes = spikes[spikes > (stim_onset + 2 * interval)] % (2 * interval)
+            binned_spikes = binned_spikes[binned_spikes < interval]
+            probe_spikes[cell] = np.r_[probe_spikes[cell], binned_spikes]
     return (bg_spikes, probe_spikes)
 
 def get_spike_times(filehandle, cellnames):
@@ -214,6 +218,18 @@ def get_square_wave_edges(filehandle, path):
     simtime = float(dict(filehandle['runconfig/scheduling'][:])['simtime'])
     dt = simtime / len(series)
     return np.nonzero(np.diff(series) > 0.0)[0] * dt
+
+
+import subprocess
+
+def get_valid_files_handles(directory):
+    # Files smaller than 1 MB will not have any usefule data for analysis
+    pipe = subprocess.Popen(['find', directory, '-type', 'f', '-name', 'data*.h5', '-size','+1M'], stdout=subprocess.PIPE)
+    # TODO use subprocess.communicate to avoid issues with large amount of output
+    files = [line.strip() for line in pipe.stdout]
+    return [h5.File(fname, 'r') for fname in find_data_with_stimulus(files)]
+    
+
 
 import sys
 
@@ -240,14 +256,14 @@ if __name__ == '__main__':
     datagrp = bg_file.create_group('data')
     datagrp.attrs['note'] = 'Spike times following only-background stimulus'
     for cellname, spiketimes in bg_spikes.items():
-        ds = data.create_dataset(cellname)
+        ds = datagrp.create_dataset(cellname)
         ds[:] = spiketimes
     bg_file.close()
     probe_file = h5.File('%s_probe.h5' % (ofprefix), 'w')
     datagrp = probe_file.create_group('data')
     datagrp.attrs['note'] = 'Spike times following probe+background stimulus'
     for cellname, spiketimes in probe_spikes.items():
-        ds = data.create_dataset(cellname)
+        ds = datagrp.create_dataset(cellname)
         ds[:] = spiketimes
     probe_file.close()
 
