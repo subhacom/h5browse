@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Jun  8 11:29:29 2012 (+0530)
+# Last-Updated: Fri Jun  8 16:24:05 2012 (+0530)
 #           By: subha
-#     Update #: 456
+#     Update #: 465
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -199,14 +199,11 @@ def get_stim_aligned_spike_times(fhandles, cellnames):
         ii = 0
         for cell, spikes in spike_times.items():
             ii += 1
-            spikes = spikes[spikes > (stim_onset + interval)] % (2 * interval)
+            spikes = (spikes[spikes > (stim_onset + interval)] - (stim_onset+interval)) % (2 * interval)
             bg = spikes[spikes < interval]
             probe = spikes[spikes >= interval] - interval
-            plt.plot(bg, np.ones(len(bg)) * ii, '|')
-            plt.plot(probe, np.ones(len(probe)) * ii, '|')
             bg_spikes[cell] = np.r_[bg_spikes[cell], bg]
             probe_spikes[cell] = np.r_[probe_spikes[cell], probe]
-    plt.show()
     return (bg_spikes, probe_spikes)
 
 def get_spike_times(filehandle, cellnames):
