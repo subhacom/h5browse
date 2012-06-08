@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Jun  7 17:46:44 2012 (+0530)
+# Last-Updated: Fri Jun  8 11:29:29 2012 (+0530)
 #           By: subha
-#     Update #: 426
+#     Update #: 456
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,6 +49,8 @@ import random
 import h5py as h5
 import numpy as np
 from collections import defaultdict
+from matplotlib import pyplot as plt
+
 
 def find_data_with_stimulus(filenamelist):
     files_with_stim = []
@@ -194,13 +196,17 @@ def get_stim_aligned_spike_times(fhandles, cellnames):
         # stmulus.
         interval = float(stiminfo['bg_interval'])
         print fh.filename, 'stimulus interval', interval
+        ii = 0
         for cell, spikes in spike_times.items():
-            binned_spikes = spikes[spikes > (stim_onset + interval)] % (2*interval)
-            binned_spikes = binned_spikes[binned_spikes < interval]
-            bg_spikes[cell] = np.r_[bg_spikes[cell], binned_spikes]
-            binned_spikes = spikes[spikes > (stim_onset + 2 * interval)] % (2 * interval)
-            binned_spikes = binned_spikes[binned_spikes < interval]
-            probe_spikes[cell] = np.r_[probe_spikes[cell], binned_spikes]
+            ii += 1
+            spikes = spikes[spikes > (stim_onset + interval)] % (2 * interval)
+            bg = spikes[spikes < interval]
+            probe = spikes[spikes >= interval] - interval
+            plt.plot(bg, np.ones(len(bg)) * ii, '|')
+            plt.plot(probe, np.ones(len(probe)) * ii, '|')
+            bg_spikes[cell] = np.r_[bg_spikes[cell], bg]
+            probe_spikes[cell] = np.r_[probe_spikes[cell], probe]
+    plt.show()
     return (bg_spikes, probe_spikes)
 
 def get_spike_times(filehandle, cellnames):
