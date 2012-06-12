@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Jun  8 16:50:28 2012 (+0530)
-#           By: subha
-#     Update #: 480
+# Last-Updated: Tue Jun 12 22:00:03 2012 (+0530)
+#           By: Subhasis Ray
+#     Update #: 496
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -180,9 +180,10 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
     Returns
     -------
     
-    A pair containing dicts of spike times: one for backe ground alone
-    and one for background + probe. All the spike times are with
-    respect to the preceding stimulus.
+    A pair containing dicts of list of arrays spike times following
+    each stimulus presentation: one for back ground alone and one for
+    background + probe. All the spike times are with respect to the
+    preceding stimulus.
     """
     bg_spikes = defaultdict(list)
     probe_spikes = defaultdict(list)
@@ -194,25 +195,24 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
         # stmulus.
         interval = float(stiminfo['bg_interval'])
         print fh.filename, 'stimulus interval', interval
-        ii = 0
+        ii = 1
         if plot is not None:
             plt.title(fh.filename)
         for cell, spikes in spike_times.items():
             spikes = (spikes[spikes > (stim_onset + interval)] - (stim_onset+interval)) % (2 * interval)
             bg = spikes[spikes < interval]
             probe = spikes[spikes >= interval] - interval
-            bg_spikes[cell] = np.r_[bg_spikes[cell], bg]
-            probe_spikes[cell] = np.r_[probe_spikes[cell], probe]
+            bg_spikes[cell].append(bg)
+            probe_spikes[cell].append(probe)
+            plt.plot(bg, np.ones(len(bg))*ii, 'bx')
+            plt.plot(probe, np.ones(len(probe))*ii, 'r+')
             if plot == 'each':
                 plt.title('%s: %s' % (fh.filename, cell))
-                plt.plot(bg, np.ones(len(bg)), 'x')
-                plt.plot(probe, np.ones(len(probe)), '+')
                 plt.show()
             elif plot == 'all':
                 ii += 1
-                plt.plot(bg, np.ones(len(bg))*ii, 'x')
-                plt.plot(probe, np.ones(len(probe))*ii, '+')
         if plot == 'all':
+            plt.title(fh.filename)
             plt.show()
     return (bg_spikes, probe_spikes)
 
@@ -270,7 +270,7 @@ if __name__ == '__main__':
     datagrp.attrs['note'] = 'Spike times following only-background stimulus'
     for cellname, spiketimes in bg_spikes.items():
         ds = datagrp.create_dataset(cellname)
-        ds[:] = spiketimes
+        ds[:] = array(spiketimes.ravel()) # flatten the list of arrays
     bg_file.close()
     probe_file = h5.File('%s_probe.h5' % (ofprefix), 'w')
     datagrp = probe_file.create_group('data')
