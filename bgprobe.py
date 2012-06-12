@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Jun  8 16:24:05 2012 (+0530)
+# Last-Updated: Fri Jun  8 16:50:28 2012 (+0530)
 #           By: subha
-#     Update #: 465
+#     Update #: 480
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,7 +50,6 @@ import h5py as h5
 import numpy as np
 from collections import defaultdict
 from matplotlib import pyplot as plt
-
 
 def find_data_with_stimulus(filenamelist):
     files_with_stim = []
@@ -100,7 +99,6 @@ def categorise_networks(filehandles):
 def compare_synapses(filehandles):
     raise NotImplementedError('Synapse-by-synapse comparison is yet to be implemented')    
     
-
 def compare_networks(filehandles, paranoid=False):
     """Compare a set of network files for identity, taking the first
     as the left side and comparing all the others to it."""
@@ -166,7 +164,7 @@ def pick_cells(filehandles, celltype, number, paranoid=False):
     indices = random.sample(range(count), number)
     return ['%s_%d' % (celltype, index) for index in indices]
 
-def get_stim_aligned_spike_times(fhandles, cellnames):
+def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
     """Collect the spike times for each cell from all the files with
     respect to the stimuli.
 
@@ -197,13 +195,25 @@ def get_stim_aligned_spike_times(fhandles, cellnames):
         interval = float(stiminfo['bg_interval'])
         print fh.filename, 'stimulus interval', interval
         ii = 0
+        if plot is not None:
+            plt.title(fh.filename)
         for cell, spikes in spike_times.items():
-            ii += 1
             spikes = (spikes[spikes > (stim_onset + interval)] - (stim_onset+interval)) % (2 * interval)
             bg = spikes[spikes < interval]
             probe = spikes[spikes >= interval] - interval
             bg_spikes[cell] = np.r_[bg_spikes[cell], bg]
             probe_spikes[cell] = np.r_[probe_spikes[cell], probe]
+            if plot == 'each':
+                plt.title('%s: %s' % (fh.filename, cell))
+                plt.plot(bg, np.ones(len(bg)), 'x')
+                plt.plot(probe, np.ones(len(probe)), '+')
+                plt.show()
+            elif plot == 'all':
+                ii += 1
+                plt.plot(bg, np.ones(len(bg))*ii, 'x')
+                plt.plot(probe, np.ones(len(probe))*ii, '+')
+        if plot == 'all':
+            plt.show()
     return (bg_spikes, probe_spikes)
 
 def get_spike_times(filehandle, cellnames):
