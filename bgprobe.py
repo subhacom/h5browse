@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Jun 12 22:00:03 2012 (+0530)
-#           By: Subhasis Ray
-#     Update #: 496
+# Last-Updated: Fri Jun 15 09:55:05 2012 (+0530)
+#           By: subha
+#     Update #: 516
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -232,6 +232,23 @@ def get_square_wave_edges(filehandle, path):
     dt = simtime / len(series)
     return np.nonzero(np.diff(series) > 0.0)[0] * dt
 
+def get_t_first_spike(spiketimes_list):
+    ret = []
+    for st in spiketimes_list:
+        if len(st) > 0:
+            ret.append(st[0])
+        else:
+            ret.append(1e9) # a large placeholder value for when there was no spike    
+    return np.array(ret)
+
+def get_spike_freq(spiketimes_list, delay=0.0, window=50e-3):
+    """Get the average spike rate within a period `window` after
+    `delay` time from stimulus onset."""
+    ret = []
+    for st in spiketimes_list:
+        spikes = np.nonzero((st > delay) & (st < delay+window))[0]
+        ret.append(spikes * 1.0 / window)
+    return np.array(ret)
 
 import subprocess
 
