@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Tue May 22 18:02:11 2012 (+0530)
+# Last-Updated: Fri Jun 15 13:12:06 2012 (+0530)
 #           By: subha
-#     Update #: 3566
+#     Update #: 3567
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -1485,7 +1485,8 @@ class DataVizWidget(QtGui.QMainWindow):
                             offset,
                             binsize=binsize,
                             legendSuffix=regex,                                                                
-                            rate=rateCheck.isChecked()):
+                            rate=rateCheck.isChecked(),
+                               normcells=normalizeCheck.isChecked()):
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
             mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         else:
