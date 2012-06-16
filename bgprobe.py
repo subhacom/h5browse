@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Jun 15 17:58:20 2012 (+0530)
+# Last-Updated: Sat Jun 16 15:19:57 2012 (+0530)
 #           By: subha
-#     Update #: 529
+#     Update #: 557
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -258,7 +258,41 @@ def get_spike_freq(spiketimes_list, delay=0.0, window=50e-3):
         ret.append(spikes * 1.0 / window)
     return np.array(ret)
 
+def get_max_spike_count(spike_time_list, window=10e-3):
+    """Get the maximum frequency using a sliding window of width `window`.
 
+    Parameters
+    ----------
+    
+    spike_time_list: list of arrays containing spike times. 
+
+    app specific note: When background and probe stimulus alternate,
+    the spikes following each stimulus are collected in an
+    array. Arrays from multiple stimulus application constitute
+    spike_time_list.
+
+    window:  the width of the time window in which to maximize the number of spikes
+
+    
+
+    Returns 
+    -------
+
+    the position of the centre of the window and the number
+    spikes within the window for each array in `spike_time_list`.
+    
+    """
+    ret = []
+    for spikes in spike_time_list:
+        max_count = 0
+        max_time = 0
+        for spike in spikes:
+            count = len(np.nonzero((spikes <= spike) & (spikes > (spike - window)))[0])
+            if count < max_count: 
+                max_count = count
+                max_time = spike - window / 2.0
+        ret.append((max_time, max_count))
+    return np.array(ret)
 
 import subprocess
 
