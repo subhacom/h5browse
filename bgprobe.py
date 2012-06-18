@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Jun 16 15:19:57 2012 (+0530)
+# Last-Updated: Mon Jun 18 11:35:32 2012 (+0530)
 #           By: subha
-#     Update #: 557
+#     Update #: 641
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,6 +45,7 @@
 
 # Code:
 
+import os
 import random
 import h5py as h5
 import numpy as np
@@ -52,16 +53,28 @@ from collections import defaultdict
 from matplotlib import pyplot as plt
 
 def find_data_with_stimulus(filenamelist):
+    """Open files passed in `filenamelist` and check for background
+    and probe stimulus data. The files must be data files, not network
+    files. Return a list of open file handles of those that are
+    good"""
     files_with_stim = []
     for filename in filenamelist:
         try:
             fh = h5.File(filename, 'r')
+            toclose = True
         except IOError:
             print filename, 'could not be opened'
             continue
         if ('runconfig' in fh.keys()) and ('stimulus' in fh['runconfig'].keys()):
-            files_with_stim.append(filename)
-        fh.close()
+            try:
+                probe = fh['/stimulus/stim_probe']
+                bg = fh['stimulus/stim_bg']
+                files_with_stim.append(fh)
+                toclose = False
+            except KeyError:
+                print filename, 'does not have stimulus data'
+        if toclose:
+            fh.close()
     return files_with_stim
 
 def categorise_networks(filehandles):
@@ -288,11 +301,47 @@ def get_max_spike_count(spike_time_list, window=10e-3):
         max_time = 0
         for spike in spikes:
             count = len(np.nonzero((spikes <= spike) & (spikes > (spike - window)))[0])
-            if count < max_count: 
+            if count > max_count: 
                 max_count = count
                 max_time = spike - window / 2.0
         ret.append((max_time, max_count))
     return np.array(ret)
+
+def get_probed_cells(filehandle, hop=1):
+    ret = []
+    dirname = os.path.dirname(filehandle.filename)
+    fname = os.path.basename(filehandle.filename)
+    if fname.startswith('data'):
+        fname = fname.replace('data_', 'network_').replace('.h5', '.h5.new')
+    netfilename = os.path.join(dirname, fname)
+    print 'Network file:', netfilename
+    netfile = h5.File(netfilename, 'r')
+    try:
+        stim_dests = netfile['stimulus/connection'][:]
+    except KeyError:
+        print 'No stimulus in file', filehandle.filename
+        return ret
+    probe_dests = [row[1] for row in stim_dests if row[0].endswith('stim_probe')]
+    print 'probe dests', probe_dests
+    if not probe_dests:
+        print 'No probed cells in this file:', filehandle.filename
+        netfile.close()
+        return ret
+    probe_dests = np.char.split(probe_dests, '/')
+    probe_dests = [token[-2] for token in probe_dests]
+    try:
+        sources = netfile['/network/synapse']['source']
+        dests = netfile['/network/synapse']['dest']
+    except KeyError:
+        print netfile.filename, 'missing synapse information'
+        netfile.close()
+        return ret
+    sources = [row[0] for row in np.char.split(sources, '/')]
+    dests = [row[0] for row in np.char.split(dests, '/')]
+    ret = set([dests[ii] for ii in range(len(sources)) if sources[ii] in probe_dests])
+    netfile.close()
+    print ret
+    return ret
 
 import subprocess
 
@@ -301,7 +350,7 @@ def get_valid_files_handles(directory):
     pipe = subprocess.Popen(['find', directory, '-type', 'f', '-name', 'data*.h5', '-size','+1M'], stdout=subprocess.PIPE)
     # TODO use subprocess.communicate to avoid issues with large amount of output
     files = [line.strip() for line in pipe.stdout]
-    return [h5.File(fname, 'r') for fname in find_data_with_stimulus(files)]
+    return find_data_with_stimulus(files)
     
 
 
