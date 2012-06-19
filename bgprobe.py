@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 18 11:35:32 2012 (+0530)
+# Last-Updated: Tue Jun 19 11:34:17 2012 (+0530)
 #           By: subha
-#     Update #: 641
+#     Update #: 717
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -78,8 +78,8 @@ def find_data_with_stimulus(filenamelist):
     return files_with_stim
 
 def categorise_networks(filehandles):
-    """Categorize the files based on cellcount and network
-    generation rng seed
+    """Categorize the files based on cellcount and network generation
+    rng seed. filehandles should be a list of data files.
 
     Returns a dict whose keys are seeds and values are list of
     filehandles that used that seed.
@@ -99,21 +99,39 @@ def categorise_networks(filehandles):
         # 'key1,key2,...,keyN:val1,val2,...,valN'
         sorted_keys = sorted(cellcount.keys())
         sorted_values = [cellcount[key] for key in sorted_keys]
-        cchash = hash(','.join(sorted_keys)+':'+','.join(sorted_values))
+        cellcountinfo = ','.join(sorted_keys)+':'+','.join(sorted_values)
+        directory = os.path.dirname(fh.filename)
+        filename = os.path.basename(fh.filename)
+        if filename.startswith('data_'):
+            netfilename = filename.replace('data_', 'network_').replace('.h5', '.h5.new')
+            netfile = h5.File(netfilename, 'r')
+            try:
+                stim_conn = dict(netfile['/stimulus/connection'])
+                netfile.close()
+                sorted_keys = sorted(stim_conn.keys())
+                stiminfo = ','.join(sorted_keys) + ':' + \
+                    ','.join([stim_conn[key] for key in sorted_keys])
+            except KeyError:
+                print netfilename, ' - has no stimulus connection information.'
+                netfile.close()
+                continue                                    
         k = None
         if 'rngseed' in numinfo:
             k = numinfo['rngseed']
         else:
             k = numinfo['numpy_rngseed']
         d = seeds[k]        
-        if cchash not in d:
-            d[cchash] = [fh]
+        nethash = hash(cellcountinfo + '.' + stiminfo)
+        if nethash not in d:
+            d[nethash] = [fh]
         else:
-            d[cchash].append(fh)
+            d[nethash].append(fh)
+    print '--------- Catgorise network ---------'
     for key, value in seeds.items():
-        for cchash, fh in value.items():
+        for nethash, fh in value.items():
             for f in fh:
-                print 'k"%s" #"%d" f"%s"' % (key, cchash, f.filename)
+                print 'k"%s" #"%d" f"%s"' % (key, nethash, f.filename)
+    print '----- end catgorise networks --------'
     return seeds        
 
 def compare_synapses(filehandles):
@@ -340,9 +358,45 @@ def get_probed_cells(filehandle, hop=1):
     dests = [row[0] for row in np.char.split(dests, '/')]
     ret = set([dests[ii] for ii in range(len(sources)) if sources[ii] in probe_dests])
     netfile.close()
-    print ret
     return ret
 
+def collect_statistics(datafiles, celltypes):
+    if len(datafiles) == 0:
+        return None
+    cellcount = dict(datafiles[0]['/runconfig/cellcount'])
+    stimulus_interval = float(dict(datafiles[0]['/runconfig/stimulus'])['bg_interval'])
+    print '****************************************'
+    print '* File names:'
+    for fh in datafiles:
+        print '*', fh.filename
+    print '* --------------------------------------'
+    print '* Cell count:'
+    for cell, count in cellcount.items():
+        if count > 0:
+            print '*', cell, ':', count
+    probed_cells = get_probed_cells(datafiles[0])
+    probe_info = defaultdict(dict)
+    bg_info = defaultdict(dict)
+    width = 20e-3
+    for celltype in celltypes:
+        cells = pick_cells(datafiles, celltype, 1000) # choose all cells (assuming <= 1000 cells of each type)
+        if not cells:
+            print '!! No entry for celltype', celltype
+            continue
+        bgtimes, probetimes, = get_stim_aligned_spike_times(datafiles, cells)
+        for cell in cells:
+            bg_info[cell]['t_first_spike'] = get_t_first_spike(bgtimes[cell])
+            bg_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in bgtimes[cell]]) / stimulus_interval
+            peak_spiking_info = get_max_spike_count(bgtimes[cell], width)
+            bg_info[cell]['t_peak_spiking'] = peak_spiking_info[0]
+            bg_info[cell]['f_peak_spiking'] = peak_spiking_info[1]
+            probe_info[cell]['t_first_spike'] = get_t_first_spike(probetimes[cell])
+            probe_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in probetimes[cell]]) / stimulus_interval
+            peak_spiking_info = get_max_spike_count(probetimes[cell], width)
+            probe_info[cell]['t_peak_spiking'] = peak_spiking_info[0]
+            probe_info[cell]['f_peak_spiking'] = peak_spiking_info[1]
+    return (bg_info, probe_info)
+            
 import subprocess
 
 def get_valid_files_handles(directory):
