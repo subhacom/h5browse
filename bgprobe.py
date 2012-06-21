@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Jun 19 11:34:17 2012 (+0530)
+# Last-Updated: Thu Jun 21 10:03:10 2012 (+0530)
 #           By: subha
-#     Update #: 717
+#     Update #: 817
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,29 +52,34 @@ import numpy as np
 from collections import defaultdict
 from matplotlib import pyplot as plt
 
+import analyzer
+
 def find_data_with_stimulus(filenamelist):
     """Open files passed in `filenamelist` and check for background
     and probe stimulus data. The files must be data files, not network
     files. Return a list of open file handles of those that are
     good"""
     files_with_stim = []
+    files_to_close = []
     for filename in filenamelist:
         try:
             fh = h5.File(filename, 'r')
-            toclose = True
         except IOError:
             print filename, 'could not be opened'
             continue
-        if ('runconfig' in fh.keys()) and ('stimulus' in fh['runconfig'].keys()):
-            try:
-                probe = fh['/stimulus/stim_probe']
-                bg = fh['stimulus/stim_bg']
+        try:
+            bgtimes = analyzer.get_bgtimes(fh)
+            probetimes = analyzer.get_probetimes(fh)
+            if (0 in bgtimes.shape) or (0 in probetimes.shape):
+                files_to_close.append(fh)
+            else:
                 files_with_stim.append(fh)
-                toclose = False
-            except KeyError:
-                print filename, 'does not have stimulus data'
-        if toclose:
-            fh.close()
+        except KeyError:
+            print filename, 'does not have stimulus data'
+            files_to_close.append(fh)
+    for fh in files_to_close:
+        print 'File without stimulus info:', fh.filename
+        fh.close()
     return files_with_stim
 
 def categorise_networks(filehandles):
@@ -104,7 +109,7 @@ def categorise_networks(filehandles):
         filename = os.path.basename(fh.filename)
         if filename.startswith('data_'):
             netfilename = filename.replace('data_', 'network_').replace('.h5', '.h5.new')
-            netfile = h5.File(netfilename, 'r')
+            netfile = h5.File(os.path.join(directory, netfilename), 'r')
             try:
                 stim_conn = dict(netfile['/stimulus/connection'])
                 netfile.close()
@@ -218,8 +223,8 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
     Returns
     -------
     
-    A pair containing dicts of list of arrays spike times following
-    each stimulus presentation: one for back ground alone and one for
+    A pair containing dicts of list of arrays of spike times following
+    each stimulus presentation: one for background alone and one for
     background + probe. All the spike times are with respect to the
     preceding stimulus.
     """
@@ -228,6 +233,7 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
     for fh in fhandles:
         spike_times = get_spike_times(fh, cellnames)
         stiminfo = dict(fh['runconfig/stimulus'][:])
+        simtime = float(dict(fh['runconfig/scheduling'])['simtime'])        
         stim_onset = float(stiminfo['onset'])
         # Probe stimulus is designed to align with every alternet bg
         # stmulus.
@@ -237,11 +243,19 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
         if plot is not None:
             plt.title(fh.filename)
         for cell, spikes in spike_times.items():
-            spikes = (spikes[spikes > (stim_onset + interval)] - (stim_onset+interval)) % (2 * interval)
-            bg = spikes[spikes < interval]
-            probe = spikes[spikes >= interval] - interval
-            bg_spikes[cell].append(bg)
-            probe_spikes[cell].append(probe)
+            # print '# CELL', cell
+            # print '# Stim onset:', stim_onset
+            # print spikes            
+            bg = [spikes[(spikes >= bgtime) & (spikes < (bgtime+interval))] % interval
+                  for bgtime in np.arange(stim_onset+interval, simtime, 2*interval)]
+            bg_spikes[cell] += bg
+            # print '# BG SPIKES'
+            # print bg_spikes
+            probe = [spikes[(spikes >= probetime) & (spikes < (probetime+interval))] % interval
+                     for probetime in np.arange(stim_onset + 2 * interval, simtime, 2 * interval)]
+            probe_spikes[cell] += probe
+            # print '#### probe spikes'
+            # print probe_spikes
             if plot is not None:
                 plt.plot(bg, np.ones(len(bg))*ii, 'bx')
                 plt.plot(probe, np.ones(len(probe))*ii, 'r+')
@@ -309,7 +323,7 @@ def get_max_spike_count(spike_time_list, window=10e-3):
     Returns 
     -------
 
-    the position of the centre of the window and the number
+    the position of the centre of the window and the number of
     spikes within the window for each array in `spike_time_list`.
     
     """
@@ -322,7 +336,7 @@ def get_max_spike_count(spike_time_list, window=10e-3):
             if count > max_count: 
                 max_count = count
                 max_time = spike - window / 2.0
-        ret.append((max_time, max_count))
+        ret.append((max_time, max_count / window))
     return np.array(ret)
 
 def get_probed_cells(filehandle, hop=1):
@@ -340,7 +354,6 @@ def get_probed_cells(filehandle, hop=1):
         print 'No stimulus in file', filehandle.filename
         return ret
     probe_dests = [row[1] for row in stim_dests if row[0].endswith('stim_probe')]
-    print 'probe dests', probe_dests
     if not probe_dests:
         print 'No probed cells in this file:', filehandle.filename
         netfile.close()
@@ -361,6 +374,24 @@ def get_probed_cells(filehandle, hop=1):
     return ret
 
 def collect_statistics(datafiles, celltypes):
+    """Collect some statistics for cells of type listed in `celltypes`
+    from `datafiles`
+
+    Returns
+    -------
+    
+    A pair of dictionaries, (bginfo, probeinfo) which contain the data
+    for background only stimulus and data for background+probe
+    stimulus.
+
+    Each dict is keyed with cell name and the values are dicts themselves. 
+    The values contain 
+
+    t_first_spike - array of time to first spike after each stimulus.
+    f_avg - array of average spiking rate after each stimulus
+    f_peak_spiking - the peak spiking rate within a window (20 ms default).
+    t_peak_spiking - window position for peak spiking above.
+    """
     if len(datafiles) == 0:
         return None
     cellcount = dict(datafiles[0]['/runconfig/cellcount'])
@@ -372,14 +403,14 @@ def collect_statistics(datafiles, celltypes):
     print '* --------------------------------------'
     print '* Cell count:'
     for cell, count in cellcount.items():
-        if count > 0:
+        if int(count) > 0:
             print '*', cell, ':', count
     probed_cells = get_probed_cells(datafiles[0])
     probe_info = defaultdict(dict)
     bg_info = defaultdict(dict)
     width = 20e-3
     for celltype in celltypes:
-        cells = pick_cells(datafiles, celltype, 1000) # choose all cells (assuming <= 1000 cells of each type)
+        cells = pick_cells(datafiles, celltype, 100000) # choose all cells (assuming <= 1000 cells of each type)
         if not cells:
             print '!! No entry for celltype', celltype
             continue
@@ -388,13 +419,19 @@ def collect_statistics(datafiles, celltypes):
             bg_info[cell]['t_first_spike'] = get_t_first_spike(bgtimes[cell])
             bg_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in bgtimes[cell]]) / stimulus_interval
             peak_spiking_info = get_max_spike_count(bgtimes[cell], width)
-            bg_info[cell]['t_peak_spiking'] = peak_spiking_info[0]
-            bg_info[cell]['f_peak_spiking'] = peak_spiking_info[1]
+            if len(peak_spiking_info) == 0:
+                peak_spiking_info = - np.ones((1,2))
+            bg_info[cell]['t_peak_spiking'] = peak_spiking_info[:,0]
+            bg_info[cell]['f_peak_spiking'] = peak_spiking_info[:,1]
             probe_info[cell]['t_first_spike'] = get_t_first_spike(probetimes[cell])
             probe_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in probetimes[cell]]) / stimulus_interval
             peak_spiking_info = get_max_spike_count(probetimes[cell], width)
-            probe_info[cell]['t_peak_spiking'] = peak_spiking_info[0]
-            probe_info[cell]['f_peak_spiking'] = peak_spiking_info[1]
+            if len(peak_spiking_info) == 0:
+                peak_spiking_info = - np.ones((1,2))
+            probe_info[cell]['t_peak_spiking'] = peak_spiking_info[:, 0]
+            probe_info[cell]['f_peak_spiking'] = peak_spiking_info[:, 1]
+                
+            # print bg_info[cell]
     return (bg_info, probe_info)
             
 import subprocess
@@ -428,21 +465,26 @@ if __name__ == '__main__':
             except IOError, e:
                 print e
     cellnames = pick_cells(fhandles, celltype, number)
+    print 'Cells:'
+    print cellnames
     (bg_spikes, probe_spikes) = get_stim_aligned_spike_times(fhandles, cellnames)
-    bg_file = h5.File('%s_bg.h5' % (ofprefix), 'w')
-    datagrp = bg_file.create_group('data')
-    datagrp.attrs['note'] = 'Spike times following only-background stimulus'
-    for cellname, spiketimes in bg_spikes.items():
-        ds = datagrp.create_dataset(cellname)
-        ds[:] = array(spiketimes.ravel()) # flatten the list of arrays
-    bg_file.close()
-    probe_file = h5.File('%s_probe.h5' % (ofprefix), 'w')
-    datagrp = probe_file.create_group('data')
-    datagrp.attrs['note'] = 'Spike times following probe+background stimulus'
-    for cellname, spiketimes in probe_spikes.items():
-        ds = datagrp.create_dataset(cellname)
-        ds[:] = spiketimes
-    probe_file.close()
+    print 'BG data'
+    print bg_spikes
+    print 'PROBE DATA'
+    print probe_spikes
+    # bg_file = h5.File('%s_bg.h5' % (ofprefix), 'w')
+    # datagrp = bg_file.create_group('data')
+    # datagrp.attrs['note'] = 'Spike times following only-background stimulus'
+    # for cellname, spiketimes in bg_spikes.items():
+    #     ds = datagrp.create_dataset(cellname, data=np.array(spiketimes).ravel())
+    # bg_file.close()
+    # probe_file = h5.File('%s_probe.h5' % (ofprefix), 'w')
+    # datagrp = probe_file.create_group('data')
+    # datagrp.attrs['note'] = 'Spike times following probe+background stimulus'
+    # for cellname, spiketimes in probe_spikes.items():
+    #     ds = datagrp.create_dataset(cellname)
+    #     ds[:] = spiketimes
+    # probe_file.close()
 
     
 # 
