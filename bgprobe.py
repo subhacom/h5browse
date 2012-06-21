@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Jun 21 10:03:10 2012 (+0530)
+# Last-Updated: Thu Jun 21 12:03:35 2012 (+0530)
 #           By: subha
-#     Update #: 817
+#     Update #: 821
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -232,6 +232,8 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
     probe_spikes = defaultdict(list)
     for fh in fhandles:
         spike_times = get_spike_times(fh, cellnames)
+        bgtimes = analyzer.get_bgtimes(fh)
+        probetimes = analyzer.get_probetimes(fh)
         stiminfo = dict(fh['runconfig/stimulus'][:])
         simtime = float(dict(fh['runconfig/scheduling'])['simtime'])        
         stim_onset = float(stiminfo['onset'])
@@ -246,13 +248,13 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
             # print '# CELL', cell
             # print '# Stim onset:', stim_onset
             # print spikes            
-            bg = [spikes[(spikes >= bgtime) & (spikes < (bgtime+interval))] % interval
-                  for bgtime in np.arange(stim_onset+interval, simtime, 2*interval)]
+            bg = [spikes[(spikes >= bgtimes[ii]) & (spikes < (bgtimes[ii]+interval))] - bgtimes[ii]
+                  for ii in range(0, len(bgtimes), 2)]
             bg_spikes[cell] += bg
             # print '# BG SPIKES'
             # print bg_spikes
-            probe = [spikes[(spikes >= probetime) & (spikes < (probetime+interval))] % interval
-                     for probetime in np.arange(stim_onset + 2 * interval, simtime, 2 * interval)]
+            probe = [spikes[(spikes >= probetime) & (spikes < (probetime+interval))] - probetime
+                     for probetime in probetimes]
             probe_spikes[cell] += probe
             # print '#### probe spikes'
             # print probe_spikes

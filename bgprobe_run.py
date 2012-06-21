@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun 15 14:40:53 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Jun 21 09:48:22 2012 (+0530)
+# Last-Updated: Thu Jun 21 11:20:38 2012 (+0530)
 #           By: subha
-#     Update #: 544
+#     Update #: 563
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,8 +36,8 @@ from bgprobe import *
 
 if __name__ == '__main__':
     # First, exclude files older than a cutoff date or simulations which lasted less than 5 s
-    # candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/')
-    candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/')
+    candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/')
+    # candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/')
     cutoff_date = datetime.datetime(2012, 01, 01)
     good_fh = []    
     for fh in candidate_fh:
@@ -153,18 +153,22 @@ if __name__ == '__main__':
             ax_tps_favg.scatter(probe_tps_mean, probe_favg_mean, c='m', marker='+')
             ax_fps_favg.scatter(bg_fps_mean, bg_favg_mean, c='c', marker='x')
             ax_fps_favg.scatter(probe_fps_mean, probe_favg_mean, c='m', marker='+')
-            ax_tfs_bg.pcolor(bg_tfs)
-            print 'PROBE TFS'
-            print probe_tfs
-            if len(probe_tfs) > 0:
-                print probe_tfs, len(probe_tfs), probe_tfs.shape
-                ax_tfs_probe.pcolor(probe_tfs)
-            ax_tps_bg.pcolor(bg_tps)
-            ax_tps_probe.pcolor(probe_tps)
-            ax_fps_bg.pcolor(bg_fps)
-            ax_fps_probe.pcolor(probe_fps)
-            ax_favg_bg.pcolor(bg_favg)
-            ax_favg_probe.pcolor(probe_favg)
+            cax = ax_tfs_bg.pcolor(bg_tfs)
+            fig.colorbar(cax, ax=ax_tfs_bg, orientation='vertical')
+            cax = ax_tfs_probe.pcolor(probe_tfs)
+            fig.colorbar(cax, ax=ax_tfs_probe, orientation='vertical')
+            cax = ax_tps_bg.pcolor(bg_tps)
+            fig.colorbar(cax, ax=ax_tps_bg,orientation='vertical')
+            cax = ax_tps_probe.pcolor(probe_tps)
+            fig.colorbar(cax, ax=ax_tps_probe, orientation='vertical')
+            cax = ax_fps_bg.pcolor(bg_fps)
+            fig.colorbar(cax, ax=ax_fps_bg, orientation='vertical')
+            cax = ax_fps_probe.pcolor(probe_fps)
+            fig.colorbar(cax, ax=ax_fps_probe, orientation='vertical')
+            cax = ax_favg_bg.pcolor(bg_favg)
+            fig.colorbar(cax, ax=ax_favg_bg, orientation='vertical')
+            cax = ax_favg_probe.pcolor(probe_favg)
+            fig.colorbar(cax, ax=ax_favg_probe, orientation='vertical')
             fig.set_size_inches(20.0, 10.0, forward=True)
             plt.show()
             # raise(Exception)
