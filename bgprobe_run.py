@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun 15 14:40:53 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 12:36:42 2012 (+0530)
+# Last-Updated: Mon Jun 25 20:37:09 2012 (+0530)
 #           By: subha
-#     Update #: 582
+#     Update #: 583
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,7 +36,7 @@ from bgprobe import *
 
 if __name__ == '__main__':
     # First, exclude files older than a cutoff date or simulations which lasted less than 5 s
-    candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/')
+    candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_01_28')
     # candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/')
     cutoff_date = datetime.datetime(2012, 01, 01)
     good_fh = []    

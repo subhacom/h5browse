@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 11:32:17 2012 (+0530)
+# Last-Updated: Mon Jun 25 14:00:12 2012 (+0530)
 #           By: subha
-#     Update #: 826
+#     Update #: 827
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -419,7 +419,7 @@ def collect_statistics(datafiles, celltypes):
         bgtimes, probetimes, = get_stim_aligned_spike_times(datafiles, cells)
         for cell in cells:
             bg_info[cell]['t_first_spike'] = get_t_first_spike(bgtimes[cell])
-            print cell, 'bgtimes:', bgtimes[cell]
+            # print cell, 'bgtimes:', bgtimes[cell]
             bg_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in bgtimes[cell]]) / stimulus_interval
             peak_spiking_info = get_max_spike_count(bgtimes[cell], width)
             if len(peak_spiking_info) == 0:
@@ -427,7 +427,7 @@ def collect_statistics(datafiles, celltypes):
             bg_info[cell]['t_peak_spiking'] = peak_spiking_info[:,0]
             bg_info[cell]['f_peak_spiking'] = peak_spiking_info[:,1]
             probe_info[cell]['t_first_spike'] = get_t_first_spike(probetimes[cell])
-            print cell, 'probetimes:', probetimes[cell]          
+            # print cell, 'probetimes:', probetimes[cell]          
             probe_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in probetimes[cell]]) / stimulus_interval
             peak_spiking_info = get_max_spike_count(probetimes[cell], width)
             if len(peak_spiking_info) == 0:
