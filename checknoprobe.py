@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jun 25 16:13:04 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 20:54:25 2012 (+0530)
+# Last-Updated: Mon Jun 25 21:07:32 2012 (+0530)
 #           By: subha
-#     Update #: 135
+#     Update #: 162
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -74,6 +74,8 @@ if __name__ == '__main__':
         datadict = defaultdict(list)
         odddict = {}
         evendict = {}
+        oddtfs = defaultdict(list)
+        eventfs = defaultdict(list)
         for cell in df['spikes']:
             if not cell.startswith(celltype):
                 continue
@@ -83,33 +85,37 @@ if __name__ == '__main__':
             odds = []
             evens = []
             for ii in range(1, len(bgtimes)):
-                spikes = spiketimes[(spiketimes >= bgtimes[ii-1]) & (spiketimes < bgtimes[ii])]
+                spikes = spiketimes[(spiketimes >= bgtimes[ii-1]) & (spiketimes < bgtimes[ii])] - bgtimes[ii-1]
                 print ii, spikes
                 datadict[cell].append(spikes)
                 if ii % 2 == 1:
-                    odds.append(len(spikes))
-                    print 'odd',odds[-1]
+                    tfs = oddtfs
+                    counts = odds
                 else:
-                    evens.append(len(spikes))
-                    print 'even', evens[-1]
+                    tfs = eventfs
+                    counts = evens
+                l = len(spikes)
+                if l > 0:
+                    tfs[cell].append(spikes[0])
+                else:
+                    tfs[cell].append(-1.0)
+                counts.append(l)
             odddict[cell] = odds
             evendict[cell] = evens
+        oddmean = [np.mean(v) for v in odddict.values()]
+        evenmean = [np.mean(v) for v in evendict.values()]
+        oddtfsmean = [np.mean(v) for v in oddtfs.values()]
+        eventfsmean  = [np.mean(v) for v in eventfs.values()]
         plt.subplot(4,1,1)
         plt.title('avg odd')
-        plt.hist([np.mean(v) for v in odddict.values()])
+        plt.hist(oddmean)
         plt.subplot(4,1,2)
         plt.title('avg even')
-        plt.hist([np.mean(v) for v in evendict.values()])
-        ax = plt.subplot(4,1,3, projection='3d')
-        v = odddict.values()
-        a = np.array(v)
-        X, Y = np.meshgrid(range(a.shape[1]), range(a.shape[0]))
-        print a.shape, X.shape, Y.shape        
-        ax.scatter(X, Y, a)
-        ax = plt.subplot(4,1,4, projection='3d')
-        a = np.array(evendict.values())
-        X, Y = np.meshgrid(range(a.shape[1]), range(a.shape[0]))
-        ax.scatter(X, Y, a)
+        plt.hist(evenmean)
+        plt.subplot(4, 1, 3)
+        plt.title('tfs vs spike count')
+        plt.scatter(oddtfsmean, oddmean, c='c', marker='x')
+        plt.scatter(eventfsmean, evenmean, c='m', marker='+')
         plt.show()
 
 # 
