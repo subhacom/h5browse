@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun 15 14:40:53 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 20:37:09 2012 (+0530)
+# Last-Updated: Mon Jun 25 22:01:02 2012 (+0530)
 #           By: subha
-#     Update #: 583
+#     Update #: 584
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -138,7 +138,7 @@ if __name__ == '__main__':
             bg_tfs = np.array([bgdata[cell]['t_first_spike'] for cell in cells])
             bg_tps = np.array([bgdata[cell]['t_peak_spiking'] for cell in cells])
             bg_fps = np.array([bgdata[cell]['f_peak_spiking'] for cell in cells])
-            bg_favg = np.array([bgdata[cell]['f_avg'] for info in cells])
+            bg_favg = np.array([bgdata[cell]['f_avg'] for cell in cells])
             probe_tfs = np.array([probedata[cell]['t_first_spike'] for cell in cells])
             probe_tps = np.array([probedata[cell]['t_peak_spiking'] for cell in cells])
             probe_fps = np.array([probedata[cell]['f_peak_spiking'] for cell in cells])

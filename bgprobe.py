@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 14:00:12 2012 (+0530)
+# Last-Updated: Mon Jun 25 21:57:45 2012 (+0530)
 #           By: subha
-#     Update #: 827
+#     Update #: 850
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -287,13 +287,13 @@ def get_square_wave_edges(filehandle, path):
     dt = simtime / len(series)
     return np.nonzero(np.diff(series) > 0.0)[0] * dt
 
-def get_t_first_spike(spiketimes_list):
+def get_t_first_spike(spiketimes_list, default):
     ret = []
     for st in spiketimes_list:
         if len(st) > 0:
             ret.append(st[0])
         else:
-            ret.append(1.0) # a placeholder value for when there was no spike    
+            ret.append(default) # a placeholder value for when there was no spike    
     return np.array(ret)
 
 def get_spike_freq(spiketimes_list, delay=0.0, window=50e-3):
@@ -418,15 +418,20 @@ def collect_statistics(datafiles, celltypes):
             continue
         bgtimes, probetimes, = get_stim_aligned_spike_times(datafiles, cells)
         for cell in cells:
-            bg_info[cell]['t_first_spike'] = get_t_first_spike(bgtimes[cell])
+            print cell
+            print [len(bg) for bg in bgtimes[cell]]
+            print [len(pb) for pb in probetimes[cell]]
+            tfs = [v[0] if len(v) > 0 else stimulus_interval for v in bgtimes[cell]]
+            bg_info[cell]['t_first_spike'] = tfs
             # print cell, 'bgtimes:', bgtimes[cell]
-            bg_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in bgtimes[cell]]) / stimulus_interval
+            bg_info[cell]['f_avg'] = np.array([len(st) for st in bgtimes[cell]]) / stimulus_interval
+            print bg_info[cell]['f_avg']
             peak_spiking_info = get_max_spike_count(bgtimes[cell], width)
             if len(peak_spiking_info) == 0:
                 peak_spiking_info = - np.ones((1,2))
             bg_info[cell]['t_peak_spiking'] = peak_spiking_info[:,0]
             bg_info[cell]['f_peak_spiking'] = peak_spiking_info[:,1]
-            probe_info[cell]['t_first_spike'] = get_t_first_spike(probetimes[cell])
+            probe_info[cell]['t_first_spike'] = [v[0] if len(v) > 0 else stimulus_interval for v in probetimes[cell]]
             # print cell, 'probetimes:', probetimes[cell]          
             probe_info[cell]['f_avg'] = np.array([len(spiketimes) for spiketimes in probetimes[cell]]) / stimulus_interval
             peak_spiking_info = get_max_spike_count(probetimes[cell], width)
