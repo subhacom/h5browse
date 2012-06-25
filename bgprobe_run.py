@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun 15 14:40:53 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Jun 21 11:20:38 2012 (+0530)
+# Last-Updated: Mon Jun 25 12:36:42 2012 (+0530)
 #           By: subha
-#     Update #: 563
+#     Update #: 582
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -74,6 +74,14 @@ if __name__ == '__main__':
             probed_cells = get_probed_cells(files[0])
             probed_cells = [cell for cell in probed_cells for celltype in celltypes if cell.startswith(celltype) ]
             bgdata, probedata, = collect_statistics(files, celltypes)
+            # Commenting out the following to see effect of stimulus
+            # no (odd/even) when probe is not present. I noticed that
+            # even when there is no probe stimulus, every alternate bg
+            # stimulus has effect similar to probe.
+
+            # if len(bgdata) == 0 or len(probedata) == 0:
+            #     print 'Empty data set'
+            #     continue
             assert(set(bgdata.keys()) == set(probedata.keys()))
             fig = plt.figure()
             # t_first_spike - t_peak_spiking
@@ -135,6 +143,11 @@ if __name__ == '__main__':
             probe_tps = np.array([probedata[cell]['t_peak_spiking'] for cell in cells])
             probe_fps = np.array([probedata[cell]['f_peak_spiking'] for cell in cells])
             probe_favg = np.array([probedata[cell]['f_avg'] for cell in cells])
+            if (len(bg_tfs) == 0) or (0 in bg_tfs.shape) \
+                    or (len(bg_tps) == 0) or (0 in bg_tps.shape):
+                print 'Empty array in this data set.'
+                continue
+            
             bg_tfs_mean = np.mean(bg_tfs, 1)
             bg_tps_mean = np.mean(bg_tps, 1)
             bg_fps_mean = np.mean(bg_fps, 1)
@@ -153,21 +166,24 @@ if __name__ == '__main__':
             ax_tps_favg.scatter(probe_tps_mean, probe_favg_mean, c='m', marker='+')
             ax_fps_favg.scatter(bg_fps_mean, bg_favg_mean, c='c', marker='x')
             ax_fps_favg.scatter(probe_fps_mean, probe_favg_mean, c='m', marker='+')
-            cax = ax_tfs_bg.pcolor(bg_tfs)
+            cax = ax_tfs_bg.pcolor(bg_tfs, vmin=0, vmax=isi)
             fig.colorbar(cax, ax=ax_tfs_bg, orientation='vertical')
-            cax = ax_tfs_probe.pcolor(probe_tfs)
+            cax = ax_tfs_probe.pcolor(probe_tfs, vmin=0, vmax=isi)
             fig.colorbar(cax, ax=ax_tfs_probe, orientation='vertical')
-            cax = ax_tps_bg.pcolor(bg_tps)
+            cax = ax_tps_bg.pcolor(bg_tps, vmin=0, vmax=isi)
             fig.colorbar(cax, ax=ax_tps_bg,orientation='vertical')
-            cax = ax_tps_probe.pcolor(probe_tps)
+            cax = ax_tps_probe.pcolor(probe_tps, vmin=0, vmax=isi)
             fig.colorbar(cax, ax=ax_tps_probe, orientation='vertical')
-            cax = ax_fps_bg.pcolor(bg_fps)
+            max_freq = max(np.amax(bg_fps), np.amax(probe_fps))
+            max_avg_freq = max(np.amax(bg_favg), np.amax(probe_favg))
+            print 'MAX FREQ', max_freq
+            cax = ax_fps_bg.pcolor(bg_fps, vmin=0, vmax=max_freq)
             fig.colorbar(cax, ax=ax_fps_bg, orientation='vertical')
-            cax = ax_fps_probe.pcolor(probe_fps)
+            cax = ax_fps_probe.pcolor(probe_fps, vmin=0, vmax=max_freq)
             fig.colorbar(cax, ax=ax_fps_probe, orientation='vertical')
-            cax = ax_favg_bg.pcolor(bg_favg)
+            cax = ax_favg_bg.pcolor(bg_favg, vmin=0, vmax=max_avg_freq)
             fig.colorbar(cax, ax=ax_favg_bg, orientation='vertical')
-            cax = ax_favg_probe.pcolor(probe_favg)
+            cax = ax_favg_probe.pcolor(probe_favg, vmin=0, vmax=max_avg_freq)
             fig.colorbar(cax, ax=ax_favg_probe, orientation='vertical')
             fig.set_size_inches(20.0, 10.0, forward=True)
             plt.show()
