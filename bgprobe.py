@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 21:57:45 2012 (+0530)
+# Last-Updated: Mon Jun 25 22:05:46 2012 (+0530)
 #           By: subha
-#     Update #: 850
+#     Update #: 852
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -418,14 +418,10 @@ def collect_statistics(datafiles, celltypes):
             continue
         bgtimes, probetimes, = get_stim_aligned_spike_times(datafiles, cells)
         for cell in cells:
-            print cell
-            print [len(bg) for bg in bgtimes[cell]]
-            print [len(pb) for pb in probetimes[cell]]
             tfs = [v[0] if len(v) > 0 else stimulus_interval for v in bgtimes[cell]]
             bg_info[cell]['t_first_spike'] = tfs
             # print cell, 'bgtimes:', bgtimes[cell]
             bg_info[cell]['f_avg'] = np.array([len(st) for st in bgtimes[cell]]) / stimulus_interval
-            print bg_info[cell]['f_avg']
             peak_spiking_info = get_max_spike_count(bgtimes[cell], width)
             if len(peak_spiking_info) == 0:
                 peak_spiking_info = - np.ones((1,2))

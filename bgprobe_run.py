@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun 15 14:40:53 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 22:01:02 2012 (+0530)
+# Last-Updated: Mon Jun 25 22:20:07 2012 (+0530)
 #           By: subha
-#     Update #: 584
+#     Update #: 587
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,7 +36,9 @@ from bgprobe import *
 
 if __name__ == '__main__':
     # First, exclude files older than a cutoff date or simulations which lasted less than 5 s
-    candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_01_28')
+    candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/')
+    # The 2012_01_28 is control data with only background stimulus.
+    # candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_01_28')
     # candidate_fh = get_valid_files_handles('/data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/')
     cutoff_date = datetime.datetime(2012, 01, 01)
     good_fh = []    
@@ -146,6 +148,7 @@ if __name__ == '__main__':
             if (len(bg_tfs) == 0) or (0 in bg_tfs.shape) \
                     or (len(bg_tps) == 0) or (0 in bg_tps.shape):
                 print 'Empty array in this data set.'
+                del fig
                 continue
             
             bg_tfs_mean = np.mean(bg_tfs, 1)
