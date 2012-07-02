@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jun  6 11:13:39 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 22:05:46 2012 (+0530)
+# Last-Updated: Wed Jun 27 17:53:19 2012 (+0530)
 #           By: subha
-#     Update #: 852
+#     Update #: 906
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -207,7 +207,7 @@ def pick_cells(filehandles, celltype, number, paranoid=False):
     indices = random.sample(range(count), number)
     return ['%s_%d' % (celltype, index) for index in indices]
 
-def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
+def get_stim_aligned_spike_times(fhandles, cellnames):
     """Collect the spike times for each cell from all the files with
     respect to the stimuli.
 
@@ -228,44 +228,48 @@ def get_stim_aligned_spike_times(fhandles, cellnames, plot=None):
     background + probe. All the spike times are with respect to the
     preceding stimulus.
     """
+    plot = 'all'
     bg_spikes = defaultdict(list)
     probe_spikes = defaultdict(list)
     for fh in fhandles:
-        spike_times = get_spike_times(fh, cellnames)
-        bgtimes = analyzer.get_bgtimes(fh)
-        probetimes = analyzer.get_probetimes(fh)
         stiminfo = dict(fh['runconfig/stimulus'][:])
         simtime = float(dict(fh['runconfig/scheduling'])['simtime'])        
         stim_onset = float(stiminfo['onset'])
+        interval = float(stiminfo['bg_interval'])
+        stimwidth = float(stiminfo['pulse_width'])
+        spike_times = get_spike_times(fh, cellnames)
+        bgtimes = analyzer.get_bgtimes(fh)
+        probetimes = analyzer.get_probetimes(fh)
+        print 'Background times', bgtimes
+        print 'Probe times', probetimes
+        bgbins = [(bgtimes[ii], bgtimes[ii]+interval+stimwidth) for ii in range(0, len(bgtimes), 2)]
+        print bgbins
+        probebins = [(pt, pt+interval+stimwidth) for pt in probetimes]
+        print probebins
         # Probe stimulus is designed to align with every alternet bg
         # stmulus.
-        interval = float(stiminfo['bg_interval'])
-        print fh.filename, 'stimulus interval', interval
-        ii = 1
-        if plot is not None:
-            plt.title(fh.filename)
+        cell_no = 1
         for cell, spikes in spike_times.items():
-            # print '# CELL', cell
-            # print '# Stim onset:', stim_onset
-            # print spikes            
-            bg = [spikes[(spikes >= bgtimes[ii]) & (spikes < (bgtimes[ii]+interval))] - bgtimes[ii]
-                  for ii in range(0, len(bgtimes), 2)]
+            bg = [spikes[(spikes >= bin[0]) & (spikes < bin[1])]
+                  for bin in bgbins]
             bg_spikes[cell] += bg
-            # print '# BG SPIKES'
-            # print bg_spikes
-            probe = [spikes[(spikes >= probetime) & (spikes < (probetime+interval))] - probetime
-                     for probetime in probetimes]
+            probe = [spikes[(spikes >= bin[0]) & (spikes < (bin[1]))]
+                     for bin in probebins]
             probe_spikes[cell] += probe
-            # print '#### probe spikes'
-            # print probe_spikes
+            for x in bg:
+                print 'bg', x
+            for x in probe:
+                print 'probe', x
             if plot is not None:
-                plt.plot(bg, np.ones(len(bg))*ii, 'bx')
-                plt.plot(probe, np.ones(len(probe))*ii, 'r+')
+                x = np.concatenate(bg)
+                plt.plot(x, np.ones(len(x))*cell_no, 'bx')
+                x = np.concatenate(probe)
+                plt.plot(x, np.ones(len(x))*cell_no, 'r+')
             if plot == 'each':
                 plt.title('%s: %s' % (fh.filename, cell))
                 plt.show()
             elif plot == 'all':
-                ii += 1
+                cell_no += 1
         if plot == 'all':
             plt.title(fh.filename)
             plt.show()

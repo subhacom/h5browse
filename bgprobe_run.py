@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun 15 14:40:53 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jun 25 22:20:07 2012 (+0530)
+# Last-Updated: Tue Jun 26 17:11:46 2012 (+0530)
 #           By: subha
-#     Update #: 587
+#     Update #: 599
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -62,16 +62,12 @@ if __name__ == '__main__':
     favg_label = 'Average spiking rate'
     for seed, values in cats.items():
         for hash_, files in values.items():
-            print '#### processing', seed, hash_
-            print '#### Files ####'
-            for f in files:
-                print f.filename
             cellcount = dict(files[0]['/runconfig/cellcount'])
-            isi = float(dict(files[0]['/runconfig/stimulus'])['bg_interval'])
-            print '#### cell count ####'
-            for cell, count in cellcount.items():
-                if int(count) > 0:
-                    print cell, count
+            stim_interval = float(dict(files[0]['/runconfig/stimulus'])['bg_interval'])
+            isi = float(dict(files[0]['/runconfig/stimulus'])['isi'])
+            if isi > 0:
+                print '# Skipping paired pulse stimulation:', files[0].filename
+                continue
             # Keep track of the probed cells to highlight them in the plots
             probed_cells = get_probed_cells(files[0])
             probed_cells = [cell for cell in probed_cells for celltype in celltypes if cell.startswith(celltype) ]
@@ -85,6 +81,29 @@ if __name__ == '__main__':
             #     print 'Empty data set'
             #     continue
             assert(set(bgdata.keys()) == set(probedata.keys()))
+            # Now prepare the data and do the plotting
+            cells = bgdata.keys()            
+            bg_tfs = np.array([bgdata[cell]['t_first_spike'] for cell in cells])
+            bg_tps = np.array([bgdata[cell]['t_peak_spiking'] for cell in cells])
+            bg_fps = np.array([bgdata[cell]['f_peak_spiking'] for cell in cells])
+            bg_favg = np.array([bgdata[cell]['f_avg'] for cell in cells])
+            probe_tfs = np.array([probedata[cell]['t_first_spike'] for cell in cells])
+            probe_tps = np.array([probedata[cell]['t_peak_spiking'] for cell in cells])
+            probe_fps = np.array([probedata[cell]['f_peak_spiking'] for cell in cells])
+            probe_favg = np.array([probedata[cell]['f_avg'] for cell in cells])
+            if (len(bg_tfs) == 0) or (0 in bg_tfs.shape) \
+                    or (len(bg_tps) == 0) or (0 in bg_tps.shape):
+                print 'Empty array in this data set.'
+                continue
+            
+            bg_tfs_mean = np.mean(bg_tfs, 1)
+            bg_tps_mean = np.mean(bg_tps, 1)
+            bg_fps_mean = np.mean(bg_fps, 1)
+            bg_favg_mean = np.mean(bg_favg, 1)
+            probe_tfs_mean = np.mean(probe_tfs, 1)
+            probe_tps_mean = np.mean(probe_tps, 1)
+            probe_fps_mean = np.mean(probe_fps, 1)
+            probe_favg_mean = np.mean(probe_favg, 1)
             fig = plt.figure()
             # t_first_spike - t_peak_spiking
             ax_tfs_tps = fig.add_subplot(3, 5, 1)
@@ -135,30 +154,6 @@ if __name__ == '__main__':
             ax_favg_probe = fig.add_subplot(3, 5, 14)
             ax_favg_probe.set_xlabel('Average spiking rate, x=probe stim #')
             ax_favg_probe.set_ylabel('cell #')
-            # Now prepare the data and do the plotting
-            cells = bgdata.keys()            
-            bg_tfs = np.array([bgdata[cell]['t_first_spike'] for cell in cells])
-            bg_tps = np.array([bgdata[cell]['t_peak_spiking'] for cell in cells])
-            bg_fps = np.array([bgdata[cell]['f_peak_spiking'] for cell in cells])
-            bg_favg = np.array([bgdata[cell]['f_avg'] for cell in cells])
-            probe_tfs = np.array([probedata[cell]['t_first_spike'] for cell in cells])
-            probe_tps = np.array([probedata[cell]['t_peak_spiking'] for cell in cells])
-            probe_fps = np.array([probedata[cell]['f_peak_spiking'] for cell in cells])
-            probe_favg = np.array([probedata[cell]['f_avg'] for cell in cells])
-            if (len(bg_tfs) == 0) or (0 in bg_tfs.shape) \
-                    or (len(bg_tps) == 0) or (0 in bg_tps.shape):
-                print 'Empty array in this data set.'
-                del fig
-                continue
-            
-            bg_tfs_mean = np.mean(bg_tfs, 1)
-            bg_tps_mean = np.mean(bg_tps, 1)
-            bg_fps_mean = np.mean(bg_fps, 1)
-            bg_favg_mean = np.mean(bg_favg, 1)
-            probe_tfs_mean = np.mean(probe_tfs, 1)
-            probe_tps_mean = np.mean(probe_tps, 1)
-            probe_fps_mean = np.mean(probe_fps, 1)
-            probe_favg_mean = np.mean(probe_favg, 1)
             ax_tfs_tps.scatter(bg_tfs_mean, bg_tps_mean, c='c', marker='x')
             ax_tfs_tps.scatter(probe_tfs_mean, probe_tps_mean, c='m', marker='+')
             ax_tfs_fps.scatter(bg_tfs_mean, bg_fps_mean, c='c', marker='x')
@@ -169,13 +164,13 @@ if __name__ == '__main__':
             ax_tps_favg.scatter(probe_tps_mean, probe_favg_mean, c='m', marker='+')
             ax_fps_favg.scatter(bg_fps_mean, bg_favg_mean, c='c', marker='x')
             ax_fps_favg.scatter(probe_fps_mean, probe_favg_mean, c='m', marker='+')
-            cax = ax_tfs_bg.pcolor(bg_tfs, vmin=0, vmax=isi)
+            cax = ax_tfs_bg.pcolor(bg_tfs, vmin=0, vmax=stim_interval)
             fig.colorbar(cax, ax=ax_tfs_bg, orientation='vertical')
-            cax = ax_tfs_probe.pcolor(probe_tfs, vmin=0, vmax=isi)
+            cax = ax_tfs_probe.pcolor(probe_tfs, vmin=0, vmax=stim_interval)
             fig.colorbar(cax, ax=ax_tfs_probe, orientation='vertical')
-            cax = ax_tps_bg.pcolor(bg_tps, vmin=0, vmax=isi)
+            cax = ax_tps_bg.pcolor(bg_tps, vmin=0, vmax=stim_interval)
             fig.colorbar(cax, ax=ax_tps_bg,orientation='vertical')
-            cax = ax_tps_probe.pcolor(probe_tps, vmin=0, vmax=isi)
+            cax = ax_tps_probe.pcolor(probe_tps, vmin=0, vmax=stim_interval)
             fig.colorbar(cax, ax=ax_tps_probe, orientation='vertical')
             max_freq = max(np.amax(bg_fps), np.amax(probe_fps))
             max_avg_freq = max(np.amax(bg_favg), np.amax(probe_favg))
