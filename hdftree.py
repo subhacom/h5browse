@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Sat May 19 12:23:08 2012 (+0530)
-#           By: Subhasis Ray
-#     Update #: 499
+# Last-Updated: Fri Jul  6 09:33:26 2012 (+0530)
+#           By: subha
+#     Update #: 500
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -139,7 +139,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
             else:
                 current_node = filehandle
             def check_n_select(name, obj):
-                if isinstance(obj, h5py.Dataset) and (str(obj.name).find('ectopic_') < 0) and regex.match(str(obj.name)):
+                if isinstance(obj, h5py.Dataset)  and regex.match(str(obj.name)):
                     table_path = path + '/' + name
                     ret[table_path] = obj
                 return None

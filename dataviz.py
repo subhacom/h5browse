@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jun 15 13:12:06 2012 (+0530)
+# Last-Updated: Fri Jul  6 12:12:22 2012 (+0530)
 #           By: subha
-#     Update #: 3567
+#     Update #: 3570
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -851,6 +851,7 @@ class DataVizWidget(QtGui.QMainWindow):
             return str(self.regexLineEdit.text())
         
     def __selectDataByRegex(self, pattern):
+        print pattern
         self.data_dict = self.h5tree.getDataByRe(pattern)
         self.dataList.model().clear()
         pathlist = self.data_dict.keys()
@@ -1494,6 +1495,9 @@ class DataVizWidget(QtGui.QMainWindow):
 
 
     def _plotSpikeTimeDistributionByRegex(self):
+        """Plot the spike time histogram (normalized by cell count)
+        from currently selected element in data tree.
+        """
         selected = self.h5tree.selectedItems()
         dialog = QtGui.QDialog(self)
         dialog.setWindowTitle('Plot spike time distribution')

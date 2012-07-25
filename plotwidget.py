@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Tue May 22 18:08:32 2012 (+0530)
+# Last-Updated: Fri Jul  6 12:11:07 2012 (+0530)
 #           By: subha
-#     Update #: 1211
+#     Update #: 1217
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -753,17 +753,17 @@ class PlotWidget(Qwt.QwtPlot):
         new_curve.attach(self)
         self.curve_path_dict[new_curve] = path
         self.path_curve_dict[path].append(new_curve)
-        path = 'Spike_Time_Hist_bins_' + legendSuffix
-        histmarkers = Qwt.QwtPlotCurve(path)
-        height = int(max(yy) + 0.5)
-        yy = numpy.ones(hist[1].shape) * height
-        histmarkers.setData(hist[1], yy)
-        pen = Qt.QPen(Qt.Qt.black, 1, Qt.Qt.DotLine)
-        histmarkers.setPen(pen)
-        histmarkers.setStyle(Qwt.QwtPlotCurve.Sticks)
-        histmarkers.attach(self)
-        self.curve_path_dict[histmarkers] = path
-        self.path_curve_dict[path].append(new_curve)
+        # path = 'Spike_Time_Hist_bins_' + legendSuffix
+        # histmarkers = Qwt.QwtPlotCurve(path)
+        # height = int(max(yy) + 0.5)
+        # yy = numpy.ones(hist[1].shape) * height
+        # histmarkers.setData(hist[1], yy)
+        # pen = Qt.QPen(Qt.Qt.black, 1, Qt.Qt.DotLine)
+        # histmarkers.setPen(pen)
+        # histmarkers.setStyle(Qwt.QwtPlotCurve.Sticks)
+        # histmarkers.attach(self)
+        # self.curve_path_dict[histmarkers] = path
+        # self.path_curve_dict[path].append(new_curve)
         self.clearZoomStack()
         self.replot()
         return 1

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Mon Jun  4 15:51:47 2012 (+0530)
+# Last-Updated: Tue Jul 24 16:51:46 2012 (+0530)
 #           By: subha
-#     Update #: 1432
+#     Update #: 1500
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -31,8 +31,8 @@
 # Code:
 
 import os
-import h5py
-import numpy
+import h5py as h5
+import numpy as np
 import pylab
     
 import scipy.signal as signal
@@ -57,8 +57,8 @@ def fir_filter(datalist, sampling_interval, cutoff=450.0, rolloff=10.0):
     taps = signal.firwin(N, cutoff/nyquist_rate, window=('kaiser', beta))
     filtered_data_list = []
     for data in datalist:
-        if not isinstance(data, numpy.ndarray):
-            tmp = numpy.zeros(len(data))
+        if not isinstance(data, np.ndarray):
+            tmp = np.zeros(len(data))
             tmp[:] = data[:]
             data = tmp
         filtered_data_list.append(signal.lfilter(taps, 1.0, data))
@@ -76,14 +76,14 @@ def blackmann_windowedsinc_filter(datalist, sampling_interval, cutoff=450.0, rol
     if m%2 == 1:
         m += 1
     cutoff = cutoff * sampling_interval
-    indices = numpy.linspace(0.0, m+1, m+1)
-    syncwin = 2 * cutoff * numpy.sinc(2*cutoff*(indices-m/2))
-    blackmann = 0.42 - 0.5 * numpy.cos(2 * numpy.pi * indices / m) + 0.08 * numpy.cos(4 * numpy.pi * indices / m)
+    indices = np.linspace(0.0, m+1, m+1)
+    syncwin = 2 * cutoff * np.sinc(2*cutoff*(indices-m/2))
+    blackmann = 0.42 - 0.5 * np.cos(2 * np.pi * indices / m) + 0.08 * np.cos(4 * np.pi * indices / m)
     lowpass = syncwin * blackmann
-    lowpass = lowpass/ numpy.sum(lowpass)
+    lowpass = lowpass/ np.sum(lowpass)
     filtered_data_list = []
     for data in datalist:
-        filtered_data = numpy.convolve(lowpass, data, mode='same')
+        filtered_data = np.convolve(lowpass, data, mode='same')
         filtered_data_list.append(filtered_data)
     end = datetime.now()
     delta = end - start
@@ -101,7 +101,7 @@ def celltype_synstat(cell_synstat):
     for cell, gbar in cell_synstat.items():
         celltype_syn_map[cell.partition('_')[0]].append(gbar)
     for celltype, gbar_list in celltype_syn_map.items():
-        ret[celltype] = (numpy.mean(gbar_list), numpy.std(gbar_list))
+        ret[celltype] = (np.mean(gbar_list), np.std(gbar_list))
     end = datetime.now()
     delta = end - start
     print 'celltype_synstat: %g s' % (delta.days * 86400 + delta.seconds + delta.microseconds * 1e-6)
@@ -144,7 +144,7 @@ def dump_synstat(netfile):
         filename = os.path.basename(netfilename)
         filename.replace('.h5.new', '_%s.csv' % (key))
         data = sorted(cell_syn_map.items(), cmp=lambda x, y: cmp(int(x[0].rpartition('_')[-1]), int(y[0].rpartition('_')[-1])))
-        numpy.savetxt(filename, numpy.array(data, dtype='a32, f4'), fmt='%s, %g')        
+        np.savetxt(filename, np.array(data, dtype='a32, f4'), fmt='%s, %g')        
     celltype_ampa_map = celltype_synstat(cellmaps['ampa'])
     celltype_nmda_map = celltype_synstat(cellmaps['nmda'])
     celltype_gaba_map = celltype_synstat(cellmaps['gaba'])
@@ -169,7 +169,7 @@ def is_spiking(filehandle, cellname, ignore_time):
     is because often there is a spike at time 0 due to imbalance in
     initial Vm and resting membrane potential.
     """
-    spike_times = numpy.array(filehandle['spikes'][cellname])
+    spike_times = np.array(filehandle['spikes'][cellname])
     for time in spike_times:
         if time > ignore_time:
             return True
@@ -275,12 +275,12 @@ def get_plotdt(filehandle):
 def get_bgtimes(filehandle):
     stim_bg = filehandle['stimulus']['stim_bg'][:]
     simtime = get_simtime(filehandle)
-    return numpy.nonzero(numpy.diff(stim_bg) > 0.0)[0] * simtime / len(stim_bg)
+    return np.nonzero(np.diff(stim_bg) > 0.0)[0] * simtime / len(stim_bg)
 
 def get_probetimes(filehandle):
     stim_probe = filehandle['stimulus']['stim_probe'][:]
     simtime = get_simtime(filehandle)
-    indices = numpy.nonzero(numpy.diff(stim_probe) > 0.0)
+    indices = np.nonzero(np.diff(stim_probe) > 0.0)
     return indices[0] * simtime / len(stim_probe)
 
 def get_affected_cells(datafile, netfile, timewin):
@@ -304,11 +304,11 @@ def get_affected_cells(datafile, netfile, timewin):
             probe_time = probe_times[2*ii]
             bg_time = background_times[4*ii]
             print bg_time, probe_time
-            indices_in_window = numpy.nonzero(numpy.logical_and(spike_times > bg_time, spike_times < bg_time+timewin))[0]
+            indices_in_window = np.nonzero(np.logical_and(spike_times > bg_time, spike_times < bg_time+timewin))[0]
             if len(indices_in_window) > 0:
                 fired_on_bg.add(cellname)
                 print 'Fired on bg:', cellname
-            indices_in_window = numpy.nonzero(numpy.logical_and(spike_times > probe_time, spike_times < probe_time+timewin))[0]
+            indices_in_window = np.nonzero(np.logical_and(spike_times > probe_time, spike_times < probe_time+timewin))[0]
             if len(indices_in_window) > 0:
                 fired_on_probe.add(cellname)
                 print 'Fired on bg+probe:', cellname
@@ -344,8 +344,8 @@ def find_spikes_by_stim(datafile, netfile, timewindow):
         for ii in range(len(probe_times)):
             t_bg = bg_times[2*ii]
             t = probe_times[ii]
-            probe_indices = numpy.nonzero(spike_times[numpy.nonzero(spike_times > t)[0]] < t+timewindow)
-            bg_indices =  numpy.nonzero(spike_times[numpy.nonzero(spike_times > t_bg)[0]] < t_bg+timewindow)
+            probe_indices = np.nonzero(spike_times[np.nonzero(spike_times > t)[0]] < t+timewindow)
+            bg_indices =  np.nonzero(spike_times[np.nonzero(spike_times > t_bg)[0]] < t_bg+timewindow)
             if len(probe_indices) > 0:
                 fired_on_probe.add(cellname)
             if len(bg_indices) > 0:
@@ -384,15 +384,15 @@ def get_bgstim_aligned_chunks(datafile, cellname):
         if cellname in name and not name.startswith('ectopic'):
             t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
             spiketrain = spikes[name][:] - t_stim
-            indices = numpy.nonzero(spiketrain > 0)[0]
+            indices = np.nonzero(spiketrain > 0)[0]
             while len(indices) > 0:
                 spiketrain = spiketrain[indices]
-                chunk_indices = numpy.nonzero(spiketrain < stim_width)[0]                
+                chunk_indices = np.nonzero(spiketrain < stim_width)[0]                
                 if len(chunk_indices) > 0:
                     chunk = spiketrain[chunk_indices]
                     ret.append(chunk)
                 spiketrain = spiketrain - stim_width
-                indices = numpy.nonzero(spiketrain > 0)[0]
+                indices = np.nonzero(spiketrain > 0)[0]
     return (ret, stim_width)
     
 def calculate_psth(datafile, cellname, binsize):
@@ -410,21 +410,21 @@ def calculate_psth(datafile, cellname, binsize):
                 value = row[1]
         stimulus_info[row[0]] = value
     stim_width = stimulus_info['bg_interval'] + stimulus_info['pulse_width'] + stimulus_info['isi']
-    psth = numpy.zeros(int(stim_width/binsize))
-    bins = numpy.arange(0, stim_width, binsize)
+    psth = np.zeros(int(stim_width/binsize))
+    bins = np.arange(0, stim_width, binsize)
     for name in spikes:
         if cellname in name and not name.startswith('ectopic'):
             t_stim = stimulus_info['onset'] + stimulus_info['bg_interval']
             spiketrain = spikes[name][:] - t_stim
-            indices = numpy.nonzero(spiketrain > 0)[0]
+            indices = np.nonzero(spiketrain > 0)[0]
             while len(indices) > 0:
                 spiketrain = spiketrain[indices]
-                chunk_indices = numpy.nonzero(spiketrain < stim_width)[0]                
+                chunk_indices = np.nonzero(spiketrain < stim_width)[0]                
                 if len(chunk_indices) > 0:
                     chunk = spiketrain[chunk_indices]
-                    psth += numpy.histogram(chunk, bins)[0]
+                    psth += np.histogram(chunk, bins)[0]
                 spiketrain = spiketrain - stim_width
-                indices = numpy.nonzero(spiketrain > 0)[0]
+                indices = np.nonzero(spiketrain > 0)[0]
     return (psth, bins)
 
 def plot_psth(datafile, celltypes, binsize):
@@ -434,13 +434,13 @@ def plot_psth(datafile, celltypes, binsize):
     ii = 0
     for celltype in celltypes:
         x, w, = get_bgstim_aligned_chunks(datafile, celltype)
-        x = numpy.concatenate(x)
+        x = np.concatenate(x)
         x.sort()
         celltype_st_map[celltype] = x
         ii += 1
         pylab.subplot(numrows, 1, ii)
         # pylab.title(celltype)
-        pylab.hist(x, numpy.arange(0, w, binsize), label=celltype)
+        pylab.hist(x, np.arange(0, w, binsize), label=celltype)
         pylab.legend()
     pylab.show()
     return celltype_st_map
@@ -462,15 +462,15 @@ def get_stiminfo_dict(fhandle):
 def extract_chunks(spiketrain, stimstart, stimwidth):
     ret = []
     spiketrain = spiketrain - stimstart
-    indices = numpy.nonzero(spiketrain > 0)[0]
+    indices = np.nonzero(spiketrain > 0)[0]
     while len(indices) > 0:
         spiketrain = spiketrain[indices]
-        indices = numpy.nonzero(spiketrain < stimwidth)[0]
+        indices = np.nonzero(spiketrain < stimwidth)[0]
         if len(indices) > 0:
             chunk = spiketrain[indices]
             ret.append(chunk)
         spiketrain = spiketrain - stimwidth
-        indices = numpy.nonzero(spiketrain > 0)[0]
+        indices = np.nonzero(spiketrain > 0)[0]
     return ret
 
 def chunks_from_multiple_datafile(filenames, celltypes, bg_interval=None, isi=None, pulse_width=None):    
@@ -483,7 +483,7 @@ def chunks_from_multiple_datafile(filenames, celltypes, bg_interval=None, isi=No
     for celltype in celltypes:
         ret[celltype] = defaultdict(list)
     for filename in filenames:
-        fhandle = h5py.File(filename, 'r')
+        fhandle = h5.File(filename, 'r')
         simtime = get_simtime(fhandle)    
         stimulus_info = get_stiminfo_dict(fhandle)
         if (bg_interval is not None and isi is not None and pulse_width is not None) and (float(stimulus_info['bg_interval']) != bg_interval or float(stimulus_info['isi']) != isi):
@@ -513,24 +513,24 @@ def psth_multifile(filenames, celltypes, binsize, combined=False, bg_interval=No
         for filename, chunked_data in chunks[celltypes[ii]].items():
             if len(chunked_data) == 0:
                 continue
-            tmp = numpy.concatenate(chunked_data)
+            tmp = np.concatenate(chunked_data)
             print celltypes[ii], filename, tmp.shape
             if len(tmp) == 0:
                 continue
             if not combined:
                 tmp.sort()
-                bins = numpy.arange(0, stimwidths[filename], binsize)
-                hist, edges = numpy.histogram(tmp, bins)
+                bins = np.arange(0, stimwidths[filename], binsize)
+                hist, edges = np.histogram(tmp, bins)
                 hist = hist / (len(chunked_data) * binsize) # normalize by number of stim presentations and binsize
-                tmp = numpy.zeros(len(bins)-1)
+                tmp = np.zeros(len(bins)-1)
                 tmp[:len(hist)] = hist[:]
                 pylab.bar(bins[:-1], tmp, binsize, label=os.path.basename(filename))
                 pylab.xlim(0, edges[-1])
                 maxy = pylab.ylim()[1]
-                pylab.yticks([int(y) for y in numpy.linspace(0, maxy, 5)])
+                pylab.yticks([int(y) for y in np.linspace(0, maxy, 5)])
 
             else:
-                x = numpy.concatenate([x, tmp])
+                x = np.concatenate([x, tmp])
             print 'Processed', filename, len(x)
         if combined:
             if bg_interval is None:
@@ -540,24 +540,24 @@ def psth_multifile(filenames, celltypes, binsize, combined=False, bg_interval=No
                 stim_width = bg_interval + isi + pulse_width
             x.sort()            
             print 'Total number of spikes', len(x)
-            bins = numpy.arange(0, stimwidths[filename], binsize)
-            hist, edges = numpy.histogram(x, bins)
+            bins = np.arange(0, stimwidths[filename], binsize)
+            hist, edges = np.histogram(x, bins)
             hist = hist / (len(chunked_data) * binsize) # normalize by number of stim presentations and binsize
-            tmp = numpy.zeros(len(bins)-1)
+            tmp = np.zeros(len(bins)-1)
             tmp[:len(hist)] = hist[:]            
             pylab.bar(bins[:-1], tmp, binsize, label=celltypes[ii])
             pylab.xlim(0, edges[-1])
             maxy = pylab.ylim()[1]
-            pylab.yticks([int(y) for y in numpy.linspace(0, maxy, 5)])
+            pylab.yticks([int(y) for y in np.linspace(0, maxy, 5)])
         else:
             pylab.legend()
     pylab.subplots_adjust(hspace=1)
     pylab.show()
 
 def get_psth(binsize, timewindow, spiketrains):
-    combined_spikes = numpy.concatenate(spiketrains)
+    combined_spikes = np.concatenate(spiketrains)
     combined_spikes.sort()
-    return numpy.histogram(combined_spikes, numpy.arange(0, timewindow, binsize))
+    return np.histogram(combined_spikes, np.arange(0, timewindow, binsize))
 
 # The following is from scipy cookbook: http://www.scipy.org/Cookbook/SignalSmooth
 def smooth(x,window_len=11,window='hanning'):
@@ -585,7 +585,7 @@ def smooth(x,window_len=11,window='hanning'):
     
     see also: 
     
-    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
+    np.hanning, np.hamming, np.bartlett, np.blackman, np.convolve
     scipy.signal.lfilter
  
     TODO: the window parameter could be the window itself if an array instead of a string   
@@ -606,14 +606,14 @@ def smooth(x,window_len=11,window='hanning'):
         raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
     
 
-    s=numpy.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+    s=np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
     #print(len(s))
     if window == 'flat': #moving average
-        w=numpy.ones(window_len,'d')
+        w=np.ones(window_len,'d')
     else:
-        w=eval('numpy.'+window+'(window_len)')
+        w=eval('np.'+window+'(window_len)')
     
-    y=numpy.convolve(w/w.sum(),s,mode='valid')
+    y=np.convolve(w/w.sum(),s,mode='valid')
     return y
 
     
@@ -622,8 +622,8 @@ def cost_psth(binsize, timewindow, spiketrains):
     from that."""
     num_spike_trains = len(spiketrains)
     hist, edges, = get_psth(binsize, timewindow, spiketrains)
-    mean_count = numpy.mean(hist)
-    variance_count = numpy.var(hist)
+    mean_count = np.mean(hist)
+    variance_count = np.var(hist)
     return (2 * mean_count - variance_count)/(num_spike_trains * binsize)**2
     
 def get_optimal_psth_binsize(spiketrain, timewindow, min_binsize, max_binsize):
@@ -651,40 +651,40 @@ def plot_psth_optimal_binsize(filenames, celltypes, min_binsize, max_binsize, bg
         pylab.bar(edges[:-1], hist, binsize, label=cell)
         pylab.xlim(0, edges[-1])
         maxy = pylab.ylim()[1]
-        pylab.yticks([int(y) for y in numpy.linspace(0, maxy, 5)])
+        pylab.yticks([int(y) for y in np.linspace(0, maxy, 5)])
         ii += 1
     pylab.subplots_adjust(hspace=1)
     pylab.show()
 
 def plot_conncounts(netfilepath):
-    netfile = h5py.File(netfilepath, 'r')
-    syn = numpy.asarray(netfile['/network/synapse'])
+    netfile = h5.File(netfilepath, 'r')
+    syn = np.asarray(netfile['/network/synapse'])
     netfile.close()
     conndict = defaultdict(int)
     for row in syn:
         conn = row[0] + '-' + row[1]
         conndict[conn] += 1
     pylab.plot(range(len(conndict)), conndict.values(), '.')
-    # pylab.xticks(numpy.array(range(len(syn))), conndict.keys())
+    # pylab.xticks(np.array(range(len(syn))), conndict.keys())
     pylab.show()
 
 def plot_cellcell_conncounts(netfilepath):
     """Plot number synapses between each connected cell pair"""
-    netfile = h5py.File(netfilepath, 'r')
-    syn = numpy.asarray(netfile['/network/synapse'])
+    netfile = h5.File(netfilepath, 'r')
+    syn = np.asarray(netfile['/network/synapse'])
     netfile.close()
     conndict = defaultdict(int)
     for row in syn:
         conn = row[0].partition('/')[0] + '-' + row[1].partition('/')[0]
         conndict[conn] += 1
     pylab.plot(range(len(conndict)), conndict.values(), '.')
-    pylab.xticks(numpy.array(range(len(syn))), conndict.keys())
+    pylab.xticks(np.array(range(len(syn))), conndict.keys())
     pylab.show()
 
 def get_cellcell_conncounts(netfilepath):
     """Return number synapses between each connected cell pair"""
-    netfile = h5py.File(netfilepath, 'r')
-    syn = numpy.asarray(netfile['/network/synapse'])
+    netfile = h5.File(netfilepath, 'r')
+    syn = np.asarray(netfile['/network/synapse'])
     netfile.close()
     conndict = defaultdict(int)
     for row in syn:
@@ -699,8 +699,8 @@ def find_bad_files(netfilelist):
     conn_err_list = []
     for filename in netfilelist:
         try:
-            netfile = h5py.File(filename, 'r')
-            syn = numpy.asarray(netfile['/network/synapse'])
+            netfile = h5.File(filename, 'r')
+            syn = np.asarray(netfile['/network/synapse'])
             netfile.close()
         except Exception, e:
             io_err_list.append(filename)
@@ -735,9 +735,9 @@ def get_cell_index(cellstartindices, cellname):
     return cellstartindices[celltype] + int(index)
 
 def load_cell_graph(netfilepath):
-    filehandle = h5py.File(netfilepath, 'r')
-    syninfo = numpy.asarray(filehandle['/network/synapse'])
-    cellinfo = numpy.asarray(filehandle['/runconfig/cellcount'])
+    filehandle = h5.File(netfilepath, 'r')
+    syninfo = np.asarray(filehandle['/network/synapse'])
+    cellinfo = np.asarray(filehandle['/runconfig/cellcount'])
     filehandle.close()
     # first extract the starting index of the celltypes in whole population
     cellstart = {}
@@ -770,9 +770,9 @@ def load_cell_graph(netfilepath):
     return cellgraph
 
 def read_networkgraph(filename):
-    netfile = h5py.File(filename, 'r')
-    syninfo = numpy.asarray(netfile['/network/synapse'])
-    cellinfo = numpy.asarray(netfile['/runconfig/cellcount'])
+    netfile = h5.File(filename, 'r')
+    syninfo = np.asarray(netfile['/network/synapse'])
+    cellinfo = np.asarray(netfile['/runconfig/cellcount'])
     labels = []
     cellstartindices = {}
     current_start = 0
@@ -812,8 +812,8 @@ def get_files_with_same_settings(filelist, originalfile, hdfnodepath):
 def get_files_with_same_cells(filelist, cellcount_dict):
     not_equal = []
     for filename  in filelist:
-        f = h5py.File(filename, 'r')
-        cellcounts = numpy.asarray(f['/runconfig/cellcount'])
+        f = h5.File(filename, 'r')
+        cellcounts = np.asarray(f['/runconfig/cellcount'])
         f.close()
         for row in cellcounts:
             if int(row[1]) != int(cellcount_dict[row[0]]):
@@ -829,7 +829,7 @@ def spike_probability_w_filter(srctrain, dsttrain, window):
         return 0.0
     count = 0
     index = 0
-    count = len(filter(lambda tspike: len(numpy.nonzero((dsttrain < tspike + window) & (dsttrain > tspike))[0]) > 0, srctrain))
+    count = len(filter(lambda tspike: len(np.nonzero((dsttrain < tspike + window) & (dsttrain > tspike))[0]) > 0, srctrain))
     return float(count) / len(srctrain)
 
 def get_spike_following_probability(srctrain, dsttrain, window):
@@ -846,19 +846,19 @@ def get_spike_following_probability(srctrain, dsttrain, window):
     # ('SpinyStellate_231-SpinyStellate_22', 0.3571428656578064)
     # ('SpinyStellate_231-SpinyStellate_22', 0.3571428656578064)
     for tspike in srctrain:
-        if len(numpy.nonzero((dsttrain <= tspike + window) & (dsttrain > tspike))[0]) > 0:
+        if len(np.nonzero((dsttrain <= tspike + window) & (dsttrain > tspike))[0]) > 0:
             count += 1
     return float(count) / len(srctrain)
 
 def find_spike_following_probability_in_connected_cells(netfilepath, datafilepath, timewindow):
     cellgraph = load_cell_graph(netfilepath)
-    datafile = h5py.File(datafilepath, 'r')
+    datafile = h5.File(datafilepath, 'r')
     probabilities = {}
     for edge in cellgraph.es(synapse_eq='ampa'):
         src = cellgraph.vs[edge.source]['name']
-        srctrain = numpy.asarray(datafile['/spikes'][src])
+        srctrain = np.asarray(datafile['/spikes'][src])
         dst = cellgraph.vs[edge.target]['name']
-        dsttrain = numpy.asarray(datafile['/spikes'][dst])
+        dsttrain = np.asarray(datafile['/spikes'][dst])
         probabilities['%s-%s' % (src, dst)]  = get_spike_folloing_probability(srctrain, dsttrain, timewindow)
     datafile.close()
     return probabilities
@@ -869,7 +869,7 @@ def dump_spike_following_probabilities_in_connected_cells(netfilepathlist, dataf
         print 'Saving probabilities in', outfilename
         outfile = None
         try:            
-            outfile = h5py.File(outfilename, 'w')
+            outfile = h5.File(outfilename, 'w')
             grp = outfile.create_group('/spiking_prob')
             delta = timedelta(0,0,0)
             for ii in range(6):
@@ -878,7 +878,7 @@ def dump_spike_following_probabilities_in_connected_cells(netfilepathlist, dataf
                 probabilities = find_spike_following_probability_in_connected_cells(netfilepath, datafilepath, window)
                 end = datetime.now()
                 delta = delta + (end-start)
-                data = numpy.asarray(probabilities.items(), dtype=('|S35,f'))
+                data = np.asarray(probabilities.items(), dtype=('|S35,f'))
                 print data[0]
                 dset = grp.create_dataset('delta_%d' % (ii), data=data)
                 dset.attrs['window'] = window       
@@ -899,9 +899,9 @@ def dump_spike_following_probability_in_unconnected_cells(netfilepath, datafilep
     print 'Netfile path: %s, Datafile path: %s' % (datafilepath, netfilepath)
     cellgraph = load_cell_graph(netfilepath)
     cellindices = {}
-    datafile = h5py.File(datafilepath, 'r')
+    datafile = h5.File(datafilepath, 'r')
     for row in datafile['/runconfig/cellcount']:
-        cellindices[row[0]] = numpy.arange(0, int(row[1]))
+        cellindices[row[0]] = np.arange(0, int(row[1]))
     outfilename = datafilepath.replace('/data_', '/noconn_prob_')
     print 'Saving probabilities in', outfilename
     outfile = None
@@ -910,19 +910,19 @@ def dump_spike_following_probability_in_unconnected_cells(netfilepath, datafilep
         probabilities = {}
         for edge in cellgraph.es:
             src = cellgraph.vs[edge.source]['name']
-            srctrain = numpy.asarray(datafile['/spikes'][src])
+            srctrain = np.asarray(datafile['/spikes'][src])
             dst = cellgraph.vs[edge.target]['name']
             dst_type, dst_index = dst.split('_')
             forbidden = set([src])
             neighbors = cellgraph.vs[cellgraph.neighbors(edge.source, ig.OUT)]['name']
             for nn in neighbors:
                 forbidden.add(nn)
-            index = cellindices[dst_type][numpy.random.randint(len(cellindices[dst_type]))]
+            index = cellindices[dst_type][np.random.randint(len(cellindices[dst_type]))]
             target = '%s_%d' % (dst_type, index)
             while target in forbidden:
-                index = cellindices[dst_type][numpy.random.randint(len(cellindices[dst_type]))]
+                index = cellindices[dst_type][np.random.randint(len(cellindices[dst_type]))]
                 target = '%s_%d' % (dst_type, index)
-            targettrain = numpy.asarray(datafile['/spikes'][target])
+            targettrain = np.asarray(datafile['/spikes'][target])
             for ii in range(len(timewindows)):
                 prob = get_spike_following_probability(srctrain, targettrain, timewindows[ii])
                 name = 'delta_%d' % (ii)
@@ -935,12 +935,12 @@ def dump_spike_following_probability_in_unconnected_cells(netfilepath, datafilep
     #     raise ex
     #     return
     try:
-        outfile = h5py.File(outfilename, 'w')
+        outfile = h5.File(outfilename, 'w')
         grp = outfile.create_group('spiking_prob')
         for ii in range(len(timewindows)):
             key = 'delta_%d' % (ii)
             value = dsets[key]
-            dset = grp.create_dataset(key, data=numpy.asarray(value.items(), dtype=('|S35,f')))
+            dset = grp.create_dataset(key, data=np.asarray(value.items(), dtype=('|S35,f')))
             dset.attrs['window'] = timewindows[ii]
     finally:
         if outfile:
@@ -955,7 +955,7 @@ def test():
     print 'Outfile', outfilename
     outfile = None
     try:
-        outfile = h5py.File(outfilename, 'w')
+        outfile = h5.File(outfilename, 'w')
         grp = outfile.create_group('/spiking_prob')
         delta = timedelta(0,0,0)
         for ii in range(6):
@@ -964,7 +964,7 @@ def test():
             probabilities = find_probabilities(netfilepath, datafilepath, window)
             end = datetime.now()
             delta = delta + (end-start)
-            data = numpy.asarray(probabilities.items(), dtype=('|S35,f'))
+            data = np.asarray(probabilities.items(), dtype=('|S35,f'))
             print data[0]
             dset = grp.create_dataset('delta_%d' % (ii), data=data)
             dset.attrs['window'] = window       
@@ -972,6 +972,35 @@ def test():
     finally:
         if outfile:
             outfile.close()
+
+def get_synapse_count(syndata, srctype, desttype, syntype):
+    return len(np.nonzero(np.char.startswith(lsyns['source'], srctype) & np.char.startswith(lsyns['dest'], desttype) & (lsyns['type'] == 'ampa'))[0])
+
+# 2012-07-24 16:51:39 (+0530) Subha - commented out incomplete code.
+# def compare_conn_statistics(fleft, fright):
+#     lcells = defaultdict(dict)
+#     rcells = defaultdict(dict)
+#     lsyns = fleft['/network/synapse'][:]
+#     cellcount = dict(fleft['/runconfig/cellcount'])
+#     celltypes = [cell for cell in cellcount if int(cellcount[cell]) > 0]
+#     for srctype in celltypes:
+#         for desttype in celltypes:
+#             ampa_syns = 
+#             lcells[srctype][desttype] = ampa_syns
+#     for srctype, syndict in lcells.items():
+#         for desttype, count in syndict.items():
+#             print srctype, '->', desttype, count
+
+#     rsyns = fright['/network/synapse'][:]
+#     cellcount = dict(fright['/runconfig/cellcount'])
+#     celltypes = [cell for cell in cellcount is int(cellcount[cell]) > 0]
+    
+    # src_celltypes = np.char.partition(lsyns['source'], '_')[:,0]
+    # dest_celltypes = np.char.partition(lsyns['dest'], '_')[:,0]
+    # ampa_indices = np.nonzero(lsyns['type'] == 'ampa')[0]
+    
+    # print len(ampa_indices)
+
 
 filenames = [
     "../py/data/2012_01_17/data_20120117_114805_6302.h5",
@@ -1013,8 +1042,15 @@ filenames = [
 import sys
 
 if __name__ == '__main__':
+    lfilename = '../py/data/2012_06_23/network_20120623_153426_27376.h5.new'
+    rfilename = '../py/data/2012_06_29/network_20120629_154728_24179.h5.new'
+    lfile = h5.File(lfilename, 'r')
+    rfile = h5.File(rfilename, 'r')
+    compare_conn_statistics(lfile, rfile)
+    lfile.close()
+    rfile.close()
     # psth_multifile(filenames, ['SpinyStellate_0', 'DeepBasket_1', 'DeepLTS_2', 'DeepAxoaxonic_3', 'nRT_1', 'TCR_4'], 10e-3, combined=True, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
-    plot_psth_optimal_binsize(filenames, ['SpinyStellate', 'DeepBasket', 'DeepLTS', 'DeepAxoaxonic', 'nRT', 'TCR'], 1e-3, 100e-3, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
+    # plot_psth_optimal_binsize(filenames, ['SpinyStellate', 'DeepBasket', 'DeepLTS', 'DeepAxoaxonic', 'nRT', 'TCR'], 1e-3, 100e-3, bg_interval=0.5, isi=0.125, pulse_width=2e-3)
 
 # SpinyStellate optimal binsize: 0.499995553487 cost: 0.000346856234075 error: 0 no. of evaluations: 25
 # DeepBasket optimal binsize: 0.194248984076 cost: 1.2071571773 error: 0 no. of evaluations: 24
@@ -1026,8 +1062,8 @@ if __name__ == '__main__':
     # netfilename = sys.argv[1]
     # datafilename = sys.argv[2]
     # print 'Opening:', netfilename, 'and', datafilename
-    # netfile = h5py.File(netfilename, 'r')
-    # datafile = h5py.File(datafilename, 'r')
+    # netfile = h5.File(netfilename, 'r')
+    # datafile = h5.File(datafilename, 'r')
     # # stat = dump_synstat(netfile)
     # # probe_conn_set = find_spikes_by_stim(datafile,  netfile, 100e-3)
     # # for cellname in probe_conn_set:
