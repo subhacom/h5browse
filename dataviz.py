@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Jul  6 12:12:22 2012 (+0530)
+# Last-Updated: Thu Jul 26 09:53:06 2012 (+0530)
 #           By: subha
-#     Update #: 3570
+#     Update #: 3585
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -357,6 +357,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotPresynapticSpikesAction = QtGui.QAction('Plot presynaptic spikes', self)
         self.connect(self.plotPresynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPresynapticSpikes)
         self.toolActions.append(self.plotPresynapticSpikesAction)
+        self.plotPostSynapticSpikesAction = QtGui.QAction('Plot postsynaptic spikes', self)
+        self.connect(self.plotPostSynapticSpikesAction, QtCore.SIGNAL('triggered()'), self.__plotPostSynapticSpikes)
+        self.toolActions.append(self.plotPostSynapticSpikesAction)
         self.wrapPlotsByTimeWindowAction = QtGui.QAction(self.tr('Wrap plots over time'), self)
         self.connect(self.wrapPlotsByTimeWindowAction, QtCore.SIGNAL('triggered()'), self.__wrapPlotsByTimeWindow)
         self.toolActions.append(self.wrapPlotsByTimeWindowAction)
@@ -995,7 +998,7 @@ class DataVizWidget(QtGui.QMainWindow):
     def __selectAllCurves(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
         activePlot.selectAllCurves()        
-
+        
     def __plotPresynapticVm(self):
         """This is for easily displaying the data for presynaptic
         cells of the current cell. Depends on my specific file
@@ -1047,6 +1050,27 @@ class DataVizWidget(QtGui.QMainWindow):
             ts = self.h5tree.getTimeSeries(presyn_spike_paths[0])[:]
             presyn_spike = [(ts, self.h5tree.getData(path)[:]) for path in presyn_spike_paths]
             activePlot.addPlotCurveList(presyn_spike_paths, presyn_spike, mode='raster')
+
+    def __plotPostSynapticSpikes(self):
+        activePlot = self.mdiArea.activeSubWindow().widget()
+        paths = activePlot.getDataPathsForSelectedCurves()
+        files = []
+        # self.dataList.clear()
+        for path in paths:
+            filepath = self.h5tree.getOpenFileName(path)
+            datafile = self.h5tree.fhandles[filepath]
+            net_file_name = self.data_model_dict[filepath]
+            self.h5tree.addH5Handle(net_file_name)
+            syntab = self.h5tree.getData(net_file_name + '/network/synapse')
+            cell_name = path.rpartition('/')[-1]
+            postsyn_ix = numpy.char.startswith(syntab['source'], cell_name+'/')
+            syntab = syntab[postsyn_ix]
+            postsyn_cell = set([item[0] for item in numpy.char.split(syntab['dest'], '/')])
+            postsyn_spike_paths = ['%s/spikes/%s' % (filepath, cell) for cell in postsyn_cell]
+            ts = self.h5tree.getTimeSeries(postsyn_spike_paths[0])[:]
+            postsyn_spike = [(ts, self.h5tree.getData(path)[:]) for path in postsyn_spike_paths]
+            activePlot.addPlotCurveList(postsyn_spike_paths, postsyn_spike, mode='raster')
+        
 
     def __wrapPlotsByTimeWindow(self):
         activePlot = self.mdiArea.activeSubWindow().widget()
