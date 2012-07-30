@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Jul 28 10:53:40 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Jul 28 15:35:03 2012 (+0530)
+# Last-Updated: Mon Jul 30 12:07:03 2012 (+0530)
 #           By: subha
-#     Update #: 129
+#     Update #: 177
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -23,7 +23,17 @@
 # see what fraction of cells are firing early. Are these connected to
 # the stimulus?
 # 
-# 
+# Some summary info to put in:
+#
+#  How many cells do fire within 10 ms?
+#
+#  Do they do so consistently on each stimulus? 
+#
+#  Is there a difference between bg-only and bg+probe stimulus?
+#
+#  How do these cells relate to connectivity to stimulated cells? 
+#
+#  Are they consistently the directly connected cells?
 
 # Change log:
 # 
@@ -33,6 +43,7 @@
 
 # Code:
 
+import os
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
@@ -210,7 +221,7 @@ def plot_early_spikes(files, celltype, t):
     early = get_early_spikes(stim_times, celltype, t)
     for f, data in early.items():
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        ax = fig.add_subplot(211)
         ax.set_title(f.filename)
         d = []
         for ii in range(len(data)):
@@ -223,7 +234,15 @@ def plot_early_spikes(files, celltype, t):
         d = dict(f['/runconfig/cellcount'])
         y = np.sum(ax.get_ylim()) / 2.0
         x = np.sum(ax.get_xlim()) / 2.0
-        ax.text(x, y, 'ss: %d/%s, db: %s, daa: %s, dlts: %s' % (len(data), d['SpinyStellate'], d['DeepBasket'], d['DeepAxoaxonic'], d['DeepLTS']))
+        ax = fig.add_subplot(212)
+        counts = [int(v) for v in d.values()]        
+        cells = d.keys()
+        bars = ax.bar(np.arange(len(counts))+0.5, counts)
+        # plt.xticks(np.arange(0, len(counts), 1.0), d.keys(), rotation=45)
+        for ii in range(len(bars)):
+            ax.text(bars[ii].get_x() + bars[ii].get_width()/2.0, 1, cells[ii], va='bottom', rotation='vertical')
+        img_filename = os.path.basename(f.filename).replace('.h5', '.png').replace('data_', 'ss_spiketime_hist_')
+        plt.savefig(img_filename, bbox_inches=0)
         plt.show()
 
 if __name__ == '__main__':

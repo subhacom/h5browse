@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Jul 26 09:53:06 2012 (+0530)
+# Last-Updated: Sat Jul 28 10:15:50 2012 (+0530)
 #           By: subha
-#     Update #: 3585
+#     Update #: 3587
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -1504,19 +1504,18 @@ class DataVizWidget(QtGui.QMainWindow):
         simtime = self.h5tree.get_simtime(filepath)
         binsize = float(str(binsText.text()))
         if plotWidget.plotPSTH(stimcurve,
-                            stimdata,
-                            data,
-                            simtime,
-                            offset,
-                            binsize=binsize,
-                            legendSuffix=regex,                                                                
-                            rate=rateCheck.isChecked(),
+                               stimdata,
+                               data,
+                               simtime,
+                               offset,
+                               binsize=binsize,
+                               legendSuffix=regex,                                                                
+                               rate=rateCheck.isChecked(),
                                normcells=normalizeCheck.isChecked()):
             mdiChild = self.mdiArea.addSubWindow(plotWidget)
             mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
         else:
             del plotWidget
-
 
     def _plotSpikeTimeDistributionByRegex(self):
         """Plot the spike time histogram (normalized by cell count)
