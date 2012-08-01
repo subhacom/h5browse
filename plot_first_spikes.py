@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Jul 28 10:53:40 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Jul 30 12:07:03 2012 (+0530)
+# Last-Updated: Wed Aug  1 10:01:07 2012 (+0530)
 #           By: subha
-#     Update #: 177
+#     Update #: 248
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,9 +45,11 @@
 
 import os
 from collections import defaultdict
+import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py as h5
+import random
 
 # These are all the files with runconfig/cellcount info with > 10 MB
 # data
@@ -245,9 +247,43 @@ def plot_early_spikes(files, celltype, t):
         plt.savefig(img_filename, bbox_inches=0)
         plt.show()
 
+def plot_isi_hist(files, celltype, count):
+    for f in files:
+        cells = [cell for cell in f['spikes'] if cell.startswith(celltype)]
+        onset = float(dict(f['/runconfig/stimulus'])['onset'])
+        if len(cells) == 0:
+            print 'Cell count 0 for', f.filename
+            return
+        indices = range(len(cells))
+        if count < len(cells):
+            random.shuffle(indices)
+            indices = indices[:count]
+        fig = plt.figure()        
+        fig.set_size_inches(21, 12, forward=True)
+        fig.suptitle(f.filename)
+        stiminfo = dict(f['/runconfig/stimulus'])
+        schedinfo = dict(f['/runconfig/scheduling'])
+        cellcount = dict(f['/runconfig/cellcount'])
+        inhibitory = sum([int(v) for k, v in cellcount.items() if k in ['DeepBasket', 'DeepAxoaxonic', 'DeepLTS', 'SupBasket', 'SupAxoaxonic', 'SupLTS']])
+        bins = np.arange(0, float(dict(f['/runconfig/stimulus'])['bg_interval']), 5e-3)
+        data = [f['spikes'][cells[ii]][:] for ii in indices]
+        data = [d[d > onset] for d in data]
+        print celltype
+        print 'file simtime bginterval ppinterval spikecount cellcount inhibitory tcr stimulated'
+        print os.path.basename(f.filename), schedinfo['simtime'], stiminfo['bg_interval'], stiminfo['isi'], np.mean([len(d) for d in data]), len(cells), inhibitory, cellcount['TCR'], stiminfo['bg_count']
+        for ii in range(len(data)):
+            ax = fig.add_subplot(len(data), 2, 2*ii+1)
+            n, bins, patches = ax.hist(np.diff(data[ii]), bins=bins, normed=True)            
+            ax.set_title('%s, SS: %d, total spikes: %d' % (cells[indices[ii]], len(cells), len(data[ii])))
+            ax = fig.add_subplot(len(data), 2, 2*ii+2)
+            ax.plot(data[ii], np.ones(len(data[ii])), 'x')
+        plt.show()
+            
+        
 if __name__ == '__main__':
     files = [h5.File(name, 'r') for name in filenames]
-    plot_early_spikes(files, 'SpinyStellate', 10e-3)
+    plot_isi_hist(files, 'SpinyStellate', 10)
+    # plot_early_spikes(files, 'SpinyStellate', 10e-3)
     for f in files: f.close()
         
 
