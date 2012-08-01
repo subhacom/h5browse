@@ -1,0 +1,9 @@
+dataviz is a GUI utility for viewing HDF5 datasets. 
+
+It is written in Python.  It uses PyQt4 for PyQwt5 for GUI. h5py for
+reading HDF5 files. numpy is used for array/matrix data structures.
+
+It was developed for analyzing neuronal simulation data saved in a
+custom format. But the interface is generic enough to display simple
+HDF5 files. The tools are totally for neuronal data analysis. But the
+plan is to make it a more general tool.
