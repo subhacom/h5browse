@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Jul 28 10:53:40 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Aug  2 10:36:52 2012 (+0530)
+# Last-Updated: Thu Aug  2 11:13:52 2012 (+0530)
 #           By: subha
-#     Update #: 315
+#     Update #: 321
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -247,8 +247,9 @@ def plot_early_spikes(files, celltype, t):
         plt.savefig(img_filename, bbox_inches=0)
         plt.show()
 
-def plot_isi_hist(files, celltype, count):
-    for f in files:
+def plot_isi_hist(filenames, celltype, count):
+    for fname in filenames:
+        f = h5.File(fname, 'r')
         print 'Processing', f.filename
         cells = [cell for cell in f['spikes'] if cell.startswith(celltype)]
         onset = float(dict(f['/runconfig/stimulus'])['onset'])
@@ -290,6 +291,7 @@ def plot_isi_hist(files, celltype, count):
         print totburstlength / len(data), totspikesperburst/len(data)
         # plt.show()
         plt.savefig(os.path.basename(f.filename) + '.isi_burst.png')
+        f.close()
 
 def get_burst_stat(data, onset, minspikes=4, maxinterval=10e-3):
     """Find if there are bursts of spikes in this data. Burst is
@@ -324,10 +326,11 @@ def get_burst_stat(data, onset, minspikes=4, maxinterval=10e-3):
         
 if __name__ == '__main__':
     datadir = '/data/subha/cortical/py/data'
-    files = [h5.File(os.path.join(datadir, name), 'r') for name in filenames]
+    # files = [h5.File(os.path.join(datadir, name), 'r') for name in filenames]
+    files = [os.path.join(datadir, name) for name in filenames]
     plot_isi_hist(files, 'SpinyStellate', 10)
     # plot_early_spikes(files, 'SpinyStellate', 10e-3)
-    for f in files: f.close()
+    # for f in files: f.close()
         
 
 # 
