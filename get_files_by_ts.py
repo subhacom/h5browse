@@ -5,6 +5,7 @@ import h5py as h5
 import os
 import subprocess
 from datetime import datetime
+from operator import itemgetter
 
 def find_files(path, *args):
     """Use gnu find command to get files in directory `path`. 
@@ -71,20 +72,23 @@ def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
         fd.close()
     return ret
 
-# This is the list of current filename, timestamp pairs
-current_fts = get_fname_timestamps(filenames, '20120601', '20121201')
+if __name__ == '__main__':
+    # This is the list of current filename, timestamp pairs
+    current_fts = get_fname_timestamps(filenames, '20120601', '20121201')
+    current_fts = sorted(current_fts, key=itemgetter(1))
+    # We'll store the file (descriptor, timestamp)  in fdts
+    fdts = []
 
-# We'll store the file (descriptor, timestamp)  in fdts
-fdts = []
+    for v in current_fts:
+        try:
+            fd = h5.File(v[0], 'r')
+            fdts.append((fd, v[1]))
+        except IOError, e:
+            print 'Error accessing file %s: %s' % (v[0], e)
 
-for v in current_fts:
-    try:
-        fd = h5.File(v[0], 'r')
-        fdts.append((fd, v[1]))
-    except IOError, e:
-        print 'Error accessing file %s: %s' % (v[0], e)
-
-
+    for f, t in fdts:
+        print os.path.basename(f.filename), f.attrs['notes']
+        f.close()
 
 
 
