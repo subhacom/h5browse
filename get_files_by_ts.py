@@ -1,11 +1,33 @@
 #!/usr/bin/env python
 
+from collections import namedtuple, defaultdict
 import sys
 import h5py as h5
 import os
 import subprocess
 from datetime import datetime
 from operator import itemgetter
+import numpy as np
+import csv
+
+# This tuple is to be used for storing cell counts for each file
+cellcount_tuple = namedtuple('cellcount',
+    ['SupPyrRS',
+    'SupPyrFRB',
+    'SupBasket',
+    'SupAxoaxonic',
+    'SupLTS',
+    'SpinyStellate',
+    'TuftedIB',
+    'TuftedRS',
+    'DeepBasket',
+    'DeepAxoaxonic',
+    'DeepLTS',
+    'NontuftedRS',
+    'TCR',
+    'nRT'],
+    verbose=False)
+
 
 def find_files(path, *args):
     """Use gnu find command to get files in directory `path`. 
@@ -15,9 +37,6 @@ def find_files(path, *args):
     out, err = po.communicate()
     filenames = [fname for fname in out.split('\n') if fname.strip() ]
     return filenames
-
-
-filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5')
 
 
 def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
@@ -72,7 +91,52 @@ def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
         fd.close()
     return ret
 
+
+def classify_files_by_cellcount(filelist):
+    categories = defaultdict(set)
+    for filename in filelist:
+        with h5.File(filename, 'r') as fd:
+            cc = {}
+            try:
+                cc = dict([(k, int(v)) for k, v in np.asarray(fd['/runconfig/cellcount'])])                
+                cctuple = cellcount_tuple(**cc)
+                categories[cctuple].add(filename)
+            except KeyError, e:
+                print e            
+            finally:
+                fd.close()
+    return categories
+
+def load_spike_data(fnames):
+    """Load the spike time data from multiple files into a dictionary
+    of dictionaries. Each entry is of the form
+    data[filename][cellname] = spiketime_array
+
+    """
+    data = {}
+    for fn in fnames:
+        data[fn] = {}
+        fd = None
+        try:
+            fd = h5.File(fn, 'r')
+            for cellname in fd['spikes']:
+                data[fn][cellname] = np.asarray(fd['spikes'][cellname])
+        finally:
+            if fd:
+                fd.close()
+    return data
+
+def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
+    filename = os.path.normpath(os.path.expanduser(os.path.expandvars(filename)))
+    colordict = {}
+    with open(filename) as fd:
+        reader = csv.reader(fd, delimiter=' ', quotechar="'")
+        for tokens in reader:
+            colordict[tokens[0]] = tokens[1]
+    return colordict
+
 if __name__ == '__main__':
+    filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5')
     # This is the list of current filename, timestamp pairs
     current_fts = get_fname_timestamps(filenames, '20120601', '20121201')
     current_fts = sorted(current_fts, key=itemgetter(1))
@@ -85,10 +149,11 @@ if __name__ == '__main__':
             fdts.append((fd, v[1]))
         except IOError, e:
             print 'Error accessing file %s: %s' % (v[0], e)
-
+    print '=== printing filenames and notes ==='
     for f, t in fdts:
-        print os.path.basename(f.filename), f.attrs['notes']
+        print '^', os.path.basename(f.filename), f.attrs['notes']
         f.close()
+    classify_files_by_cellcount([item[0] for item in current_fts])
 
 
 

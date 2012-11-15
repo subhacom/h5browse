@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Jul 24 16:51:46 2012 (+0530)
+# Last-Updated: Wed Nov 14 14:32:19 2012 (+0530)
 #           By: subha
-#     Update #: 1500
+#     Update #: 1505
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -806,8 +806,7 @@ def get_files_with_same_settings(filelist, originalfile, hdfnodepath):
     """Look into the files in filelist and compare node hdfnodepath
     with that in originalfile. Return the names in filelist for which
     this node is identical."""
-    for filename in filelist:
-        pass
+    raise NotImplementedError('Not yet implemented.')
 
 def get_files_with_same_cells(filelist, cellcount_dict):
     not_equal = []
