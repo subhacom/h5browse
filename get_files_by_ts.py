@@ -40,7 +40,7 @@ def find_files(path, *args):
 
 
 def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
-    """Get a list of 2-tuples of (filename, timestamp) for specified
+    """Get a dict of (filename, timestamp) for specified
     files where timestamp is datetime objects lying within [start,
     end] dates.
     
@@ -50,7 +50,7 @@ def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
 
     end: end date in 'YYYYmmdd' format
     """
-    ret = []
+    ret = {}
     start = datetime.strptime(start, '%Y%m%d')
     end = datetime.strptime(end, '%Y%m%d')
     for fname in filepaths:
@@ -87,12 +87,18 @@ def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
         if ts != tmpts:
             print 'File name and timestamp inside file do not match', fname
         if ts >= start and ts <= end:
-            ret.append((fname, ts))
+            ret[fname] = ts
         fd.close()
     return ret
 
 
 def classify_files_by_cellcount(filelist):
+    """Categorise files by cell count.
+
+    Return a dict containing cellcount->set of files with that
+    cellcount.
+    
+    """
     categories = defaultdict(set)
     for filename in filelist:
         with h5.File(filename, 'r') as fd:
@@ -134,6 +140,24 @@ def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
         for tokens in reader:
             colordict[tokens[0]] = tokens[1]
     return colordict
+
+def get_notes_from_files(filelist):
+    """Retrieve the notes for files in file list. Return a dict
+    mapping file name to notes."""
+    notes = {}
+    for fname in filelist:
+        fd = None
+        try:
+            fd = h5.File(fname, 'r')
+            notes[fname] = fd.attrs['notes']            
+        except IOError, e:
+            print 'Error accessing file %s: %s' % (fname, e)
+        except KeyError, e1:
+            print 'No `notes` attribute in', fname
+        finally:
+            if fd:
+                fd.close()
+    return notes
 
 if __name__ == '__main__':
     filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5')
