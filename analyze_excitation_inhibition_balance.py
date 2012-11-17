@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 16 16:52:27 2012 (+0530)
+# Last-Updated: Sat Nov 17 14:33:59 2012 (+0530)
 #           By: subha
-#     Update #: 321
+#     Update #: 399
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -24,22 +24,6 @@
 # Change log:
 # 
 # 
-# 
-# 
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-# Floor, Boston, MA 02110-1301, USA.
 # 
 # 
 
@@ -77,6 +61,32 @@ def invert_container_map(container_map):
 def randomized_plot(file_stub_map, plot_function):
     pass
 
+def plot_spike_rasters(cells, data, colordict):
+    """Plot spike raster of cells from `cells` list using data in
+    `data` list.
+
+    `cells` and `data` must be of same length. data[i] contains spike
+    times for cells[i].
+
+    `colordict` dictionary contains the mapping from celltype to plot
+    color.
+    
+    """
+    for index, (cell, spiketimes) in enumerate(zip(cells, data)):
+        plt.plot(spiketimes, np.ones(len(spiketimes)) * index, 
+                 color=colordict[cell.split('_')[0]],
+                 ls='',
+                 marker=',', 
+                 mew=0)
+        
+def classify_cells(cells):
+    """Return a dict maping celltype to list of cells."""
+    categories = defaultdict(list)
+    for cell in cells:
+        celltype = cell.split('_')[0]
+        categories[celltype].append(cell)
+    return categories
+
 def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, colordict):
     """Display spike rasters for all cell types with randomized
     labels.
@@ -94,6 +104,8 @@ def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, col
     file_category_map = invert_container_map(category_map)
     files = file_category_map.keys()
     random.shuffle(files)
+    stim_data = load_stim_data(files)
+    simtimes = get_simtime(files)
     file_figtitle_map = {}
     file_fig_map = {}    
     for figindex, fname in enumerate(files):
@@ -101,21 +113,15 @@ def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, col
         file_fig_map[fname] = fig
         file_figtitle_map[fname] = figindex + 1
         fdata = data_map[fname]
-        cc = defaultdict(int)
+        cc = defaultdict(list) # dict from cell type to cells
         cells = sorted(fdata.keys())                
-        tot_cell_cnt = 0
-        for cell in cells:
-            celltype = cell.split('_')[0]
-            cc[celltype] += 1            
-            if cc[celltype] > cellcounts[celltype]:
-                continue
-            tot_cell_cnt += 1
-            col = colordict[celltype]
-            plt.plot(fdata[cell], 
-                     np.ones(len(fdata[cell])) * tot_cell_cnt,
-                     color=col,
-                     ls='',
-                     marker=',', mew=0)
+        celltype_cell_map = classify_cells(cells)
+        cells_to_plot = []
+        for celltype, cells in celltype_cell_map.items():
+            cells_to_plot += cells[:cellcounts[celltype]]
+        data_to_plot = [fdata[cell] for cell in cells_to_plot]
+        plot_spike_rasters(cells_to_plot, data_to_plot, colordict)
+        plt.plot(np.linspace(0, simtimes[fname], len(stim_data[fname][0])), stim_data[fname][0]*1e9*len(cells_to_plot), alpha=0.2)
     with open('filetofigure_%s.csv' % 
               (datetime.now().strftime('%Y%m%d_%H%M%S')), 'w') as fd:        
         fd.write('filename, figure, %s\n' % (', '.join(cellcount_tuple._fields)))
@@ -161,9 +167,9 @@ if __name__ == '__main__':
                                SpinyStellate=240,
                                TuftedIB=0,
                                TuftedRS=0,
-                               DeepBasket=30,
+                               DeepBasket=0,
                                DeepAxoaxonic=0,
-                               DeepLTS=30,
+                               DeepLTS=0,
                                NontuftedRS=0,
                                TCR=100,
                                nRT=0)

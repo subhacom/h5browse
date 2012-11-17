@@ -132,6 +132,20 @@ def load_spike_data(fnames):
                 fd.close()
     return data
 
+def get_simtime(files):
+    data = {}
+    for fn in files:
+        data[fn] = {}
+        fd = None
+        try:
+            fd = h5.File(fn, 'r')
+            data[fn] = float(dict(fd['/runconfig/scheduling'])['simtime'])
+        finally:
+            if fd:
+                fd.close()
+    return data
+    
+
 def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
     filename = os.path.normpath(os.path.expanduser(os.path.expandvars(filename)))
     colordict = {}
@@ -140,6 +154,18 @@ def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
         for tokens in reader:
             colordict[tokens[0]] = tokens[1]
     return colordict
+
+def load_stim_data(files):
+    data = {}
+    for fn in files:
+        fd = None
+        try:
+            fd = h5.File(fn, 'r')
+            data[fn] = (np.asarray(fd['/stimulus/stim_bg']), np.asarray(fd['/stimulus/stim_probe']))
+        finally:
+            if fd:
+                fd.close()
+    return data
 
 def get_notes_from_files(filelist):
     """Retrieve the notes for files in file list. Return a dict
