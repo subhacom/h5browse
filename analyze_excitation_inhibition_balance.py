@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Nov 20 18:17:58 2012 (+0530)
+# Last-Updated: Tue Nov 20 20:36:16 2012 (+0530)
 #           By: subha
-#     Update #: 701
+#     Update #: 754
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -130,11 +130,27 @@ class TraubData(object):
         if hasattr(self, 'bg_cells'):
             return
         stiminfo = np.asarray(self.fnet['/stimulus/connection'])
-        self.bg_cells = stiminfo[np.char.endswith(stiminfo['f0'], 'stim_bg')]['f1']
-        self.probe_cells = stiminfo[np.char.endswith(stiminfo['f0'], 'stim_probe')]['f1']
+        self.bg_cells = [ token[-2] \
+                          for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_bg')]['f1'], '/')]
+        self.probe_cells = [token[-2] \
+                            for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_probe')]['f1'], '/')]
+
+    def get_bg_stimulated_cells(self, celltype):
+        post_cells = []
+        for cell in self.bg_cells:
+            post_cells += self.postsynaptic(cell)
+        return [cell for cell in set(post_cells) if cell.startswith(celltype)]
+        
+    def get_probe_stimulated_cells(self, celltype):
+        post_cells = []
+        for cell in self.probe_cells:
+            post_cells += self.postsynaptic(cell)
+        return [cell for cell in set(post_cells) if cell.startswith(celltype)]
 
     def bg_stimulus_spike_correlations(self, celltype, window):
-        raise NotImplementedError('TODO')
+        cells = self.get_bg_stimulated_cells(celltype)
+        raise NotImplementedError('TODO: finish')
+        
 
 def close_all_figures():
     current_figures = [fig_manager.canvas.figure for fig_manager in Gcf.get_all_fig_managers()]
@@ -283,7 +299,7 @@ def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, col
         
 if __name__ == '__main__':    
     filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5') # Find all data files in the directory
-    current_fts = get_fname_timestamps(filenames, '20120918', '20121201') # These simulations were done from 2012-09-19 till 2012-11-??
+    current_fts = get_fname_timestamps(filenames, '20120918', '20120920') # These simulations were done from 2012-09-19 till 2012-11-??
     notes = get_notes_from_files(current_fts.keys())
     print '=== printing filenames and notes ==='
     for k, v in notes.items():
@@ -299,7 +315,19 @@ if __name__ == '__main__':
     for d in data:
         print d.fdata.filename
         print d.bg_cells
+        cell_stimcount_list = []
+        for cell in d.get_bg_stimulated_cells('SpinyStellate'):
+            pre_cells = set([pre for pre in d.presynaptic(cell)])
+            stim_pre_cells = pre_cells.intersection(set(d.bg_cells))
+            cell_stimcount_list.append((cell, len(stim_pre_cells)))
+        for cell, stim_count in sorted(cell_stimcount_list, key=itemgetter(1)):
+            print cell, stim_count
+            
         print d.probe_cells
+        print 'Probe stimulated SS cells:'
+        probed_cells = d.get_probe_stimulated_cells('SpinyStellate')
+        print len(probed_cells)
+        
 
     #============================================================
     # The following code plots population spike count histogram
