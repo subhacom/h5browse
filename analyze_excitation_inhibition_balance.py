@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Nov 20 20:36:16 2012 (+0530)
+# Last-Updated: Wed Nov 21 12:16:29 2012 (+0530)
 #           By: subha
-#     Update #: 754
+#     Update #: 776
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -58,10 +58,15 @@ class TraubData(object):
     simtime: duration of the simulation
     """
     def __init__(self, fname):
-        self.fdata = h5.File(fname, 'r')
         netfilename = os.path.join(os.path.dirname(fname),
                                    os.path.basename(fname).replace('data_', 'network_').replace('.h5', '.h5.new'))
-        self.fnet = h5.File(netfilename)
+        self.fdata = None
+        self.fnet = None
+        try:
+            self.fdata = h5.File(fname, 'r')
+            self.fnet = h5.File(netfilename)
+        except IOError as e:
+            print e
         self.__get_cellcounts()
         self.__get_timestamp()        
         self.__get_stimuli()
@@ -73,12 +78,17 @@ class TraubData(object):
         print 'Loaded', fname
 
     def __del__(self):
-        self.fdata.close()
-        self.fnet.close()
+        if self.fdata is not None:
+            self.fdata.close()
+        if self.fnet is not None:
+            self.fnet.close()
 
     def __get_cellcounts(self):
+        if self.fdata is None:
+            return
         try:
-            cc = dict([(k, int(v)) for k, v in np.asarray(self.fdata['/runconfig/cellcount'])])                
+            cc = dict([(k, int(v)) for k, v in np.asarray(self.fdata['/runconfig/cellcount']) if k in cellcount_tuple._fields])                
+            print self.fdata.filename, cc
             self.cellcounts = cellcount_tuple(**cc)
         except KeyError, e:
             print e           
@@ -109,7 +119,15 @@ class TraubData(object):
         self.plotdt = float(schedinfo['plotdt'])
 
     def __get_synapse(self):
-        self.synapse = np.asarray(self.fnet['/network/synapse'])
+        try:
+            self.synapse = np.asarray(self.fnet['/network/synapse'])
+        except KeyError as e:
+            print self.fdata.filename
+            print e
+            raise(e)
+            
+    def get_notes(self):
+        return self.fdata.attrs['notes']
         
     def presynaptic(self, cellname):
         indices = np.char.startswith(self.synapse['dest'], cellname)
@@ -299,34 +317,43 @@ def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, col
         
 if __name__ == '__main__':    
     filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5') # Find all data files in the directory
-    current_fts = get_fname_timestamps(filenames, '20120918', '20120920') # These simulations were done from 2012-09-19 till 2012-11-??
-    notes = get_notes_from_files(current_fts.keys())
+    # These simulations for excitation inhibition balance were done from 2012-09-19 till 2012-11-??
+    current_fts = get_fname_timestamps(filenames, '20110101', '20120920') 
+    handles = []
+    for fname in current_fts.keys():
+        try:
+            handles.append(TraubData(fname))
+        except (IOError, KeyError) as e:
+            print e
     print '=== printing filenames and notes ==='
-    for k, v in notes.items():
-        print '^', k, v
+    for fd in handles:
+        print '^', fd.fdata.filename
+        print '\t', fd.get_notes()
     print '---'
-    categories = classify_files_by_cellcount(current_fts.keys())
-    # After categorising the good files, we work with only those files
-    # with 240 spiny stellate cells (others test simulations)
-    goodfiles = {cc: files for cc, files in categories.items() if cc.SpinyStellate == 240}
-    colordict = load_celltype_colors()
-    data = [TraubData(filename) for filenamelist in goodfiles.values() for filename in filenamelist]
-    print 'Loaded data'
-    for d in data:
-        print d.fdata.filename
-        print d.bg_cells
-        cell_stimcount_list = []
-        for cell in d.get_bg_stimulated_cells('SpinyStellate'):
-            pre_cells = set([pre for pre in d.presynaptic(cell)])
-            stim_pre_cells = pre_cells.intersection(set(d.bg_cells))
-            cell_stimcount_list.append((cell, len(stim_pre_cells)))
-        for cell, stim_count in sorted(cell_stimcount_list, key=itemgetter(1)):
-            print cell, stim_count
+    for fh in handles:
+        print fh.fdata.filename, 'has', len(fh.get_bg_stimulated_cells('TCR')), 'background stimulated cells.'
+    # categories = classify_files_by_cellcount(current_fts.keys())
+    # # After categorising the good files, we work with only those files
+    # # with 240 spiny stellate cells (others test simulations)
+    # goodfiles = {cc: files for cc, files in categories.items() if cc.SpinyStellate == 240}
+    # colordict = load_celltype_colors()
+    # data = [TraubData(filename) for filenamelist in goodfiles.values() for filename in filenamelist]
+    # print 'Loaded data'
+    # for d in data:
+    #     print d.fdata.filename
+    #     print d.bg_cells
+    #     cell_stimcount_list = []
+    #     for cell in d.get_bg_stimulated_cells('SpinyStellate'):
+    #         pre_cells = set([pre for pre in d.presynaptic(cell)])
+    #         stim_pre_cells = pre_cells.intersection(set(d.bg_cells))
+    #         cell_stimcount_list.append((cell, len(stim_pre_cells)))
+    #     for cell, stim_count in sorted(cell_stimcount_list, key=itemgetter(1)):
+    #         print cell, stim_count
             
-        print d.probe_cells
-        print 'Probe stimulated SS cells:'
-        probed_cells = d.get_probe_stimulated_cells('SpinyStellate')
-        print len(probed_cells)
+    #     print d.probe_cells
+    #     print 'Probe stimulated SS cells:'
+    #     probed_cells = d.get_probe_stimulated_cells('SpinyStellate')
+    #     print len(probed_cells)
         
 
     #============================================================
