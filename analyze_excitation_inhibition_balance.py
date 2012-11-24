@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Nov 21 12:16:29 2012 (+0530)
+# Last-Updated: Sat Nov 24 17:37:59 2012 (+0530)
 #           By: subha
-#     Update #: 776
+#     Update #: 836
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -29,8 +29,11 @@
 
 # Code:
 
+
+
 import h5py as h5
 import os
+print os.getcwd()
 from datetime import datetime
 from get_files_by_ts import *
 import numpy as np
@@ -216,10 +219,10 @@ def classify_cells(cells):
         categories[celltype].append(cell)
     return categories
 
-def plot_population_spike_histogram(trbdata, timerange, bins, colordict):
+def plot_population_spike_histogram(trbdatalist, timerange, bins, colordict):
     """Plot histogram of spike counts for different celltypes.
     
-    trbdata: list TraubData objects wrapping the data files
+    trbdatalist: list TraubData objects wrapping the data files
 
     timerange: 2-tuple time window to consider for the histogram
 
@@ -228,17 +231,21 @@ def plot_population_spike_histogram(trbdata, timerange, bins, colordict):
     colordict: celltype-color dictionary
     """
     figures = []
-    for data in trbdata:
+    for data in trbdatalist:
         figure = plt.figure(data.fdata.filename)
         figure.suptitle(data.fdata.filename)
         figures.append(figure)
         celltype_spiketrain_map = defaultdict(list)
         for cell, spikenode in data.spikes.items():
+            celltype = cell.split('_')[0]
+            # Ignore ectopic spikes and incorrect celltype names
+            if celltype not in cellcount_tuple._fields:
+                continue
             spiketrain = np.asarray(spikenode)
             chunk = spiketrain[(spiketrain >= timerange[0]) & 
                                (spiketrain < timerange[1])]
             if len(chunk) > 0:
-                celltype_spiketrain_map[cell.split('_')[0]].append(chunk)
+                celltype_spiketrain_map[celltype].append(chunk)
         for ax_index, (celltype, spiketrains) in enumerate(celltype_spiketrain_map.items()):
             ax = figure.add_subplot(len(celltype_spiketrain_map), 1, ax_index+1)
             spike_times = np.concatenate(spiketrains)
@@ -314,29 +321,71 @@ def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, col
         figfile = os.path.basename(filename)+'.png'
         figure.savefig(figfile)
         print 'Saved', figfile
-        
-if __name__ == '__main__':    
-    filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5') # Find all data files in the directory
-    # These simulations for excitation inhibition balance were done from 2012-09-19 till 2012-11-??
-    current_fts = get_fname_timestamps(filenames, '20110101', '20120920') 
+
+
+def display_more_tcr_stimulated_spike_hist(colordict):
+    filenames = []
+    with open('many_tcr_stimulated.txt', 'r') as filelist:
+        for line in filelist:
+            filename = line.strip()
+            if filename:
+                filenames.append(filename)
     handles = []
-    for fname in current_fts.keys():
+    for fname in filenames:
         try:
-            handles.append(TraubData(fname))
+            fd = TraubData(fname)
+            handles.append(fd)
         except (IOError, KeyError) as e:
             print e
-    print '=== printing filenames and notes ==='
+    good_files = []    
     for fd in handles:
-        print '^', fd.fdata.filename
-        print '\t', fd.get_notes()
-    print '---'
-    for fh in handles:
-        print fh.fdata.filename, 'has', len(fh.get_bg_stimulated_cells('TCR')), 'background stimulated cells.'
+        if len(fd.bg_cells) > 5 \
+          and fd.simtime >= 10.0 \
+          and fd.cellcounts.TCR == 100 \
+          and fd.cellcounts.SpinyStellate == 240 \
+          and fd.cellcounts.SupPyrRS == 0 \
+          and fd.cellcounts.SupLTS == 0 \
+          and fd.cellcounts.SupBasket == 0 \
+          and fd.cellcounts.SupPyrFRB == 0 \
+          and fd.cellcounts.SupAxoaxonic == 0 \
+          and fd.cellcounts.nRT == 0:
+          good_files.append(fd)
+    plot_population_spike_histogram(good_files, (0, 10.0), np.arange(0, 10.0, 5e-3), colordict)
+
+            
+        
+if __name__ == '__main__':    
+    colordict = load_celltype_colors()
+    display_more_tcr_stimulated_spike_hist(colordict)    
+    plt.show()
+    # These simulations for excitation inhibition balance were done from 2012-09-19 till 2012-11-??
+    # filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5') # Find all data files in the directory
+
+    # current_fts = get_fname_timestamps(filenames, '20110101', '20120920') 
+    # handles = []
+    # for fname in current_fts.keys():
+    #     try:
+    #         handles.append(TraubData(fname))
+    #     except (IOError, KeyError) as e:
+    #         print e
+    # print '=== printing filenames and notes ==='    
+    # candidate_files = []
+    # for fd in handles:
+    #     if len(fd.bg_cells) > 5 and fd.simtime >= 10.0 \
+    #         and fd.cellcounts.SpinyStellate == 240 \
+    #         and fd.cellcounts.TCR == 100:
+    #         candidate_files.append(fd)
+    #         print '^', fd.fdata.filename
+    #         print '  ', fd.cellcounts
+            
+    # plot_population_spike_histogram(candidate_files, (0, 10.0), np.arange(0, 10.0, 5e-3), colordict)
+    # plt.show()
+
+    
     # categories = classify_files_by_cellcount(current_fts.keys())
     # # After categorising the good files, we work with only those files
     # # with 240 spiny stellate cells (others test simulations)
     # goodfiles = {cc: files for cc, files in categories.items() if cc.SpinyStellate == 240}
-    # colordict = load_celltype_colors()
     # data = [TraubData(filename) for filenamelist in goodfiles.values() for filename in filenamelist]
     # print 'Loaded data'
     # for d in data:
