@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Nov 24 17:37:59 2012 (+0530)
+# Last-Updated: Sat Nov 24 19:04:50 2012 (+0530)
 #           By: subha
-#     Update #: 836
+#     Update #: 844
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -257,10 +257,18 @@ def plot_population_spike_histogram(trbdatalist, timerange, bins, colordict):
                                        alpha=0.5, 
                                        label=celltype)
             max_height = max([p.get_bbox().get_points()[1][1] for p in patches])
-            startindex = int(timerange[0]/data.plotdt+0.5)
-            endindex = int(timerange[1]/data.plotdt+0.5) + 1            
+            # Earlier simulations had a different dt used for
+            # recording stimulus. So we need to extract that dt here
+            # without depending on plotdt.
+            num_stim_points = len(data.bg_stimulus)
+            stim_dt = data.simtime / num_stim_points
+            startindex = int(timerange[0]/stim_dt+0.5)
+            endindex = int(timerange[1]/stim_dt+0.5) + 1            
             bg_stimulus = data.bg_stimulus[startindex:endindex]
+            print data.fdata.filename
+            print max(bg_stimulus)
             scale = max_height / max(bg_stimulus)
+            print 'Background stimulus to be scaled by', scale
             ts = np.linspace(timerange[0], timerange[1], len(bg_stimulus))
             ax.plot(ts, bg_stimulus*scale, 'b-.', alpha=0.4)
             plt.legend()
