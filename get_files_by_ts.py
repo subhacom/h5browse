@@ -10,24 +10,7 @@ from operator import itemgetter
 import numpy as np
 import csv
 
-# This tuple is to be used for storing cell counts for each file
-cellcount_tuple = namedtuple('cellcount',
-    ['SupPyrRS',
-    'SupPyrFRB',
-    'SupBasket',
-    'SupAxoaxonic',
-    'SupLTS',
-    'SpinyStellate',
-    'TuftedIB',
-    'TuftedRS',
-    'DeepBasket',
-    'DeepAxoaxonic',
-    'DeepLTS',
-    'NontuftedRS',
-    'TCR',
-    'nRT'],
-    verbose=False)
-
+from traubdata import cellcount_tuple
 
 def find_files(path, *args):
     """Use gnu find command to get files in directory `path`. 
