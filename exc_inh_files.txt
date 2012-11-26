@@ -12,8 +12,6 @@
 /data/subha/rsync_ghevar_cortical_data_clone/2012_11_05/data_20121105_144428_16400.h5
 /data/subha/rsync_ghevar_cortical_data_clone/2012_11_07/data_20121107_100729_29479.h5
 /data/subha/rsync_ghevar_cortical_data_clone/2012_11_08/data_20121108_210758_30357.h5
-/data/subha/rsync_ghevar_cortical_data_clone/2012_11_12/data_20121112_105155_32671.h5
-/data/subha/rsync_ghevar_cortical_data_clone/2012_11_12/data_20121112_110119_32755.h5
 /data/subha/rsync_ghevar_cortical_data_clone/2012_11_12/data_20121112_112211_685.h5
 /data/subha/rsync_ghevar_cortical_data_clone/2012_11_14/data_20121114_091030_2716.h5
 /data/subha/rsync_ghevar_cortical_data_clone/2012_11_16/data_20121116_091100_3774.h5
