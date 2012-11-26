@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Nov 24 19:04:50 2012 (+0530)
+# Last-Updated: Mon Nov 26 14:01:06 2012 (+0530)
 #           By: subha
-#     Update #: 844
+#     Update #: 874
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -70,6 +70,7 @@ class TraubData(object):
             self.fnet = h5.File(netfilename)
         except IOError as e:
             print e
+            return
         self.__get_cellcounts()
         self.__get_timestamp()        
         self.__get_stimuli()
@@ -91,7 +92,6 @@ class TraubData(object):
             return
         try:
             cc = dict([(k, int(v)) for k, v in np.asarray(self.fdata['/runconfig/cellcount']) if k in cellcount_tuple._fields])                
-            print self.fdata.filename, cc
             self.cellcounts = cellcount_tuple(**cc)
         except KeyError, e:
             print e           
@@ -125,7 +125,7 @@ class TraubData(object):
         try:
             self.synapse = np.asarray(self.fnet['/network/synapse'])
         except KeyError as e:
-            print self.fdata.filename
+            print self.fdata.filename, 'encountered error'
             print e
             raise(e)
             
@@ -265,16 +265,15 @@ def plot_population_spike_histogram(trbdatalist, timerange, bins, colordict):
             startindex = int(timerange[0]/stim_dt+0.5)
             endindex = int(timerange[1]/stim_dt+0.5) + 1            
             bg_stimulus = data.bg_stimulus[startindex:endindex]
-            print data.fdata.filename
-            print max(bg_stimulus)
             scale = max_height / max(bg_stimulus)
-            print 'Background stimulus to be scaled by', scale
             ts = np.linspace(timerange[0], timerange[1], len(bg_stimulus))
-            ax.plot(ts, bg_stimulus*scale, 'b-.', alpha=0.4)
+            ax.plot(ts, bg_stimulus*scale, 'b-.', alpha=0.4, label='deepbasket=%d' % (data.cellcounts.DeepBasket))
             plt.legend()
-        print 'plotted', data.fdata.filename
+        image_file = os.path.basename(data.fdata.filename)+'.hist.png'
         figure.set_size_inches(6,6)
-        figure.savefig(os.path.basename(data.fdata.filename)+'.hist.png')
+        figure.savefig(image_file)
+        print 'Saved plot in', image_file
+        print data.get_notes()
     return figures
 
 def randomized_spike_rasters_allcelltype(category_map, data_map, cellcounts, colordict):
@@ -360,12 +359,32 @@ def display_more_tcr_stimulated_spike_hist(colordict):
           good_files.append(fd)
     plot_population_spike_histogram(good_files, (0, 10.0), np.arange(0, 10.0, 5e-3), colordict)
 
-            
+def plot_exc_inh_balance(colordict):
+    """Plot population spike histogram for the simulations between
+    excitation inhibition balance.  These simulations for excitation
+    inhibition balance were done from 2012-09-19 till 2012-11-23
+    
+    """
+    files = []
+    with open('exc_inh_files.txt', 'r') as filelist:
+        for line in filelist:
+            filename = line.strip()
+            if filename:
+                files.append(filename)    
+    current_fts = get_fname_timestamps(files, '20120918', '20121123') 
+    handles = []
+    for fname in current_fts.keys():
+        try:
+            handles.append(TraubData(fname))
+        except (IOError, KeyError) as e:
+            print e
+    plot_population_spike_histogram(handles, (0, 20.0), np.arange(0, 20.0, 5e-3), colordict)
+    plt.show()
+    
         
 if __name__ == '__main__':    
     colordict = load_celltype_colors()
-    display_more_tcr_stimulated_spike_hist(colordict)    
-    plt.show()
+    plot_exc_inh_balance(colordict)
     # These simulations for excitation inhibition balance were done from 2012-09-19 till 2012-11-??
     # filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5') # Find all data files in the directory
 
@@ -378,14 +397,6 @@ if __name__ == '__main__':
     #         print e
     # print '=== printing filenames and notes ==='    
     # candidate_files = []
-    # for fd in handles:
-    #     if len(fd.bg_cells) > 5 and fd.simtime >= 10.0 \
-    #         and fd.cellcounts.SpinyStellate == 240 \
-    #         and fd.cellcounts.TCR == 100:
-    #         candidate_files.append(fd)
-    #         print '^', fd.fdata.filename
-    #         print '  ', fd.cellcounts
-            
     # plot_population_spike_histogram(candidate_files, (0, 10.0), np.arange(0, 10.0, 5e-3), colordict)
     # plt.show()
 
