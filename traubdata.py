@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 26 20:51:26 2012 (+0530)
+# Last-Updated: Wed Nov 28 15:10:55 2012 (+0530)
 #           By: subha
-#     Update #: 8
+#     Update #: 19
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -161,14 +161,14 @@ class TraubData(object):
         return self.fdata.attrs['notes']
         
     def presynaptic(self, cellname):
-        indices = np.char.startswith(self.synapse['dest'], cellname)
-        return [row[0] for  \
-                row in np.char.split(self.synapse['source'][indices], '/')]
+        indices = np.char.startswith(self.synapse['dest'], cellname+'/')
+        return list(set([row[0] for  \
+                row in np.char.split(self.synapse['source'][indices], '/')]))
 
     def postsynaptic(self, cellname):
-        indices = np.char.startswith(self.synapse['source'], cellname)
-        return [row[0] for  \
-                row in np.char.split(self.synapse['dest'][indices], '/')]
+        indices = np.char.startswith(self.synapse['source'], cellname+'/')
+        return list(set([row[0] for  \
+                row in np.char.split(self.synapse['dest'][indices], '/')]))
 
     def __get_stimulated_cells(self):
         """Create the attributes `bg_cells` and `probe_cells` - lists
@@ -185,12 +185,16 @@ class TraubData(object):
                             for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_probe')]['f1'], '/')]
 
     def get_bg_stimulated_cells(self, celltype):
+        """Get the cells which get input from a TCR cell receiving
+        background stimulus"""
         post_cells = []
         for cell in self.bg_cells:
             post_cells += self.postsynaptic(cell)
         return [cell for cell in set(post_cells) if cell.startswith(celltype)]
         
     def get_probe_stimulated_cells(self, celltype):
+        """Get the cells which get input from a TCR cell receiving
+        probe stimulus"""
         post_cells = []
         for cell in self.probe_cells:
             post_cells += self.postsynaptic(cell)
@@ -199,6 +203,11 @@ class TraubData(object):
     def bg_stimulus_spike_correlations(self, celltype, window):
         cells = self.get_bg_stimulated_cells(celltype)
         raise NotImplementedError('TODO: finish')
+
+    def get_bgstim_times(self):
+        ts = np.linspace(0, self.simtime, len(self.bg_stimulus))
+        indices = np.nonzero(np.diff(self.bg_stimulus))
+        return ts[indices]
 
 
 
