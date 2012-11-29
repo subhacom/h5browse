@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 19:13:38 2012 (+0530)
+# Last-Updated: Thu Nov 29 21:56:12 2012 (+0530)
 #           By: subha
-#     Update #: 115
+#     Update #: 154
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -261,7 +261,7 @@ class TraubData(object):
         indices = np.nonzero(fracs > cutoff)[0]
         return (indices+0.5) * binsize
 
-    def get_burst_arrays(self, celltype, maxisi=15e-3):
+    def get_burst_arrays(self, celltype, timerange=(0, 1e9), mincount=3, maxisi=15e-3):
         """Get bursts of spikes where two spikes within maxisi are
         considered part of the same burst.
         
@@ -269,11 +269,41 @@ class TraubData(object):
         containing spiketimes for members of the burst.
 
         """
-        burst_dict = dict([cell, np.array_split(spikes, np.where(np.diff(spikes) > maxisi)) 
-                           for cell, spikes in self.spikes.items() 
-                           if cell.startwith(celltype)])
+        tstart = 0
+        if timerange[0] > tstart:
+            tstart = timerange[0]
+        tend = self.simtime
+        if timerange[1] < tend:
+            tend = timerange[1]
+        assert(tend > tstart)
+        cell_spiketrain = [(cell, spiketimes[(spiketimes >= tstart) & (spiketimes < tend)]) for cell, spiketimes in self.spikes.items() if cell.startswith(celltype)]
+        burst_dict = dict([(cell, [spiketimes 
+                                   for spiketimes in np.array_split(sp, np.where(np.diff(sp) > maxisi)[0]+1) 
+                                   if len(spiketimes) >= mincount])
+                           for cell, sp in cell_spiketrain])        
         return burst_dict
+
+    def get_bursting_cells_hist(self, celltype, timerange=(0,1e9), binsize=100e-3, mincount=3, maxisi=15e-3):
+        """Get histogram containing number of cells bursting in each
+        bin of `binsize` width"""
+        tstart = 0
+        if timerange[0] > tstart:
+            tstart = timerange[0]
+        tend = self.simtime
+        if timerange[1] < tend:
+            tend = timerange[1]
+        bins = np.arange(tstart, tend, binsize)
+        burst_dict = self.get_burst_arrays(celltype, timerange=timerange, mincount=mincount, maxisi=maxisi)
+        hists = [np.histogram([np.mean(burst) for burst in burst_train], bins)[0] for burst_train in burst_dict.values()]
+        hists = [np.where(h > 0, 1.0, 0.0) for h in hists]
+        return (np.sum(hists, axis=0), bins)
                 
+
+if __name__ == '__main__':
+    # for testing
+    data = TraubData('/data/subha/rsync_ghevar_cortical_data_clone/2012_11_07/data_20121107_100729_29479.h5')
+    b = data.get_burst_arrays('SpinyStellate')
+    print b
 
 # 
 # traubdata.py ends here
