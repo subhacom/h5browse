@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Nov 29 21:56:12 2012 (+0530)
+# Last-Updated: Fri Nov 30 13:43:26 2012 (+0530)
 #           By: subha
-#     Update #: 154
+#     Update #: 160
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -264,6 +264,11 @@ class TraubData(object):
     def get_burst_arrays(self, celltype, timerange=(0, 1e9), mincount=3, maxisi=15e-3):
         """Get bursts of spikes where two spikes within maxisi are
         considered part of the same burst.
+
+        celltype: string or list of strings.  If it is a string, it is
+        taken as celltype and data for all cells starting with this
+        string is returned.  If a list of string, this is taken as
+        name of cells and data for cells with these names is returned.
         
         Returns a dict of cells to bursts. bursts is a list of arrays
         containing spiketimes for members of the burst.
@@ -276,7 +281,16 @@ class TraubData(object):
         if timerange[1] < tend:
             tend = timerange[1]
         assert(tend > tstart)
-        cell_spiketrain = [(cell, spiketimes[(spiketimes >= tstart) & (spiketimes < tend)]) for cell, spiketimes in self.spikes.items() if cell.startswith(celltype)]
+        if isinstance(celltype, str):
+            cell_spiketrain = [(cell, spiketrain[(spiketrain >= tstart) & (spiketrain < tend)])
+                               for cell, spiketrain in self.spikes.items() 
+                               if cell.startswith(celltype)]
+        else:
+            cell_spiketrain = []
+            for cell in celltype:
+                spiketrain = self.spikes[cell]
+                spiketrain = spiketrain[(spiketrain >= tstart) & (spiketrain < tend)]
+                cell_spiketrain.append((cell, spiketrain))
         burst_dict = dict([(cell, [spiketimes 
                                    for spiketimes in np.array_split(sp, np.where(np.diff(sp) > maxisi)[0]+1) 
                                    if len(spiketimes) >= mincount])
@@ -297,6 +311,8 @@ class TraubData(object):
         hists = [np.histogram([np.mean(burst) for burst in burst_train], bins)[0] for burst_train in burst_dict.values()]
         hists = [np.where(h > 0, 1.0, 0.0) for h in hists]
         return (np.sum(hists, axis=0), bins)
+
+        
                 
 
 if __name__ == '__main__':
