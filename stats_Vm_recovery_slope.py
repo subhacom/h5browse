@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Nov 30 13:26:10 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 30 16:20:30 2012 (+0530)
+# Last-Updated: Fri Nov 30 17:01:19 2012 (+0530)
 #           By: subha
-#     Update #: 121
+#     Update #: 133
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -56,7 +56,7 @@ matplotlib.use('GTKAgg')
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import pyplot as plt
 from matplotlib._pylab_helpers import Gcf
-
+from scipy.stats import linregress
 sys.path.append(os.path.expanduser('~/src/dataviz'))
 
 from traubdata import TraubData, cellcount_tuple
@@ -113,7 +113,11 @@ def vm_recovery_stats(files, celltype, mincount=3, maxisi=25e-3):
                 interburst_ts = [split_ts[ii] for ii in range(0, len(split_indices), 2)]                
                 plt.plot(ts, vm, 'y-')
                 for ibvm, ibts in zip(interburst_vms, interburst_ts):
-                    plt.plot(ibts, ibvm, 'g-.')                
+                    regression = linregress(ibts, ibvm)
+                    slope = regression[0]
+                    intercept = regression[1]
+                    plt.plot(ibts, intercept+ ibts * slope, 'b-', alpha=0.7)
+                    # plt.plot(ibts, ibvm, 'g-.')                
                 plt.plot(data.spikes[cell], np.zeros(len(data.spikes[cell])), 'r|', alpha=0.7)
                 break
             break
@@ -121,7 +125,7 @@ def vm_recovery_stats(files, celltype, mincount=3, maxisi=25e-3):
     plt.show()
 
 if __name__ == '__main__':
-    vm_recovery_stats(files, 'SpinyStellate')
+    vm_recovery_stats(files, 'SpinyStellate', mincount=2)
             
 
 # 
