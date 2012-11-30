@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Nov 30 13:26:10 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 30 19:02:00 2012 (+0530)
+# Last-Updated: Fri Nov 30 19:10:33 2012 (+0530)
 #           By: subha
-#     Update #: 226
+#     Update #: 229
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -123,12 +123,14 @@ def vm_recovery_stats(files, celltype, mincount=3, maxisi=15e-3):
                     regression = linregress(ibts, ibvm)
                     slopes.append(regression[0])
             if not slopes:
+                print 'No regression line could be drawn for any cell in', data.fdata.filename
                 continue
             deepbasket_slope_map[deepbasket_count].append((np.mean(slopes), np.std(slopes)))
     slope_mean_list = []
     slope_std_list =[]
     db_count_list = []
-    for deepbasket_count, slope_stats in deepbasket_slope_map.items():
+    for deepbasket_count in sorted(deepbasket_slope_map.keys()):
+        slope_stats = deepbasket_slope_map[deepbasket_count]
         print deepbasket_count
         for entry in slope_stats:
             print ' ', entry
