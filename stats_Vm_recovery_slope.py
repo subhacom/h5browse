@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Nov 30 13:26:10 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Nov 30 19:10:33 2012 (+0530)
+# Last-Updated: Sat Dec  1 11:28:07 2012 (+0530)
 #           By: subha
-#     Update #: 229
+#     Update #: 231
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -106,8 +106,11 @@ def vm_recovery_stats(files, celltype, mincount=3, maxisi=15e-3):
                 burst_array = burst_dict[cell]
                 if len(burst_array) == 0:
                     continue
-                burst_starts = np.asarray(map(itemgetter(0), burst_array)) - 5e-3
-                burst_ends = np.asarray(map(itemgetter(-1), burst_array)) + 5e-3               
+                # We need a bit space around each burst to avoid the
+                # relatively variable up-slope/down-slope part.
+                exclude_time = 5e-3
+                burst_starts = np.asarray(map(itemgetter(0), burst_array)) - exclude_time
+                burst_ends = np.asarray(map(itemgetter(-1), burst_array)) + exclude_time      
                 vm = np.asarray(data.fdata['Vm'][cell])
                 ts = np.linspace(0, data.simtime, len(vm))
                 start_indices = np.searchsorted(ts, burst_starts)
