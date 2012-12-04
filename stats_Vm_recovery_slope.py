@@ -105,6 +105,7 @@ def vm_recovery_stats(files, celltype, mincount=3, maxisi=15e-3):
             for cell in cell_list:
                 burst_array = burst_dict[cell]
                 if len(burst_array) == 0:
+                    print 'No bursts in', cell, 'in', data.fdata.filename
                     continue
                 # We need a bit space around each burst to avoid the
                 # relatively variable up-slope/down-slope part.
