@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Tue Dec  4 16:40:12 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Dec  4 19:44:53 2012 (+0530)
+# Last-Updated: Wed Dec  5 10:06:43 2012 (+0530)
 #           By: subha
-#     Update #: 117
+#     Update #: 127
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -96,7 +96,11 @@ def plot_synaptic_conductances(cell_filename_map, filename_data_map):
                          axis=0)
         ts = np.linspace(0, data.simtime, len(gE))
         if axno % rows == 0:
-            fig = plt.figure()
+            plt.show()
+            # This is to save on memory
+            if fig:
+                plt.close(fig)
+            fig = plt.figure(axno/rows)
         ax = fig.add_subplot(rows, 1, axno%rows+1)
         ax.set_title(filename)
         ax.set_ylabel('Conductance (nS)')
@@ -105,7 +109,7 @@ def plot_synaptic_conductances(cell_filename_map, filename_data_map):
         ax.plot(ts, gE*1e9, 'r-', alpha=0.7)
         ax.plot(ts, gI*1e9, 'b-', alpha=0.3)
         ts = np.linspace(0, data.simtime, len(data.bg_stimulus))
-        ax.plot(ts, data.bg_stimulus, 'g-.', alpha=0.5)
+        ax.plot(ts[np.diff(data.bg_stimulus) > 0], 'g^', alpha=0.5)
         axno += 1
 
 if __name__ == '__main__':
