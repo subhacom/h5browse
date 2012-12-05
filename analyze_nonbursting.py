@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Tue Dec  4 16:40:12 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec  5 10:13:42 2012 (+0530)
+# Last-Updated: Wed Dec  5 10:19:35 2012 (+0530)
 #           By: subha
-#     Update #: 130
+#     Update #: 131
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -110,7 +110,7 @@ def plot_synaptic_conductances(cell_filename_map, filename_data_map):
         ax.plot(ts, gI*1e9, 'b-', alpha=0.3)
         ts = np.linspace(0, data.simtime, len(data.bg_stimulus))
         bgtimes = ts[np.diff(data.bg_stimulus) > 0]
-        ax.plot(bgtimes, np.zeros(len(bgtimes)), 'g^', alpha=0.5)
+        ax.plot(bgtimes, np.ones(len(bgtimes)), 'g^', alpha=0.5)
         axno += 1
 
 if __name__ == '__main__':
