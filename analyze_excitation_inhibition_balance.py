@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Nov 26 21:18:15 2012 (+0530)
+# Last-Updated: Mon Dec 10 22:19:58 2012 (+0530)
 #           By: subha
-#     Update #: 1052
+#     Update #: 1191
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -384,10 +384,61 @@ def plot_exc_inh_balance(colordict):
             print e
     plot_population_spike_histogram(handles, (0, 20.0), np.arange(0, 20.0, 5e-3), colordict)
     plt.show()
+
+def find_intermediate_spinstells(data, fracoutofgroup=0.1, popfrac=0.5, timerange=(1.0, 1e9)):
+    """Get the list of spiny stellate cells that fire in between
+    population bursts/spikes. This can be used to see if the same
+    cells fire in the same pattern.
+
+    data: TraubData
+
+    fracoutofgroup: fraction of times a cell must fire in the
+    population interburst interval to qualify as an out of group cell.
+
+    popfrac: fraction of the population that must burst in a bin to
+    qualify that as a population burst.
+
+    """
+    bursting_hist, bins = data.get_bursting_cells_hist('SpinyStellate', timerange=(1.0, 1e9))
+    bursting_hist /= 1.0 * data.cellcounts.SpinyStellate
+    indices = np.nonzero(bursting_hist < popfrac)[0]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    strongly_out = []
+    weakly_out = []
+    count = 1
+    lines = []
+    cmap = plt.cm.copper_r
+    for cell, spikes in data.spikes.items():
+        if cell.startswith('SpinyStellate'):
+            hist, b = np.histogram(spikes, bins)
+            cindices = np.nonzero(hist)[0]
+            print 1, cindices
+            print 2, indices
+            common = set(cindices).intersection(set(indices))
+            print 3, common
+            if len(common) > fracoutofgroup * len(indices):
+                weakly_out.append(cell)
+                ax.plot(data.spikes[cell], np.ones(len(data.spikes[cell]))*count, marker='x', color=cmap(len(common)*1.0/len(indices)))
+                lines.append(len(common)*1.0/len(indices))
+                count += 1
+    ax.bar(bins[indices], height=np.ones(len(indices))*5, bottom=len(lines), width=(bins[1] - bins[0]), alpha=0.2)
+    sm = plt.cm.ScalarMappable(cmap=cmap)
+    sm.set_array(lines)
+    plt.colorbar(sm)
+    # ax.set_axis_bgcolor('black')
+    # fig.patch.set_facecolor('black')
+    plt.show()
+    return (strongly_out, weakly_out)
     
         
 if __name__ == '__main__':    
-    plot_spinstell_sync_spike_with_num_deepbasket(0.2)
+    data = TraubData('/data/subha/rsync_ghevar_cortical_data_clone/2012_11_05/data_20121105_144428_16400.h5')
+    strong, weak = find_intermediate_spinstells(data)
+    print strong
+    print weak
+    sys.exit(0)
+    # plot_spinstell_sync_spike_with_num_deepbasket(0.2)
     # These simulations for excitation inhibition balance were done from 2012-09-19 till 2012-11-??
     # filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5') # Find all data files in the directory
 
