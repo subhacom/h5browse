@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun  5 13:59:40 2009 (+0530)
 # Version: 
-# Last-Updated: Tue Apr  3 16:34:43 2012 (+0530)
+# Last-Updated: Tue Dec 11 16:47:06 2012 (+0530)
 #           By: subha
-#     Update #: 72
+#     Update #: 89
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,6 +50,7 @@ import pylab
 import gzip
 import numpy
 from scipy import signal
+import numpy as np
 
 def almost_equal(left, right, epsilon=1e-6):
     """check if two floats are almost equal"""
@@ -132,7 +133,29 @@ def check_network_identity(left, right):
                         ret = False
     return ret
             
+def get_contiguous_regions(indices):
+    """Get the starts and ends of contiguous indices.
 
+    indices: array of index values, with possibly some entries
+    missing.
+
+    startendarray:
+
+    a 2D array where row[i] = (start[i], end[i]) for the ith
+    contiguous series of values.
+    Example:
+
+    indices = array([0, 1, 2, 4, 5, 8, 9])
+    
+    get_contiguous_regions(indices)
+
+    array([[0, 3],
+           [4, 6],
+           [8, 10]]) 
+
+    """
+    brk = np.nonzero(np.diff(indices) > 1)[0]
+    return np.c_[np.r_[indices[0], indices[brk+1]], np.r_[indices[brk], indices[-1]]]
 
 
 # 
