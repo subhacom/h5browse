@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Dec 15 15:37:45 2012 (+0530)
+# Last-Updated: Sat Dec 15 21:20:20 2012 (+0530)
 #           By: subha
-#     Update #: 245
+#     Update #: 370
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,6 +47,8 @@
 
 import h5py as h5
 import os
+from operator import itemgetter
+from collections import deque
 print os.getcwd()
 from datetime import datetime
 import numpy as np
@@ -297,7 +299,7 @@ class TraubData(object):
                            for cell, sp in cell_spiketrain])        
         return burst_dict
 
-    def get_bursts(self, celltype, timerange=(0, 1e9), mincount=3, maxisi=15e-3):
+    def get_burstidx_dict(self, celltype, timerange=(0, 1e9), mincount=3, maxisi=15e-3):
         """Get a dictionary of cells to bursts in its spike train.
 
         The bursts are presented as a Nx2 array where each row is
@@ -320,18 +322,8 @@ class TraubData(object):
         for cell in cells:
             spikes = self.spikes[cell]
             spikes = spikes[(spikes >= tstart) & (spikes < tend)].copy()
-            ISI = np.diff(spikes)
-            ISI_limit = np.diff(np.where(ISI < maxisi, 1, 0))
-            begin_int = np.nonzero(ISI_limit == 1)[0] + 1
-            if ISI[0] < maxisi:
-                begin_int = np.r_[0, begin_int]
-            end_int = np.nonzero(ISI_limit == -1)[0] + 1
-            if len(end_int) < len(begin_int):
-                end_int = np.r_[end_int, len(ISI)-1]
-            burst_dict[cell] = np.asarray([(start, end - start + 1) \
-                                               for start, end in zip(begin_int, end_int) \
-                                               if end - start + 1 >= mincount-1], dtype=int)
-        return burst_dict        
+            burst_dict[cell] = get_bursts(spikes, mincount, maxisi)  
+        return burst_dict
 
     def get_bursting_cells_hist(self, celltype, timerange=(0,1e9), binsize=100e-3, mincount=3, maxisi=15e-3):
         """Get histogram containing number of cells bursting in each
@@ -348,7 +340,7 @@ class TraubData(object):
         hists = [np.where(h > 0, 1.0, 0.0) for h in hists]
         return (np.sum(hists, axis=0), bins)
 
-    def pop_ibi(self, cells):
+    def pop_ibi(self, cells, timerange=(0,1e9), mincount=3, maxisi=15e-3):
         """Get the interburst interval for `cells` population in data.
 
         We get the interburst intervals of `cells`.
@@ -362,7 +354,53 @@ class TraubData(object):
         If a list of strings, the entries are taken as exact cellnames.
 
         """
-        burst_dict = self.get_burst_arrays(cells)
+        collected_burst_info = []
+        pop_bursts = []
+        if isinstance(cells, str):
+            cells = [cell for cell in self.spikes.keys() if cell.startswith(cells)]
+        for cell in cells:
+            spiketrain = self.spikes[cell]
+            spiketrain = spiketrain[(spiketrain >= timerange[0]) & (spiketrain < timerange[1])].copy()
+            burst_info = get_bursts(spiketrain, mincount, maxisi)
+            for entry in burst_info:
+                collected_burst_info.append((cell, spiketrain[entry[0]], spiketrain[entry[0]+entry[1]-1]))        
+        # Sort the bursts by start spike time, the ends and cell names
+        # get moved around with it
+        sorted_burst_info = sorted(collected_burst_info, key=itemgetter(1))
+        print len(sorted_burst_info)
+        # First pass: go through the bursts and collect the overlapping ones into categories
+        catidx = 0
+        categories = [[sorted_burst_info[0]]]
+        currentidx = 1
+        while currentidx < len(sorted_burst_info):
+            while currentidx < len(sorted_burst_info):
+                print currentidx, sorted_burst_info[currentidx]
+                print len(categories), catidx
+                if sorted_burst_info[currentidx][1] < sorted_burst_info[currentidx-1][2]:
+                    categories[catidx].append(sorted_burst_info[currentidx])
+                else:
+                    catidx += 1
+                    categories.append([sorted_burst_info[catidx]])
+                currentidx += 1
+        return categories
+                
+            
+            
+            
+            
+def get_bursts(spikes, mincount=3, maxisi=15e-3):
+    ISI = np.diff(spikes)
+    ISI_limit = np.diff(np.where(ISI < maxisi, 1, 0))
+    begin_int = np.nonzero(ISI_limit == 1)[0] + 1
+    if ISI[0] < maxisi:
+        begin_int = np.r_[0, begin_int]
+    end_int = np.nonzero(ISI_limit == -1)[0] + 1
+    if len(end_int) < len(begin_int):
+        end_int = np.r_[end_int, len(ISI)-1]
+    return np.asarray([(start, end - start + 1) \
+                                       for start, end in zip(begin_int, end_int) \
+                                       if end - start + 1 >= mincount-1], dtype=int)
+                           
         
                 
 from matplotlib import pyplot as plt
@@ -370,7 +408,7 @@ from matplotlib import pyplot as plt
 if __name__ == '__main__':
     # for testing
     data = TraubData('/data/subha/rsync_ghevar_cortical_data_clone/2012_11_07/data_20121107_100729_29479.h5')
-    b = data.get_bursts('SpinyStellate')
+    b = data.get_burstidx_dict('SpinyStellate')
     index = 0
     for cell, bursts in b.items():
         index += 1        
