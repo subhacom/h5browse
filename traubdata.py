@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Dec 17 16:04:20 2012 (+0530)
+# Last-Updated: Mon Dec 17 18:57:26 2012 (+0530)
 #           By: subha
-#     Update #: 435
+#     Update #: 498
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -322,7 +322,10 @@ class TraubData(object):
         for cell in cells:
             spikes = self.spikes[cell]
             spikes = spikes[(spikes >= tstart) & (spikes < tend)].copy()
-            burst_dict[cell] = get_bursts(spikes, mincount, maxisi)  
+            bursts = get_bursts(spikes, mincount, maxisi)  
+            if not bursts.shape or bursts.shape[0] == 0:
+                continue
+            burst_dict[cell]
         return burst_dict
 
     def get_bursting_cells_hist(self, celltype, timerange=(0,1e9), binsize=100e-3, mincount=3, maxisi=15e-3):
@@ -353,6 +356,10 @@ class TraubData(object):
 
         If a list of strings, the entries are taken as exact cellnames.
 
+        Return a list of lists. The inner lists are bursts that
+        overlap in time. Each entry is a 3-tuple of (cell,
+        burst_start_spiketime, burst_end_spiketime).
+
         """
         collected_burst_info = []
         pop_bursts = []
@@ -362,31 +369,31 @@ class TraubData(object):
             spiketrain = self.spikes[cell]
             spiketrain = spiketrain[(spiketrain >= timerange[0]) & (spiketrain < timerange[1])].copy()
             burst_info = get_bursts(spiketrain, mincount, maxisi)
+            if burst_info is None or not burst_info.shape or burst_info.shape[0] == 0:
+                continue
             for entry in burst_info:
                 collected_burst_info.append((cell, spiketrain[entry[0]], spiketrain[entry[0]+entry[1]-1]))        
         # Sort the bursts by start spike time, the ends and cell names
         # get moved around with it
         sorted_burst_info = sorted(collected_burst_info, key=itemgetter(1))
         print len(sorted_burst_info)
-        # First pass: go through the bursts and collect the overlapping ones into categories
+        # First pass: go through the bursts and collect the
+        # overlapping ones into categories
         catidx = 0
-        categories = [[sorted_burst_info[0]]]
-        currentidx = 1
-        while currentidx < len(sorted_burst_info):
-            while currentidx < len(sorted_burst_info):
-                print currentidx, sorted_burst_info[currentidx]
-                print len(categories), catidx
-                if sorted_burst_info[currentidx][1] < sorted_burst_info[currentidx-1][2]:
-                    categories[catidx].append(sorted_burst_info[currentidx])
-                else:
-                    catidx += 1
-                    categories.append([sorted_burst_info[catidx]])
-                currentidx += 1
+        categories = []
+        current_index = catidx + 1
+        current_index = 0
+        while current_index < len(sorted_burst_info):
+            categories.append([sorted_burst_info[current_index]])
+            burst_end = sorted_burst_info[current_index][2]
+            current_index += 1
+            while current_index < len(sorted_burst_info) and \
+                    sorted_burst_info[current_index][1] < burst_end:
+                categories[-1].append(sorted_burst_info[current_index])
+                if sorted_burst_info[current_index][2] > burst_end:
+                    burst_end = sorted_burst_info[current_index][2]
+                current_index += 1
         return categories
-                
-            
-            
-            
             
 def get_bursts(spikes, mincount=3, maxisi=15e-3):
     if len(spikes) < mincount:
@@ -443,11 +450,42 @@ def test_get_burstidx_dict():
             plt.plot(spikes[np.sum(bursts, axis=1)-1], np.ones(len(bursts))*idx, 'rx')
         plt.show()
         plt.close()
+
+def test_pop_ibi():
+    """Test the performance of pop_ibi function."""
+    flist = []
+    with open('exc_inh_files.txt') as flistfile:
+        for line in flistfile:
+            fname = line.strip()
+            if len(fname) == 0 or fname.startswith('#'):
+                continue
+            flist.append(fname)
+    # Take some random datasets
+    flist = random.sample(flist, 2)
+    datalist = [TraubData(fname) for fname in flist]
+    for data in datalist:
+        tstart = random.uniform(0, data.simtime-2.0)
+        tend = tstart + 2.0
+        cats = data.pop_ibi('SpinyStellate', timerange=(tstart, tend))
+        print data.fdata.filename, cats
+        for idx, category in enumerate(cats):
+            for burst in category:
+                plt.plot(burst[1], [idx], 'b+')
+                plt.plot(burst[2], [idx], 'y+')
+            plt.plot([category[0][1]], [idx], 'rx')
+            plt.plot(max([b[2] for b in category]), [idx], 'gx')                
+        plt.xlabel('Spike time (s)')
+        plt.ylabel('Category #')
+        plt.title('Categories of overlapping bursts\nBlue +: start of burst, Yellow +: end of burst\n')
+        plt.show()
+        plt.close() # release the resources
+    
     
 from matplotlib import pyplot as plt
 
 if __name__ == '__main__':
     # for testing
-    test_get_burstidx_dict()
+    # test_get_burstidx_dict()
+    test_pop_ibi()
 # 
 # traubdata.py ends here
