@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Dec 15 21:20:20 2012 (+0530)
+# Last-Updated: Mon Dec 17 16:04:20 2012 (+0530)
 #           By: subha
-#     Update #: 370
+#     Update #: 435
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -389,6 +389,8 @@ class TraubData(object):
             
             
 def get_bursts(spikes, mincount=3, maxisi=15e-3):
+    if len(spikes) < mincount:
+        return np.array(0)
     ISI = np.diff(spikes)
     ISI_limit = np.diff(np.where(ISI < maxisi, 1, 0))
     begin_int = np.nonzero(ISI_limit == 1)[0] + 1
@@ -402,30 +404,50 @@ def get_bursts(spikes, mincount=3, maxisi=15e-3):
                                        if end - start + 1 >= mincount-1], dtype=int)
                            
         
-                
+
+def test_get_burstidx_dict():
+    """Test the get_bursts function. Select five random data file and
+    choose 3 random spiny stellates from each. Plot the spike trains
+    along with burst start and burst ends. See if they match human
+    judgement.
+
+    """
+    flist = []
+    with open('exc_inh_files.txt') as flistfile:
+        for line in flistfile:
+            fname = line.strip()
+            if len(fname) == 0 or fname.startswith('#'):
+                continue
+            flist.append(fname)
+    # Take some random datasets
+    flist = random.sample(flist, 10)
+    datalist = [TraubData(fname) for fname in flist]
+    for data in datalist:
+        tstart = random.uniform(0, data.simtime - 1.0)        
+        tend = tstart + 1.0        
+        b = data.get_burstidx_dict('SpinyStellate', timerange=(tstart,  tend))
+        # Select a few random bursts
+        cells = random.sample(b.keys(), 3)
+        print tstart, tend, cells
+        for idx, cell in enumerate(cells):
+            spikes = data.spikes[cell]
+            spikes = spikes[(spikes >= tstart) & (spikes < tend)].copy()
+            plt.plot(spikes, np.ones(len(spikes))*idx, 'b+')
+            bursts = b[cell]
+            print cell, bursts.shape
+            if not bursts.shape or bursts.shape[0] == 0:
+                print 'No bursts in this', cell, spikes
+                continue
+            print bursts
+            plt.plot(spikes[bursts[:,0]], np.ones(len(bursts))*idx, 'gx')
+            plt.plot(spikes[np.sum(bursts, axis=1)-1], np.ones(len(bursts))*idx, 'rx')
+        plt.show()
+        plt.close()
+    
 from matplotlib import pyplot as plt
 
 if __name__ == '__main__':
     # for testing
-    data = TraubData('/data/subha/rsync_ghevar_cortical_data_clone/2012_11_07/data_20121107_100729_29479.h5')
-    b = data.get_burstidx_dict('SpinyStellate')
-    index = 0
-    for cell, bursts in b.items():
-        index += 1        
-        print cell, len(bursts)
-        if len(bursts) == 0:
-            continue
-        print bursts
-        spikes = data.spikes[cell]
-        print '==='
-        for t in  spikes:
-            print t
-        print '==='
-        plt.plot(spikes, np.ones(len(spikes))*index, 'b+')
-        plt.plot(spikes[bursts[:,0]], np.ones(len(bursts))*index, 'gx')
-        plt.plot(spikes[np.sum(bursts, axis=1)-1], np.ones(len(bursts))*index, 'rx')
-        break
-    plt.show()
-
+    test_get_burstidx_dict()
 # 
 # traubdata.py ends here
