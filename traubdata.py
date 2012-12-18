@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Dec 17 18:57:26 2012 (+0530)
+# Last-Updated: Tue Dec 18 16:04:56 2012 (+0530)
 #           By: subha
-#     Update #: 498
+#     Update #: 654
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -343,10 +343,12 @@ class TraubData(object):
         hists = [np.where(h > 0, 1.0, 0.0) for h in hists]
         return (np.sum(hists, axis=0), bins)
 
-    def pop_ibi(self, cells, timerange=(0,1e9), mincount=3, maxisi=15e-3):
-        """Get the interburst interval for `cells` population in data.
-
-        We get the interburst intervals of `cells`.
+    def get_popburst_categories(self, cells, timerange=(0,1e9), mincount=3, maxisi=15e-3):
+        """Get the population burst info for `cells`. The population
+        burst info is a sequence categories where each category
+        contains the (cellname, burst start, burst end) in increasing
+        order of burst start for all overlapping bursts. Different
+        categories represent non overlapping bursts.
 
         data: TraubData instance
 
@@ -394,6 +396,68 @@ class TraubData(object):
                     burst_end = sorted_burst_info[current_index][2]
                 current_index += 1
         return categories
+
+    def get_pop_ibi(self, cells, pop_frac=0.2, timerange=(0.0, 1e9), mincount=3, maxisi=15e-3):
+        """Get the inter-population-burst-intervals for cells. The
+        population burst start and end are calculated as
+        mean_burst_centre - 2 * std and mean_burst_centre + 2 * std.
+
+        cells - a string representing cell types or a sequence containing cell names.
+
+        pop_frac: fraction of `cells` that must burst together to call
+        it a population burst.
+
+        timerange: time range of data to look at
+
+        mincount: minimum number of spikes in  a burst
+
+        maxisi: maximum inter spike interval for two spikes to be
+        considered part of a burst.
+
+        Returns a dictionary with the following key value pairs: 
+
+        'odd_cells' -> list of cells that fire outside population bursts
+
+        'pop_ibi' -> a tuple containing list of population burst start
+        and burst end times.
+
+        """
+        if isinstance(cells, str):
+            cells = [cell for cell in self.spikes.keys() if cell.startswith(cells)]
+        categories = self.get_popburst_categories(cells, timerange, mincount, maxisi)
+        odd_cells = []
+        starts = []
+        ends = []
+        # TODO: select the odd cells more carefully ... most cells are
+        # turning out to be odd cells
+        for cat in categories:
+            if len(cat) * 1.0 / len(cells) < pop_frac:
+                odd_cells += [entry[0] for entry in cat]
+                continue
+            # compute the centre of the population bursts
+            mean = np.mean([entry[1:] for entry in cat])
+            # Compute the width of the population bursts
+            sd = np.std([entry[1:] for entry in cat])
+            ends.append(cat[0][1])
+            starts.append(max([entry[2] for entry in cat]))                    
+            # plt.plot([starts[-1], mean, ends[-1]], [1.0, 1.0, 1.0], 'kx')
+            # for burst in cat:
+            #     plt.plot(burst[1], [2], 'b+')
+            #     plt.plot(burst[2], [2], 'y+')
+            # plt.plot([cat[0][1]], [2], 'rx')
+            # plt.plot(max([b[2] for b in cat]), [2], 'gx')                
+            # plt.show()
+        if ends[0] < timerange[0]:
+            ends = ends[1:]
+        else:
+            starts = [timerange[0]] + starts
+        if starts[-1] >= timerange[1]:
+            starts = starts[:-1]
+        else:
+            ends.append(timerange[1])
+        return {'odd_cells': odd_cells,
+                'pop_ibi': (starts, ends)}
+            
             
 def get_bursts(spikes, mincount=3, maxisi=15e-3):
     if len(spikes) < mincount:
@@ -451,22 +515,13 @@ def test_get_burstidx_dict():
         plt.show()
         plt.close()
 
-def test_pop_ibi():
+def test_get_pop_burst_categories():
     """Test the performance of pop_ibi function."""
-    flist = []
-    with open('exc_inh_files.txt') as flistfile:
-        for line in flistfile:
-            fname = line.strip()
-            if len(fname) == 0 or fname.startswith('#'):
-                continue
-            flist.append(fname)
-    # Take some random datasets
-    flist = random.sample(flist, 2)
-    datalist = [TraubData(fname) for fname in flist]
+    datalist = get_test_data()
     for data in datalist:
         tstart = random.uniform(0, data.simtime-2.0)
         tend = tstart + 2.0
-        cats = data.pop_ibi('SpinyStellate', timerange=(tstart, tend))
+        cats = data.get_popburst_categories('SpinyStellate', timerange=(tstart, tend))
         print data.fdata.filename, cats
         for idx, category in enumerate(cats):
             for burst in category:
@@ -479,6 +534,53 @@ def test_pop_ibi():
         plt.title('Categories of overlapping bursts\nBlue +: start of burst, Yellow +: end of burst\n')
         plt.show()
         plt.close() # release the resources
+
+def get_test_data(num=3):
+    """Peak up `num` random files from data files listed in
+    `exc_inh_files.txt` and return a list of TraubData object for the
+    same"""
+    flist = []
+    with open('exc_inh_files.txt') as flistfile:
+        for line in flistfile:
+            fname = line.strip()
+            if len(fname) == 0 or fname.startswith('#'):
+                continue
+            flist.append(fname)
+    # Take some random datasets
+    flist = random.sample(flist, num)
+    datalist = [TraubData(fname) for fname in flist]
+    return datalist
+    
+def test_pop_ibi():
+    """Test the computation of population interburst intervals"""
+    datalist = get_test_data()
+    timerange = (1.0, 20.0)
+    for data in datalist:
+        ibi_data = data.get_pop_ibi('SpinyStellate', timerange=timerange, pop_frac=0.1)
+        cells = [ss for ss in data.spikes.keys() if ss.startswith('SpinyStellate')]
+        print 'all cells', len(cells)
+        odd_cells = set(ibi_data['odd_cells'])
+        print odd_cells
+        print 'odd cells', len(odd_cells)
+        cells = set(cells) - odd_cells
+        print 'good cells', len(cells)
+        for index, cell in enumerate(cells):
+            spikes = data.spikes[cell]
+            spikes = spikes[(spikes >= timerange[0]) & (spikes < timerange[1])].copy()
+            plt.plot(spikes, np.ones(len(spikes)) * index, 'b+', alpha=0.4)
+        for index, cell in enumerate(odd_cells):
+            spikes = data.spikes[cell]
+            spikes = spikes[(spikes >= timerange[0]) & (spikes < timerange[1])].copy()
+            plt.plot(spikes, np.ones(len(spikes)) * (index+len(cells)), 'c+', alpha=0.4)
+        plt.bar(ibi_data['pop_ibi'][0], 
+                height=np.ones(len(ibi_data['pop_ibi'][0])) * (len(cells) + len(odd_cells)+1), 
+                width=np.array(ibi_data['pop_ibi'][1]) - np.array(ibi_data['pop_ibi'][0]), 
+                alpha=0.2)
+        # plt.plot(ibi_data['pop_ibi'][0], np.ones(len(ibi_data['pop_ibi'][0]))*(index+1), 'gx')
+        # plt.plot(ibi_data['pop_ibi'][1], np.ones(len(ibi_data['pop_ibi'][1]))*(index+1), 'rx')
+        plt.show()
+        plt.close()
+        
     
     
 from matplotlib import pyplot as plt
@@ -486,6 +588,7 @@ from matplotlib import pyplot as plt
 if __name__ == '__main__':
     # for testing
     # test_get_burstidx_dict()
+    # test_get_pop_burst_categories()
     test_pop_ibi()
 # 
 # traubdata.py ends here

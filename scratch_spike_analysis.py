@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Dec 15 21:57:16 2012 (+0530)
+# Last-Updated: Tue Dec 18 14:54:08 2012 (+0530)
 #           By: subha
-#     Update #: 158
+#     Update #: 161
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -40,12 +40,8 @@ from savitzkygolay import savgol
 
 if __name__ == '__main__':
     data = TraubData('/data/subha/rsync_ghevar_cortical_data_clone/2012_11_07/data_20121107_100729_29479.h5')
-    cats = data.pop_ibi('SpinyStellate')
-    for idx, category in enumerate(cats):
-        plt.plot([category[0][1]], [1], 'rx')
-        plt.plot([category[-1][2]], [1], 'gx')
-    plt.show()
-            
+    cats = data.get_pop_ibi('SpinyStellate')
+    
             
     
     # combined_spikes = []
