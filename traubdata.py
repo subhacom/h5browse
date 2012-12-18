@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Dec 18 16:04:56 2012 (+0530)
+# Last-Updated: Tue Dec 18 17:18:25 2012 (+0530)
 #           By: subha
-#     Update #: 654
+#     Update #: 655
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,6 +54,7 @@ from datetime import datetime
 import numpy as np
 from collections import namedtuple
 import random
+import igraph as ig
 
 # This tuple is to be used for storing cell counts for each file
 cellcount_tuple = namedtuple('cellcount',

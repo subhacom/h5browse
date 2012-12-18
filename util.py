@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun  5 13:59:40 2009 (+0530)
 # Version: 
-# Last-Updated: Tue Dec 11 16:47:06 2012 (+0530)
+# Last-Updated: Tue Dec 18 18:29:35 2012 (+0530)
 #           By: subha
-#     Update #: 89
+#     Update #: 94
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -51,6 +51,8 @@ import gzip
 import numpy
 from scipy import signal
 import numpy as np
+import os
+import csv
 
 def almost_equal(left, right, epsilon=1e-6):
     """check if two floats are almost equal"""
@@ -157,6 +159,14 @@ def get_contiguous_regions(indices):
     brk = np.nonzero(np.diff(indices) > 1)[0]
     return np.c_[np.r_[indices[0], indices[brk+1]], np.r_[indices[brk], indices[-1]]]
 
+def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
+    filename = os.path.normpath(os.path.expanduser(os.path.expandvars(filename)))
+    colordict = {}
+    with open(filename) as fd:
+        reader = csv.reader(fd, delimiter=' ', quotechar="'")
+        for tokens in reader:
+            colordict[tokens[0]] = tokens[1]
+    return colordict
 
 # 
 # trbutil.py ends here
