@@ -1,14 +1,14 @@
 # ranksurprise.py --- 
 # 
 # Filename: ranksurprise.py
-# Description: 
-# Author: 
+# Description: Rank-surprise (RS) algorithm for burst identification.
+# Author: Subhasis Ray
 # Maintainer: 
 # Created: Thu Dec 13 15:03:05 2012 (+0530)
 # Version: 
-# Last-Updated: Fri Dec 14 16:38:38 2012 (+0530)
+# Last-Updated: Wed Dec 19 17:31:45 2012 (+0530)
 #           By: subha
-#     Update #: 398
+#     Update #: 418
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -17,9 +17,17 @@
 
 # Commentary: 
 # 
-# Implemnts rank surprise algorithm of burst detection in a spike train
+# Implements rank surprise algorithm of burst detection/identification
+# in a spike train.
+#
+# Reference: Gourevitch, B. & Eggermont, J. J. A nonparametric
+# approach for detection of bursts in spike trains. Journal of
+# Neuroscience Methods 160, 349–358 (2007).
 # 
+# This is a Python adaptation of the matlab code available in the
+# supplementary material of the above paper.
 # 
+# This code requires numpy and scipy modules for python.
 
 # Change log:
 # 
@@ -41,7 +49,7 @@
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth
 # Floor, Boston, MA 02110-1301, USA.
 # 
-# 
+# When redistributing the code preserve the reference and the credits.
 
 # Code:
 
@@ -53,9 +61,12 @@ from scipy.stats.mstats import rankdata
 
 def burst(spiketimes, limit=None, RSalpha=-np.log(0.01)):
     """Detect bursts in spiketimes using Rank-Surprise method by Boris
-    Goure'vitch and Jos J. Eggermont.
+    Gourevitch and Jos J. Eggermont.
 
-    Ref: http://dx.doi.org/10.1016/j.jneumeth.2006.09.024
+    Reference: Gourevitch, B. & Eggermont, J. J. A nonparametric
+    approach for detection of bursts in spike trains. Journal of
+    Neuroscience Methods 160, 349-358 (2007).  doi:
+    http://dx.doi.org/10.1016/j.jneumeth.2006.09.024
 
     This is an adaptation of the matlab code available in the
     supplementary material.

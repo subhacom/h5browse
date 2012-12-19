@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Dec 18 17:18:25 2012 (+0530)
+# Last-Updated: Wed Dec 19 20:10:35 2012 (+0530)
 #           By: subha
-#     Update #: 655
+#     Update #: 668
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,12 +49,15 @@ import h5py as h5
 import os
 from operator import itemgetter
 from collections import deque
-print os.getcwd()
+print 'Working directory:', os.getcwd()
 from datetime import datetime
 import numpy as np
 from collections import namedtuple
 import random
 import igraph as ig
+import networkx as nx
+
+import util
 
 # This tuple is to be used for storing cell counts for each file
 cellcount_tuple = namedtuple('cellcount',
@@ -111,6 +114,7 @@ class TraubData(object):
         self.__get_schedinfo()
         self.__get_synapse()
         self.__get_stimulated_cells()
+        self.colordict = util.load_celltype_colors()
         print 'Loaded', fname
 
     def __del__(self):
@@ -458,6 +462,21 @@ class TraubData(object):
             ends.append(timerange[1])
         return {'odd_cells': odd_cells,
                 'pop_ibi': (starts, ends)}
+
+    def get_cell_graph(self):
+        if hasattr(self, 'cell_graph'):
+            return self.cell_graph
+        self.cell_graph = nx.MultiDiGraph()
+        synapses = self.fnet['/network/synapse']
+        pre_cells = [row[0] for row in np.char.split(synapses['source'], '/')]
+        post_cells = [row[0] for row in np.char.split(synapses['dest'], '/')]
+        weights = [g for g in synapses['Gbar']]
+        self.cell_graph.add_weighted_edges_from(zip(pre_cells, post_cells, weights))
+        for cell in self.cell_graph:
+            celltype = cell.split('_')[0]
+            self.cell_graph.node[cell]['color'] = self.colordict[celltype]
+        return self.cell_graph
+
             
             
 def get_bursts(spikes, mincount=3, maxisi=15e-3):
