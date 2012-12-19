@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec 19 21:03:35 2012 (+0530)
+# Last-Updated: Wed Dec 19 21:17:36 2012 (+0530)
 #           By: subha
-#     Update #: 345
+#     Update #: 349
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,7 +48,13 @@ if __name__ == '__main__':
     graph = data.get_cell_graph()
     spinstell_count = dict(zip(data.fnet['/network/celltype']['name'], data.fnet['/network/celltype']['count']))['SpinyStellate']
     print spinstell_count
-    g1 = nx.DiGraph(graph)
+    g1 = nx.DiGraph()
+    for e in graph.edges(data=True):
+        print e
+        if g1.has_edge(e[0], e[1]):
+            g1[e[0]][e[1]]['weight'] += e[2]['weight']
+        else:
+            g1.add_edge(*e)
     hubs, authorities = nx.hits(g1)
     g2 = g1.subgraph(['SpinyStellate_%d' % (idx) for idx in range(spinstell_count)])
     node_colors = []
