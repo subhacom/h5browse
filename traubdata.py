@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec 19 20:10:35 2012 (+0530)
+# Last-Updated: Thu Dec 20 16:49:21 2012 (+0530)
 #           By: subha
-#     Update #: 668
+#     Update #: 686
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -213,9 +213,8 @@ class TraubData(object):
         raise NotImplementedError('TODO: finish')
 
     def get_bgstim_times(self):
-        ts = np.linspace(0, self.simtime, len(self.bg_stimulus))
-        indices = np.nonzero(np.diff(self.bg_stimulus))
-        return ts[indices]
+        indices = np.nonzero(np.diff(self.bg_stimulus))[0]
+        return indices * self.simtime / len(self.bg_stimulus)
 
     def get_spiking_cell_hist(self, celltype, timerange=(0,1e9), binsize=5e-3):
         """Get the number of cells spiking in each time bin of width
@@ -429,15 +428,21 @@ class TraubData(object):
         """
         if isinstance(cells, str):
             cells = [cell for cell in self.spikes.keys() if cell.startswith(cells)]
-        categories = self.get_popburst_categories(cells, timerange, mincount, maxisi)
-        odd_cells = []
+        tstart = 0.0
+        if timerange[0] > tstart:
+            tstart = timerange[0]
+        tend = self.simtime
+        if  timerange[1] < tend:
+            tend = timerange[1]
+        categories = self.get_popburst_categories(cells, (tstart, tend), mincount, maxisi)
+        odd_cells = set()
         starts = []
         ends = []
         # TODO: select the odd cells more carefully ... most cells are
         # turning out to be odd cells
         for cat in categories:
             if len(cat) * 1.0 / len(cells) < pop_frac:
-                odd_cells += [entry[0] for entry in cat]
+                odd_cells.update([entry[0] for entry in cat])
                 continue
             # compute the centre of the population bursts
             mean = np.mean([entry[1:] for entry in cat])
@@ -452,14 +457,14 @@ class TraubData(object):
             # plt.plot([cat[0][1]], [2], 'rx')
             # plt.plot(max([b[2] for b in cat]), [2], 'gx')                
             # plt.show()
-        if ends[0] < timerange[0]:
+        if ends[0] < tstart:
             ends = ends[1:]
         else:
-            starts = [timerange[0]] + starts
-        if starts[-1] >= timerange[1]:
+            starts = [tstart] + starts
+        if starts[-1] >= tend:
             starts = starts[:-1]
         else:
-            ends.append(timerange[1])
+            ends.append(tend)
         return {'odd_cells': odd_cells,
                 'pop_ibi': (starts, ends)}
 
@@ -470,12 +475,18 @@ class TraubData(object):
         synapses = self.fnet['/network/synapse']
         pre_cells = [row[0] for row in np.char.split(synapses['source'], '/')]
         post_cells = [row[0] for row in np.char.split(synapses['dest'], '/')]
-        weights = [g for g in synapses['Gbar']]
+        weights = [g for g in synapses['Gbar']]        
         self.cell_graph.add_weighted_edges_from(zip(pre_cells, post_cells, weights))
+        index = 0
+        for e in self.cell_graph.edges_iter(data=True):
+            e[2]['type'] = synapses['type'][index]
+            index += 1
         for cell in self.cell_graph:
             celltype = cell.split('_')[0]
             self.cell_graph.node[cell]['color'] = self.colordict[celltype]
         return self.cell_graph
+
+        
 
             
             

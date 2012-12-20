@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec 19 21:17:36 2012 (+0530)
+# Last-Updated: Thu Dec 20 17:34:41 2012 (+0530)
 #           By: subha
-#     Update #: 349
+#     Update #: 575
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -29,6 +29,7 @@
 
 # Code:
 
+import random
 import numpy as np
 from collections import defaultdict
 from matplotlib import pyplot as plt
@@ -41,10 +42,11 @@ from savitzkygolay import savgol
 import util        
 import networkx as nx
 
-if __name__ == '__main__':
-    colordict = util.load_celltype_colors()
-    data = TraubData('/data/subha/rsync_ghevar_cortical_data_clone/2012_11_07/data_20121107_100729_29479.h5')
-    cats = data.get_pop_ibi('SpinyStellate')
+def draw_spinstell_hits_graph(data, burst_cats):
+    """Draw spiny stellate cells with labels as HITS authority/hub
+    value.  'odd_cells' in burst_cats dict are displayed in cyan,
+    others in purple.
+    """
     graph = data.get_cell_graph()
     spinstell_count = dict(zip(data.fnet['/network/celltype']['name'], data.fnet['/network/celltype']['count']))['SpinyStellate']
     print spinstell_count
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     g2 = g1.subgraph(['SpinyStellate_%d' % (idx) for idx in range(spinstell_count)])
     node_colors = []
     for node in g2.nodes():
-        if node in cats['odd_cells']:
+        if node in burst_cats['odd_cells']:
             node_colors.append('cyan')
         else:
             node_colors.append(colordict[node.split('_')[0]])
@@ -67,8 +69,129 @@ if __name__ == '__main__':
     nodes =nx.draw_networkx_nodes(g2, pos=layout, node_color=node_colors)
     labels = nx.draw_networkx_labels(g2, pos=layout, labels=dict([(cell, hubs[cell]) for cell in g2.nodes()]))
     plt.show()
-    # nx.draw_graphviz(graph, node_color=[graph.node[cell]['color'] for cell in graph.nodes()])
-    # plt.show()
+
+def plot_with_marker(data, cells, marker, startindex=0, timerange=(0, 1e9)):
+    for cell in cells:
+        spikes = data.spikes[cell]
+        spikes = spikes[(spikes >= timerange[0]) & (spikes < timerange[1])].copy()
+        plt.plot(spikes, np.ones(len(spikes)) * startindex, marker)
+        startindex += 1
+    return startindex
+    
+def plot_burst_intervals(data, timerange=(0, 1e9)):
+    cats = data.get_pop_ibi('SpinyStellate', timerange=timerange)
+    cells = [ss for ss in data.spikes.keys() if ss.startswith('Spiny')]
+    odd_cells = set(cats['odd_cells'])
+    good_cells = set(cells) - odd_cells
+    index = 1
+    index = plot_with_marker(data, good_cells, 'b+', index, timerange)
+    index = plot_with_marker(data, odd_cells, 'c+', index, timerange)
+    ibi_start, ibi_end, = cats['pop_ibi']
+    print ibi_end
+    plt.bar(ibi_start, 
+            height=np.ones(len(ibi_start))*index,
+            width=np.array(np.array(ibi_end) - np.array(ibi_start)),
+            alpha=0.2)
+
+def plot_odd_cells_net(data):
+    cats = data.get_pop_ibi('SpinyStellate')
+    odd_cells = set(cats['odd_cells'])
+    cells = set([ss for ss in data.spikes.keys() if ss.startswith('SpinyStellate')])
+    good_cells = cells - odd_cells
+    good_cells = random.sample(good_cells, len(odd_cells))
+    net = data.get_cell_graph()
+    cmap = plt.cm.PuOr
+    emax = max(data.fnet['/network/synapse']['Gbar'])
+    for good, bad in zip(good_cells, odd_cells):        
+        goodsub = net.subgraph([good] + net.predecessors(good)).copy()
+        for b in odd_cells:
+            if goodsub.has_node(b):
+                goodsub.node[b]['color'] = 'cyan'
+        goodsub.node[good]['color'] = 'red'
+        plt.subplot(121)
+        nx.draw_graphviz(goodsub, with_labels=False, node_color=[goodsub.node[n]['color'] for n in goodsub.nodes()],
+                       edge_color=[cmap(edge[2]['weight']/emax) for edge in goodsub.edges(data=True)],
+                       alpha=0.5)
+        badsub = net.subgraph([bad] + net.predecessors(bad)).copy()
+        for b in odd_cells:
+            if badsub.has_node(b):
+                badsub.node[b]['color'] = 'cyan'
+        badsub.node[bad]['color'] = 'red'
+        plt.subplot(122)
+        nx.draw_graphviz(badsub, with_labels=False, node_color=[badsub.node[n]['color'] for n in badsub.nodes()],
+                       edge_color=[cmap(edge[2]['weight']/emax) for edge in badsub.edges(data=True)],
+                       alpha=0.5)        
+        plt.show()
+        
+def plot_burst_intervals_in_datalist(datalist):        
+    for data in datalist:
+        plot_burst_intervals(data)
+        spin_stell_count = int(dict(data.fdata['runconfig/cellcount'])['SpinyStellate'])
+        stim_times = data.get_bgstim_times()
+        value = np.ones(len(stim_times)) * spin_stell_count
+        plt.plot(stim_times,value , 'gv')
+        plt.show()
+
+def compare_oddcell_nets_from_datalist(datalist):
+    for data in datalist:
+        plot_odd_cells(data)
+
+def plot_conn_strengths(data):
+    ibi = data.get_pop_ibi('SpinyStellate')
+    odd_cells = list(ibi['odd_cells'])
+    cells = [ss for ss in data.spikes.keys() if ss.startswith('Spin')]
+    good_cells = list(set(cells) - set(odd_cells))
+    post_cell = [dest.split('_')[0] for dest in data.fnet['/network/synapse']['dest']]
+    ampa = defaultdict(float)
+    gaba = defaultdict(float)
+    nmda = defaultdict(float)
+    # collect total incoming synaptic conductances to each cell
+    # for each synapse type
+    synapse = data.fnet['/network/synapse']
+    ampa_idx = np.nonzero(synapse['type'] == 'ampa')[0]
+    ampa_dests = [dest[0] for dest in np.char.split(synapse['dest'][ampa_idx], '/')]
+    ampa_weights = synapse['Gbar'][ampa_idx].copy()
+    for d, w in zip(ampa_dests, ampa_weights):
+        ampa[d] += w
+    nmda_idx = np.nonzero(synapse['type'] == 'nmda')[0]
+    nmda_dests = [dest[0] for dest in np.char.split(synapse['dest'][nmda_idx], '/')]
+    nmda_weights = synapse['Gbar'][nmda_idx].copy()
+    for d, w in zip(nmda_dests, nmda_weights):
+        nmda[d] += w
+    gaba_idx = np.nonzero(synapse['type'] == 'gaba')[0]
+    gaba_dests = [dest[0] for dest in np.char.split(synapse['dest'][gaba_idx], '/')]
+    gaba_weights = synapse['Gbar'][gaba_idx].copy()
+    for d, w in zip(gaba_dests, gaba_weights):
+        gaba[d] += w
+    ampa_list = [ampa[cell] for cell in odd_cells + good_cells]
+    nmda_list = [nmda[cell] for cell in odd_cells + good_cells]
+    gaba_list = [gaba[cell] for cell in odd_cells + good_cells]
+    x1 = np.arange(len(odd_cells))
+    x2 = np.arange(len(odd_cells), len(cells), 1)
+
+    print len(cells), len(good_cells), len(odd_cells)
+    print len(set(odd_cells))
+    plt.plot(x1, ampa_list[:len(odd_cells)], 'gx', label='AMPA - odd cells')
+    plt.plot(x2, ampa_list[len(odd_cells):], 'g+', label='AMPA - normal cells')
+    plt.plot(np.arange(len(odd_cells)), nmda_list[:len(odd_cells)], 'bx', label='NMDA - odd cells')
+    plt.plot(np.arange(len(odd_cells), len(cells)), nmda_list[len(odd_cells):], 'b+', label='NMDA - normal cells')
+    plt.plot(np.arange(len(odd_cells)), gaba_list[:len(odd_cells)], 'rx', label='GABA - odd cells')
+    plt.plot(np.arange(len(odd_cells), len(cells)), gaba_list[len(odd_cells):], 'r+', label='GABA - normal cells')
+    plt.legend()
+    plt.show()
+
+if __name__ == '__main__':
+    colordict = util.load_celltype_colors()
+    datalist = []
+    with open('exc_inh_files.txt') as flistfile:
+        for line in flistfile:
+            fname = line.strip()
+            if fname.startswith('#') or len(fname) == 0:
+                continue
+            data = TraubData(fname)
+            # plot_odd_cells_net(data)
+            plot_conn_strengths(data)
+
 
 
     # synapses = data.fnet['/network/synapse']
