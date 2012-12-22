@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Dec 22 20:59:04 2012 (+0530)
+# Last-Updated: Sat Dec 22 21:31:01 2012 (+0530)
 #           By: subha
-#     Update #: 656
+#     Update #: 681
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -181,36 +181,90 @@ def plot_conn_strengths(data):
     plt.show()
 
 from scipy.cluster.vq import whiten, kmeans2
-def clustering_on_conductance(data, celltype):
-    """Do a clustering based on various channel conductances in soma"""
+
+def get_chan_density(data, celltype, compartment):
+    """Get the channel density matrix for cells of type cell type.
+
+    Returns a 3-tuple: (cells, channels, G)
+
+    where cells is list of cells
+
+    channels is list of channels
+
+    G is an len(cells)xlen(channels) array where G[i][j] is Gbar of
+    channels[j] of cell[i] in `compartment`.
+
+    """
     hhchaninfo = np.asarray(data.fnet['/network/hhchan'])    
     cell_pattern = '/model/net/%s_' % (celltype)    
-    print cell_pattern
-    print hhchaninfo['f0']
     indices = np.char.startswith(hhchaninfo['f0'], cell_pattern)
-    print indices
     ss_data = hhchaninfo[indices].copy()
-    soma_indices = np.nonzero(np.char.rfind(ss_data['f0'], '/comp_1/') != -1)[0] # Get the indices containing soma data
+    soma_indices = np.nonzero(np.char.rfind(ss_data['f0'], '/%s/' % (compartment)) != -1)[0] # Get the indices containing soma data
     ss_data = ss_data[soma_indices].copy()
     # token[0] is '', token[1] is 'model', token[2] is 'net', token[3] is cell name, last token is channel name, the compartment is already soma    
     ss_gk = defaultdict(lambda : defaultdict(float))
     channels = {}
     for index, token in enumerate(np.char.split(ss_data['f0'], '/')):
-        print token
         ss_gk[token[3]][token[-1]] = ss_data['f1'][index]
         if token[-1] not in channels:
             channels[token[-1]] = True
     numcells = len(ss_gk)
-    print numcells, channels
     data_array = np.zeros((numcells, len(channels)))
-    print data_array.shape
     for cidx, d in enumerate(ss_gk.values()):
         for chidx, chan in enumerate(channels):
             data_array[cidx, chidx] = d[chan]
+    return ss_gk.keys(), channels.keys(), data_array
+    
+
+def clustering_on_conductance(data, celltype):
+    """Do a clustering based on various channel conductances in soma"""
+    cells, channels, data_array = get_chan_density(data, celltype, 'comp_1')
     whitened = whiten(data_array)
     centroid, labels = kmeans2(whitened, 20)
     plt.plot(np.arange(len(labels)), labels, 'x')
     plt.show()
+
+
+from sklearn.cluster import AffinityPropagation
+from sklearn import metrics
+def do_affinity_cluster_on_somatic_density(data, celltype):
+    cells, channels, data_array = get_chan_density(data, celltype, 'comp_1')
+    af = AffinityPropagation().fit(data_array)
+    cluster_centers_indices = af.cluster_centers_indices_
+    labels = af.labels_    
+    n_clusters_ = len(cluster_centers_indices)    
+    print 'Estimated number of clusters: %d' % n_clusters_
+    # print "Homogeneity: %0.3f" % metrics.homogeneity_score(labels_true, labels)
+    # print "Completeness: %0.3f" % metrics.completeness_score(labels_true, labels)
+    # print "V-measure: %0.3f" % metrics.v_measure_score(labels_true, labels)
+    # print "Adjusted Rand Index: %0.3f" % \
+    #     metrics.adjusted_rand_score(labels_true, labels)
+    # print "Adjusted Mutual Information: %0.3f" % \
+    #     metrics.adjusted_mutual_info_score(labels_true, labels)
+    print ("Silhouette Coefficient: %0.3f" %
+            metrics.silhouette_score(data_array, labels, metric='sqeuclidean'))
+
+    ##############################################################################
+    # Plot result
+    import pylab as pl
+    from itertools import cycle
+
+    pl.close('all')
+    pl.figure(1)
+    pl.clf()
+
+    colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+    for k, col in zip(range(n_clusters_), colors):
+        class_members = labels == k
+        cluster_center = data_array[cluster_centers_indices[k]]
+        pl.plot(data_array[class_members, 0], data_array[class_members, 1], col + '.')
+        pl.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col,
+                markeredgecolor='k', markersize=14)
+        for x in data_array[class_members]:
+            pl.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+
+    pl.title('Estimated number of clusters: %d' % n_clusters_)
+    pl.show()
         
 
 if __name__ == '__main__':
@@ -224,8 +278,8 @@ if __name__ == '__main__':
             data = TraubData(fname)
             # plot_odd_cells_net(data)
             # plot_conn_strengths(data)
-            clustering_on_conductance(data, 'SpinyStellate')
-
+            # clustering_on_conductance(data, 'SpinyStellate')
+            do_affinity_cluster_on_somatic_density(data, 'SpinyStellate')
 
 
     # synapses = data.fnet['/network/synapse']
