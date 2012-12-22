@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Dec 22 20:18:35 2012 (+0530)
+# Last-Updated: Sat Dec 22 20:59:04 2012 (+0530)
 #           By: subha
-#     Update #: 647
+#     Update #: 656
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -192,21 +192,23 @@ def clustering_on_conductance(data, celltype):
     ss_data = hhchaninfo[indices].copy()
     soma_indices = np.nonzero(np.char.rfind(ss_data['f0'], '/comp_1/') != -1)[0] # Get the indices containing soma data
     ss_data = ss_data[soma_indices].copy()
-    # token[2] is cell name, last token is channel name, the compartment is already soma    
+    # token[0] is '', token[1] is 'model', token[2] is 'net', token[3] is cell name, last token is channel name, the compartment is already soma    
     ss_gk = defaultdict(lambda : defaultdict(float))
     channels = {}
     for index, token in enumerate(np.char.split(ss_data['f0'], '/')):
-        ss_gk[token[2]][token[-1]] = ss_data['f1'][index]
+        print token
+        ss_gk[token[3]][token[-1]] = ss_data['f1'][index]
         if token[-1] not in channels:
             channels[token[-1]] = True
     numcells = len(ss_gk)
     print numcells, channels
     data_array = np.zeros((numcells, len(channels)))
+    print data_array.shape
     for cidx, d in enumerate(ss_gk.values()):
         for chidx, chan in enumerate(channels):
             data_array[cidx, chidx] = d[chan]
     whitened = whiten(data_array)
-    centroid, labels = kmeans2(whitened, 2)
+    centroid, labels = kmeans2(whitened, 20)
     plt.plot(np.arange(len(labels)), labels, 'x')
     plt.show()
         
