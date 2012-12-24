@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Dec 22 21:31:01 2012 (+0530)
+# Last-Updated: Mon Dec 24 10:15:59 2012 (+0530)
 #           By: subha
-#     Update #: 681
+#     Update #: 750
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -227,44 +227,61 @@ def clustering_on_conductance(data, celltype):
 
 from sklearn.cluster import AffinityPropagation
 from sklearn import metrics
+from itertools import combinations, cycle
 def do_affinity_cluster_on_somatic_density(data, celltype):
+    # I am getting the odd cells for comparing with each cluster
+    cats = data.get_pop_ibi('SpinyStellate')
+    odd_cells = set(cats['odd_cells'])    
+    # till here - is not really necessary
     cells, channels, data_array = get_chan_density(data, celltype, 'comp_1')
-    af = AffinityPropagation().fit(data_array)
-    cluster_centers_indices = af.cluster_centers_indices_
-    labels = af.labels_    
-    n_clusters_ = len(cluster_centers_indices)    
-    print 'Estimated number of clusters: %d' % n_clusters_
-    # print "Homogeneity: %0.3f" % metrics.homogeneity_score(labels_true, labels)
-    # print "Completeness: %0.3f" % metrics.completeness_score(labels_true, labels)
-    # print "V-measure: %0.3f" % metrics.v_measure_score(labels_true, labels)
-    # print "Adjusted Rand Index: %0.3f" % \
-    #     metrics.adjusted_rand_score(labels_true, labels)
-    # print "Adjusted Mutual Information: %0.3f" % \
-    #     metrics.adjusted_mutual_info_score(labels_true, labels)
-    print ("Silhouette Coefficient: %0.3f" %
-            metrics.silhouette_score(data_array, labels, metric='sqeuclidean'))
+    max_odd_overlap = 0
+    max_odd_combo = None
+    for r in range(2, data_array.shape[1]):
+        it = combinations(range(data_array.shape[1]), r)
+        for ii in it:
+            sub_array = data_array[:, ii]
+            af = AffinityPropagation().fit(sub_array)
+            cluster_centers_indices = af.cluster_centers_indices_
+            labels = af.labels_    
+            n_clusters_ = len(cluster_centers_indices)   
+            labeled_cells = defaultdict(list)
+            for idx, ll in enumerate(labels):
+                labeled_cells[ll].append(cells[idx])
+            print 'Overlap with odd cells:'
+            for ll, cl in labeled_cells.items():
+                overlap = set(cl).intersection(odd_cells)
+                print 'label: %d: %d out of %d in cluster and %d in odd_cells' % (ll, len(overlap),
+                                                                       len(cl),
+                                                                       len(odd_cells))
+                if len(overlap) > max_odd_overlap:
+                    max_odd_overlap = len(overlap)
+                    max_odd_combo = [channels[jj] for jj in ii]
+            print 'Estimated number of clusters: %d' % n_clusters_
+            print ("Silhouette Coefficient: %0.3f" %
+                   metrics.silhouette_score(data_array, labels, metric='sqeuclidean'))
+            # import pylab as pl
+            # pl.close('all')
+            # pl.figure(1)
+            # pl.clf()
 
-    ##############################################################################
-    # Plot result
-    import pylab as pl
-    from itertools import cycle
-
-    pl.close('all')
-    pl.figure(1)
-    pl.clf()
-
-    colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
-    for k, col in zip(range(n_clusters_), colors):
-        class_members = labels == k
-        cluster_center = data_array[cluster_centers_indices[k]]
-        pl.plot(data_array[class_members, 0], data_array[class_members, 1], col + '.')
-        pl.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col,
-                markeredgecolor='k', markersize=14)
-        for x in data_array[class_members]:
-            pl.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
-
-    pl.title('Estimated number of clusters: %d' % n_clusters_)
-    pl.show()
+            # colors = cycle('bgrcmykbgrcmykbgrcmykbgrcmyk')
+            # for k, col in zip(range(n_clusters_), colors):
+            #     class_members = labels == k
+            #     cluster_center = sub_array[cluster_centers_indices[k]]
+            #     pl.plot(sub_array[class_members, 0], sub_array[class_members, 1], col + '.')
+            #     pl.plot(cluster_center[0], cluster_center[1], 'o', markerfacecolor=col,
+            #             markeredgecolor='k', markersize=14)
+            #     for x in sub_array[class_members]:
+            #         pl.plot([cluster_center[0], x[0]], [cluster_center[1], x[1]], col)
+            # title = 'Estimated number of clusters: %d\nParameters:' % (n_clusters_)
+            # for jj in ii:
+            #     title += channels[jj] + ','
+            # pl.title(title)
+            # pl.show()
+    print data.fdata.filename
+    print 'No of odd cells:', len(odd_cells)
+    print 'Maximum overlap with odd cells:', max_odd_overlap, 'for channels:', max_odd_combo
+    return labeled_cells
         
 
 if __name__ == '__main__':
@@ -279,7 +296,13 @@ if __name__ == '__main__':
             # plot_odd_cells_net(data)
             # plot_conn_strengths(data)
             # clustering_on_conductance(data, 'SpinyStellate')
-            do_affinity_cluster_on_somatic_density(data, 'SpinyStellate')
+            labeled_cells = do_affinity_cluster_on_somatic_density(data, 'SpinyStellate')
+            # cats = data.get_pop_ibi('SpinyStellate')
+            # odd_cells = set(cats['odd_cells'])
+            # print 'No of odd cells:', len(odd_cells)
+            # for label, cells in labeled_cells.items():
+            #     print label, len(set(cells).intersection(odd_cells))
+                
 
 
     # synapses = data.fnet['/network/synapse']
