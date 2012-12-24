@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Dec 20 16:49:21 2012 (+0530)
+# Last-Updated: Mon Dec 24 17:09:54 2012 (+0530)
 #           By: subha
-#     Update #: 686
+#     Update #: 708
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -467,6 +467,44 @@ class TraubData(object):
             ends.append(tend)
         return {'odd_cells': odd_cells,
                 'pop_ibi': (starts, ends)}
+
+    def get_pop_spike_hist(self, celltype, binsize=5e-3, timerange=(0, 1e9)):
+        """Calculate the population spike histogram.
+
+        celltype: string representing cell type or a list of
+        individual cell names
+
+        binsize: size of histogram bins (5 ms default)
+
+        timerange: tuple (start, end) the time range of simulation to
+        be histogrammed.
+
+        Returns: (cells, hist, bins) - where cells is the list of
+        cells we histogrammed for, hist is the histogram of spike
+        counts in each bin normalized by the product of bin size and
+        cell count, hence number of spikes per second per cell in each
+        bin and bins is an array containing bin boundaries.
+
+        """
+        cells = []
+        if isinstance(celltype, str):
+            cells = [cell for cell in self.spikes.keys() if cell.startswith(celltype)]
+        tstart = 0
+        tend = self.simtime
+        if timerange[0] > tstart:
+            tstart = timerange[0]
+        if timerange[1] < tend:
+            tend = timerange[1]
+        assert(tstart < tend)
+        spikes = []
+        for cell in cells:
+            spikes = np.r_[spikes, self.spikes[cell]]        
+        bins = np.arange(tstart, tend, binsize)
+        if bins[-1] < tend:
+            bins = np.r_[bins, tend]
+        hist, bins = np.histogram(spikes, bins)
+        hist /= (bins * len(cells)) # Normalize to per cell per second
+        return cells, hist, bins
 
     def get_cell_graph(self):
         if hasattr(self, 'cell_graph'):
