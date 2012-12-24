@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Dec 12 11:43:23 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Dec 24 10:15:59 2012 (+0530)
+# Last-Updated: Mon Dec 24 21:24:34 2012 (+0530)
 #           By: subha
-#     Update #: 750
+#     Update #: 762
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -224,6 +224,14 @@ def clustering_on_conductance(data, celltype):
     plt.plot(np.arange(len(labels)), labels, 'x')
     plt.show()
 
+def plot_pop_spike_hist(data):
+    bgtimes = data.get_bgstim_times()
+    cells, hist, bins = data.get_pop_spike_hist('SpinyStellate')
+    plt.bar(bins[:-1], hist, np.ones(len(hist)) * (bins[1] - bins[0]), linewidth=0)
+    plt.plot(bgtimes, -np.ones(len(bgtimes)), 'g^')
+    plt.title('%s: %s' % (data.fdata.filename, dict(data.fdata['/runconfig/stimulus'])['bg_count']))
+    plt.show()
+
 
 from sklearn.cluster import AffinityPropagation
 from sklearn import metrics
@@ -287,21 +295,13 @@ def do_affinity_cluster_on_somatic_density(data, celltype):
 if __name__ == '__main__':
     colordict = util.load_celltype_colors()
     datalist = []
-    with open('exc_inh_files.txt') as flistfile:
+    with open('exc_inh_stim_balance_20121224.txt') as flistfile:
         for line in flistfile:
             fname = line.strip()
             if fname.startswith('#') or len(fname) == 0:
                 continue
             data = TraubData(fname)
-            # plot_odd_cells_net(data)
-            # plot_conn_strengths(data)
-            # clustering_on_conductance(data, 'SpinyStellate')
-            labeled_cells = do_affinity_cluster_on_somatic_density(data, 'SpinyStellate')
-            # cats = data.get_pop_ibi('SpinyStellate')
-            # odd_cells = set(cats['odd_cells'])
-            # print 'No of odd cells:', len(odd_cells)
-            # for label, cells in labeled_cells.items():
-            #     print label, len(set(cells).intersection(odd_cells))
+            plot_pop_spike_hist(data)
                 
 
 

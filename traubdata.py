@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Dec 24 17:09:54 2012 (+0530)
+# Last-Updated: Mon Dec 24 21:18:33 2012 (+0530)
 #           By: subha
-#     Update #: 708
+#     Update #: 709
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -503,7 +503,7 @@ class TraubData(object):
         if bins[-1] < tend:
             bins = np.r_[bins, tend]
         hist, bins = np.histogram(spikes, bins)
-        hist /= (bins * len(cells)) # Normalize to per cell per second
+        hist /= (binsize * len(cells)) # Normalize to per cell per second
         return cells, hist, bins
 
     def get_cell_graph(self):
