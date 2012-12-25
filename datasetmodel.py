@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed May 16 10:57:05 2012 (+0530)
 # Version: 
-# Last-Updated: Fri May 18 15:12:54 2012 (+0530)
+# Last-Updated: Tue Dec 25 15:34:00 2012 (+0530)
 #           By: subha
-#     Update #: 242
+#     Update #: 264
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -33,39 +33,16 @@ import h5py
 from PyQt4 import QtGui, QtCore, Qt
 
 class HDFDatasetModel(QtCore.QAbstractTableModel):
-    """Custom data mode for interfacing to large datasets in HDF5. It
-    keeps a local view of the dataset for quick access. Whenever some
-    index outside the cache is requested, the cache is updated with
-    eows around that index in the centre."""
+    """Custom data mode for interfacing to large datasets in HDF5.
+    
+    2012-12-25: removing the caching because h5py alreadt does that.
+
+    """
     def __init__(self, *args, **kwargs):
         QtCore.QAbstractTableModel.__init__(self, *args, **kwargs)
-        self._dset = [] # HDF5 dataset
-        self._cache = [] # data cache
-        self._cacheStartIndex = 0
-        # cache these many rows before and after the current index.
-        self._cacheSize = 4001
 
     def setDataset(self, node):
-        self._dset = node
-        self._cacheData(0)
-
-    def _cacheData(self, start):
-        # if cache is not smaller than dataset or current cache is
-        # valid, then do nothing.
-        if len(self._cache) >= len(self._dset) or \
-               (self._cacheStartIndex == start and len(self._cache) > 0):
-            return
-        if start >= len(self._dset) or start < 0:
-            start = 0
-        end = start + self._cacheSize
-        if end > self._dset.shape[0]:
-            end = self._dset.shape[0]        
-        self._cache = self._dset[start:end]
-        if (self._dset.dtype.names is None) and \
-               (len(self._dset.shape) > 1):
-            fields = [('f%d' % (i), self._dset.dtype.name) for i in range(self._dset.shape[1])]
-            self._cache = numpy.rec.fromarrays(self._cache.transpose(), fields)
-        self._cacheStartIndex = start
+        self._dset = numpy.asarray(node)
         
     def data(self, index, role):
         if role != Qt.Qt.DisplayRole:
@@ -75,16 +52,13 @@ class HDFDatasetModel(QtCore.QAbstractTableModel):
         row = index.row()
         if row < 0 or row >= self._dset.shape[0]:
             return QtCore.QVariant()
-        if row < self._cacheStartIndex or row >= self._cacheStartIndex + self._cacheSize:
-            self._cacheData(row - (self._cacheSize-1)/2)
-        _row = row - self._cacheStartIndex
         colcnt = self.columnCount(QtCore.QModelIndex())
         if index.column() >= colcnt or colcnt < 1:
             return QtCore.QVariant()
         elif colcnt == 1:
-            _data = self._cache[_row]
+            _data = self._dset[row]
         elif colcnt > 1:            
-            _data = self._cache[_row][index.column()]
+            _data = self._dset[row][index.column()]
         return QtCore.QVariant(str(_data))
 
     def headerData(self, section, orientation, role):
@@ -113,17 +87,13 @@ class HDFDatasetModel(QtCore.QAbstractTableModel):
         return self._dset.shape[1]
 
     def sort(self, ncol, order):
-        print 'About to sort'
         self.emit(QtCore.SIGNAL('layoutAboutToBeChanged()'))
-        self._cacheSize = self._dset.shape[0]
-        self._cacheData(0)
         field=None
-        if self._cache.dtype.names:
-            field = self._cache.dtype.names[ncol]
-        print 'Sorting by field', field
-        self._cache.sort(order=field)
+        if self._dset.dtype.names:
+            field = self._dset.dtype.names[ncol]
+        self._dset.sort(order=field)
         if order == Qt.Qt.DescendingOrder:
-            self._cache = self._cache[::-1]
+            self._dset = self._dset[::-1]
         self.emit(QtCore.SIGNAL('layoutChanged()'))
     
 def test_main():
