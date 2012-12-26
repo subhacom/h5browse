@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Mon Dec 24 21:18:33 2012 (+0530)
+# Last-Updated: Wed Dec 26 12:40:02 2012 (+0530)
 #           By: subha
-#     Update #: 709
+#     Update #: 754
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -329,7 +329,7 @@ class TraubData(object):
             bursts = get_bursts(spikes, mincount, maxisi)  
             if not bursts.shape or bursts.shape[0] == 0:
                 continue
-            burst_dict[cell]
+            burst_dict[cell] = bursts
         return burst_dict
 
     def get_bursting_cells_hist(self, celltype, timerange=(0,1e9), binsize=100e-3, mincount=3, maxisi=15e-3):
@@ -529,21 +529,57 @@ class TraubData(object):
             
             
 def get_bursts(spikes, mincount=3, maxisi=15e-3):
+    """Get a 2-column array for bursts from spikes.
+    
+    column 0: index of spike starting a burst.
+    column 1: length of burst in number of spikes.
+
+    """
     if len(spikes) < mincount:
         return np.array(0)
     ISI = np.diff(spikes)
     ISI_limit = np.diff(np.where(ISI < maxisi, 1, 0))
     begin_int = np.nonzero(ISI_limit == 1)[0] + 1
+    # Handle the start of spike train
     if ISI[0] < maxisi:
         begin_int = np.r_[0, begin_int]
+    if not begin_int.shape or begin_int.shape[0] == 0:
+        return np.array([])
+    # end_int contains the index of the last spikes in a train
     end_int = np.nonzero(ISI_limit == -1)[0] + 1
+    # Handle the end of the spike train
     if len(end_int) < len(begin_int):
-        end_int = np.r_[end_int, len(ISI)-1]
-    return np.asarray([(start, end - start + 1) \
-                                       for start, end in zip(begin_int, end_int) \
-                                       if end - start + 1 >= mincount-1], dtype=int)
+        end_int = np.r_[end_int, len(ISI)]
+    ret = np.c_[begin_int, end_int - begin_int + 1]
+    return ret[ret[:,1] >= mincount].copy()
                            
         
+def test_get_bursts():
+    flist = []
+    with open('exc_inh_files.txt') as flistfile:
+        for line in flistfile:
+            fname = line.strip()
+            if len(fname) == 0 or fname.startswith('#'):
+                continue
+            flist.append(fname)
+    # Take some random datasets
+    flist = random.sample(flist, 10)
+    datalist = [TraubData(fname) for fname in flist]
+    for data in datalist:
+        tstart = random.uniform(0, data.simtime - 1.0)        
+        tend = tstart + 1.0
+        trains = random.sample([data.spikes[cell] for cell in data.spikes.keys() if cell.startswith('SpinyStellate')], 5)
+        trains = [tr[(tr >= tstart) & (tr < tend)] for tr in trains]
+        for idx, spiketrain in enumerate(trains):
+            bursts = get_bursts(spiketrain, maxisi=30e-3)
+            if not bursts.shape or bursts.shape[0] == 0:
+                continue
+            plt.plot(spiketrain, np.ones(len(spiketrain))*idx, 'b+')
+            plt.plot(spiketrain[bursts[:,0]], np.ones(len(bursts))*idx, 'gx')
+            plt.plot(spiketrain[np.sum(bursts, axis=1)-1], np.ones(len(bursts))*idx, 'rx')
+        plt.show()
+        plt.close()
+    
 
 def test_get_burstidx_dict():
     """Test the get_bursts function. Select five random data file and
@@ -565,7 +601,7 @@ def test_get_burstidx_dict():
     for data in datalist:
         tstart = random.uniform(0, data.simtime - 1.0)        
         tend = tstart + 1.0        
-        b = data.get_burstidx_dict('SpinyStellate', timerange=(tstart,  tend))
+        b = data.get_burstidx_dict('SpinyStellate', timerange=(tstart,  tend), maxisi=30e-3)
         # Select a few random bursts
         cells = random.sample(b.keys(), 3)
         print tstart, tend, cells
@@ -656,8 +692,9 @@ from matplotlib import pyplot as plt
 
 if __name__ == '__main__':
     # for testing
+    test_get_bursts()
     # test_get_burstidx_dict()
     # test_get_pop_burst_categories()
-    test_pop_ibi()
+    # test_pop_ibi()
 # 
 # traubdata.py ends here
