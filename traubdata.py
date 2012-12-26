@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec 26 12:40:02 2012 (+0530)
+# Last-Updated: Wed Dec 26 16:15:32 2012 (+0530)
 #           By: subha
-#     Update #: 754
+#     Update #: 758
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -238,12 +238,12 @@ class TraubData(object):
         tstart = 0
         if timerange[0] > tstart:
             tstart = timerange[0]
-        tend = data.simtime
+        tend = self.simtime
         if timerange[1] < tend:
             tend  = timerange[1]
         assert(tend > tstart)
         cells = np.asarray(self.spikes.keys())
-        cells = cells[np.char.startswith(celltype)]
+        cells = cells[np.char.startswith(cells, celltype)]
         bins = np.arange(tstart, tend, binsize)
         # Get the histograms of spikes for each cell
         histlist = [np.histogram(self.spikes[cell], bins)[0] for cell in cells]
@@ -438,16 +438,14 @@ class TraubData(object):
         odd_cells = set()
         starts = []
         ends = []
-        # TODO: select the odd cells more carefully ... most cells are
-        # turning out to be odd cells
         for cat in categories:
             if len(cat) * 1.0 / len(cells) < pop_frac:
                 odd_cells.update([entry[0] for entry in cat])
                 continue
             # compute the centre of the population bursts
-            mean = np.mean([entry[1:] for entry in cat])
+            # mean = np.mean([entry[1:] for entry in cat])
             # Compute the width of the population bursts
-            sd = np.std([entry[1:] for entry in cat])
+            # sd = np.std([entry[1:] for entry in cat])
             ends.append(cat[0][1])
             starts.append(max([entry[2] for entry in cat]))                    
             # plt.plot([starts[-1], mean, ends[-1]], [1.0, 1.0, 1.0], 'kx')
