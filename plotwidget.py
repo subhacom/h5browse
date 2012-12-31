@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Fri Jul  6 12:11:07 2012 (+0530)
+# Last-Updated: Thu Dec 27 09:56:50 2012 (+0530)
 #           By: subha
-#     Update #: 1217
+#     Update #: 1219
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -479,7 +479,7 @@ class PlotWidget(Qwt.QwtPlot):
             curve.setTitle(curvename)
             if mode == 'raster':
                 curve.setStyle(curve.NoCurve)
-                curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.VLine, Qt.QBrush(), pen, Qt.QSize(7,7)))
+                curve.setSymbol(Qwt.QwtSymbol(Qwt.QwtSymbol.VLine, Qt.QBrush(), pen, Qt.QSize(1,3)))
                 # n-th entry in data list to be plotted at y = n+1 (counting from 0)
                 if (isinstance(data, tuple) or isinstance(data, list)) and len(data) == 2:
                     curve.setData(data[1], numpy.ones(len(data[1])) * (1 + len(self.path_curve_dict.keys())))

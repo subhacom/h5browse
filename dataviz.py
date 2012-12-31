@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Sat Jul 28 10:15:50 2012 (+0530)
+# Last-Updated: Mon Dec 31 12:09:15 2012 (+0530)
 #           By: subha
-#     Update #: 3587
+#     Update #: 3610
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -153,6 +153,7 @@ class DataVizWidget(QtGui.QMainWindow):
         self.dataList.setSelectionMode(self.dataList.ExtendedSelection)
         self.dataList.setContextMenuPolicy(Qt.Qt.CustomContextMenu)        
         self.rightDock.setWidget(self.dataList)
+        self.rightDock.hide()
         self.setCentralWidget(self.mdiArea)
         self.setStatusBar(QtGui.QStatusBar())
         self.windowMapper = QtCore.QSignalMapper(self)
@@ -458,8 +459,12 @@ class DataVizWidget(QtGui.QMainWindow):
 
         self.displayDataAction = QtGui.QAction('Display data', self)
         self.connect(self.displayDataAction, QtCore.SIGNAL('triggered()'), self.__displayCurrentlySelectedItemData)
-
-        # Actions for Window menu
+        
+        # Actions for View menu
+        self.toggleLeftDockAction = QtGui.QAction('Left dock', self)
+        self.toggleLeftDockAction.setCheckable(True)
+        self.toggleLeftDockAction.setChecked(True)
+        self.connect(self.toggleLeftDockAction, QtCore.SIGNAL('toggled(bool)'), self.leftDock.setVisible)
         self.closeActiveSubwindowAction = QtGui.QAction('Close current Window', self)
         self.connect(self.closeActiveSubwindowAction, QtCore.SIGNAL('triggered()'), self.mdiArea.closeActiveSubWindow)
         self.closeAllAction = QtGui.QAction('Close All Windows', self)
@@ -481,14 +486,14 @@ class DataVizWidget(QtGui.QMainWindow):
         self.fileMenu.addAction(self.savePlotAction)
         self.fileMenu.addAction(self.saveScreenshotAction)
         self.fileMenu.addAction(self.quitAction)
-        self.windowMenu = self.menuBar().addMenu('&Window')
-        self.windowMenu.addAction(self.closeActiveSubwindowAction)
-        self.windowMenu.addAction(self.closeAllAction)
-        self.windowMenu.addAction(self.switchMdiViewAction)
-        self.windowMenu.addAction(self.cascadeAction)
-        self.windowMenu.addAction(self.tileAction)
-        
-        self.connect(self.windowMenu, QtCore.SIGNAL('aboutToShow()'), self.__updateWindowMenu)
+        self.viewMenu = self.menuBar().addMenu('&View')
+        self.viewMenu.addAction(self.toggleLeftDockAction)
+        self.viewMenu.addAction(self.closeActiveSubwindowAction)
+        self.viewMenu.addAction(self.closeAllAction)
+        self.viewMenu.addAction(self.switchMdiViewAction)
+        self.viewMenu.addAction(self.cascadeAction)
+        self.viewMenu.addAction(self.tileAction)
+        self.connect(self.viewMenu, QtCore.SIGNAL('aboutToShow()'), self.__updateWindowMenu)
         self.editMenu = self.menuBar().addMenu('&Edit')
         self.editMenu.addAction(self.selectForPlotAction)
         self.editMenu.addAction(self.selectByRegexAction)
@@ -926,23 +931,24 @@ class DataVizWidget(QtGui.QMainWindow):
         self.dataListMenu.exec_(globalPos)
 
     def __updateWindowMenu(self):
-        self.windowMenu.clear()
+        self.viewMenu.clear()
+        self.viewMenu.addAction(self.toggleLeftDockAction)
         if  len(self.mdiArea.subWindowList()) == 0:
             return
-        self.windowMenu.addAction(self.closeActiveSubwindowAction)
-        self.windowMenu.addAction(self.closeAllAction)
-        self.windowMenu.addSeparator()
-        self.windowMenu.addAction(self.switchMdiViewAction)
+        self.viewMenu.addAction(self.closeActiveSubwindowAction)
+        self.viewMenu.addAction(self.closeAllAction)
+        self.viewMenu.addSeparator()
+        self.viewMenu.addAction(self.switchMdiViewAction)
         if self.mdiArea.viewMode() == self.mdiArea.TabbedView:
             self.switchMdiViewAction.setText('Subwindow view')
         else:
             self.switchMdiViewAction.setText('Tabbed view')            
-            self.windowMenu.addAction(self.cascadeAction)
-            self.windowMenu.addAction(self.tileAction)
-        self.windowMenu.addSeparator()
+            self.viewMenu.addAction(self.cascadeAction)
+            self.viewMenu.addAction(self.tileAction)
+        self.viewMenu.addSeparator()
         activeSubWindow = self.mdiArea.activeSubWindow()
         for window in self.mdiArea.subWindowList():
-            action = self.windowMenu.addAction(window.windowTitle())
+            action = self.viewMenu.addAction(window.windowTitle())
             action.setCheckable(True)
             action.setChecked(window == activeSubWindow)
             self.connect(action, QtCore.SIGNAL('triggered()'), self.windowMapper, QtCore.SLOT('map()'))
@@ -969,6 +975,8 @@ class DataVizWidget(QtGui.QMainWindow):
         title, ok, = QtGui.QInputDialog.getText(self, self.tr('Change Plot Title'), self.tr('Plot title:'), QtGui.QLineEdit.Normal, activePlot.title().text())
         if ok:
             activePlot.setTitle(title)
+            # We set the sub window title to the same
+            self.mdiArea.activeSubWindow.setWindowTitle(title)
         
     def __configurePlots(self):
         """Interactively allow the user to configure everything about

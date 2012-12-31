@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Nov 14 12:36:04 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Dec 11 18:00:58 2012 (+0530)
+# Last-Updated: Sun Dec 30 16:24:29 2012 (+0530)
 #           By: subha
-#     Update #: 1284
+#     Update #: 1287
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,9 +71,9 @@ def invert_container_map(container_map):
     the key corresponding to the container object
 
     """
-    return {v:k 
-            for k, vlist in container_map.items() 
-            for v in vlist}
+    return dict((v,k)
+                for k, vlist in container_map.items() 
+                for v in vlist)
 
 def randomized_plot(file_stub_map, plot_function):
     pass
