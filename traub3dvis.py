@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 20:16:06 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan  3 01:57:05 2013 (+0530)
+# Last-Updated: Thu Jan  3 11:21:28 2013 (+0530)
 #           By: subha
-#     Update #: 360
+#     Update #: 384
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -153,7 +153,7 @@ class TimerCallback():
         self.it = itertools.cycle(range(len(self.times)))
 
     def execute(self, obj, event):
-        print 'execute'
+        print self.actor.GetPosition()
         ii = self.it.next()
         t = self.times[ii]        
         for celltype, pos in self.display_data['pos'].items():
@@ -162,9 +162,8 @@ class TimerCallback():
                 spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]                
                 if np.any((spikes < t) & (spikes > t - self.display_data['data'].plotdt)):
                     values[jj] = 1.0
-                    print t, celltype, jj
             self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
-        obj.GetRenderWindow().Render()
+        obj.Render()
                 
         
 def display_traub_vtk(datafile, cellposfile):
@@ -174,6 +173,7 @@ def display_traub_vtk(datafile, cellposfile):
     renwin.StereoCapableWindowOn()
     renwin.StereoRenderOn()
     renwin.SetStereoTypeToCrystalEyes()
+    # renwin.SetStereoTypeToAnaglyph()
     renwin.AddRenderer(renderer)
     renwin.SetSize(1280, 900)
     polydata_dict = {}
@@ -256,8 +256,23 @@ def display_traub_vtk(datafile, cellposfile):
     camera.ComputeViewPlaneNormal()
     renderer.SetActiveCamera(camera)
     renderer.ResetCamera()
+    # For animation without interaction
+    # times = np.arange(1.0, display_data['data'].simtime, display_data['data'].plotdt)
+    # it = itertools.cycle(range(len(times)))
+    # for ii in it:
+    #     t = times[ii]        
+    #     for celltype, pos in display_data['pos'].items():
+    #         values = np.zeros(len(pos), order='C')
+    #         for jj in range(len(pos)):
+    #             spikes = display_data['spike']['%s_%d' % (celltype, jj)]                
+    #             if np.any((spikes < t) & (spikes > t - display_data['data'].plotdt)):
+    #                 values[jj] = 1.0
+    #                 print t, celltype, jj
+    #         polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
+    #     renwin.Render()
+    # For timer callback based animation
     callback = TimerCallback(display_data, polydata_dict)
-    # callback.actor = actor
+    callback.actor = actor
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renwin)
     interactor.Initialize()
