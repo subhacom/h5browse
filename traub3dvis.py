@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 20:16:06 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan  3 11:38:58 2013 (+0530)
+# Last-Updated: Thu Jan  3 11:42:32 2013 (+0530)
 #           By: subha
-#     Update #: 404
+#     Update #: 410
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -238,17 +238,8 @@ def display_traub_vtk(datafile, cellposfile):
         mapper.SetLookupTable(colorXfun)
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
-        # actor.GetProperty().SetOpacity(1)
+        # actor.GetProperty().SetOpacity(0.5)
         renderer.AddActor(actor)
-        # scalarBar = vtk.vtkScalarBarActor()
-        # scalarBar.SetLookupTable(colorXfun)
-        # # scalarBar.SetNumberOfLabels(4)
-        # scalarBar.SetPosition(10,10)
-        # scalarBar.SetHeight(0.05)
-        # scalarBar.SetWidth(0.30)
-        # scalarBar.SetOrientationToHorizontal()
-        # scalarBar.GetTitleTextProperty().SetOrientation(90.0)
-        # renderer.AddActor2D(scalarBar)
     camera = vtk.vtkCamera()
     camera.SetPosition(0.0, 500.0, -1200.0)
     camera.SetFocalPoint(0, 0, -1200)
