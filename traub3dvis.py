@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 20:16:06 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan  3 11:42:32 2013 (+0530)
+# Last-Updated: Thu Jan  3 12:03:40 2013 (+0530)
 #           By: subha
-#     Update #: 410
+#     Update #: 430
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -55,7 +55,7 @@ import vtk
 from vtk.util import numpy_support as vtknp
 import itertools
 
-posfile = '/home/subha/src/dataviz/cellpos.csv'
+posfile = '/home/subha/src/dataviz/cellpos_compact.csv'
 datafile = '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_05/data_20121105_144428_16400.h5'
 markers = {'SupPyrRS': '^',
              'SupPyrFRB': '^',
@@ -156,13 +156,14 @@ class TimerCallback():
         print self.actor.GetPosition()
         ii = self.it.next()
         t = self.times[ii]        
+        self.txtActor.SetInput('%.6f' % (t))
         for celltype, pos in self.display_data['pos'].items():            
             values = np.zeros(len(pos[0]), order='C')
             for jj in range(len(pos[0])):
                 spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]                
                 if np.any((spikes < t) & (spikes > t - self.display_data['data'].plotdt)):
                     values[jj] = 1.0
-            print celltype, values
+            # print celltype, values
             self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
         obj.Render()
                 
@@ -203,14 +204,15 @@ def display_traub_vtk(datafile, cellposfile):
             source.SetPhiResolution(6)
             source.SetPhiRoundness(5)
             source.SetThetaRoundness(5)
-            source.SetScale(3, 3, 3)
+            source.SetScale(5, 5, 5)
         elif celltype == 'DeepBasket':
-            source = vtk.vtkSuperquadricSource()
+            source = vtk.vtkSphereSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
-            source.SetPhiRoundness(1)
-            source.SetThetaRoundness(1)
-            source.SetScale(3, 3, 3)
+            source.SetRadius(2)
+            # source.SetPhiRoundness(1)
+            # source.SetThetaRoundness(1)
+            # source.SetScale(3, 3, 3)
         elif celltype == 'DeepLTS':
             source = vtk.vtkSuperquadricSource()
             source.SetThetaResolution(6)
@@ -240,6 +242,12 @@ def display_traub_vtk(datafile, cellposfile):
         actor.SetMapper(mapper)
         # actor.GetProperty().SetOpacity(0.5)
         renderer.AddActor(actor)
+    txtActor = vtk.vtkTextActor()
+    txtActor.GetTextProperty().SetFontSize(24)
+    # txtActor.SetPosition2(100, 10)
+    renderer.AddActor2D(txtActor)
+    txtActor.SetInput('Starting ...')
+    txtActor.GetTextProperty().SetColor(1, 1, 0)
     camera = vtk.vtkCamera()
     camera.SetPosition(0.0, 500.0, -1200.0)
     camera.SetFocalPoint(0, 0, -1200)
@@ -266,11 +274,12 @@ def display_traub_vtk(datafile, cellposfile):
     # For timer callback based animation
     callback = TimerCallback(display_data, polydata_dict)
     callback.actor = actor
+    callback.txtActor = txtActor
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renwin)
     interactor.Initialize()
     interactor.AddObserver('TimerEvent', callback.execute)
-    timerId = interactor.CreateRepeatingTimer(100) 
+    timerId = interactor.CreateRepeatingTimer(1) 
     # timer callback till here
    #start the interaction and timer
     interactor.Start()
