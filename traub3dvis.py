@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 20:16:06 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan  3 11:21:28 2013 (+0530)
+# Last-Updated: Thu Jan  3 11:38:58 2013 (+0530)
 #           By: subha
-#     Update #: 384
+#     Update #: 404
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -156,12 +156,13 @@ class TimerCallback():
         print self.actor.GetPosition()
         ii = self.it.next()
         t = self.times[ii]        
-        for celltype, pos in self.display_data['pos'].items():
-            values = np.zeros(len(pos), order='C')
-            for jj in range(len(pos)):
+        for celltype, pos in self.display_data['pos'].items():            
+            values = np.zeros(len(pos[0]), order='C')
+            for jj in range(len(pos[0])):
                 spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]                
                 if np.any((spikes < t) & (spikes > t - self.display_data['data'].plotdt)):
                     values[jj] = 1.0
+            print celltype, values
             self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
         obj.Render()
                 
@@ -237,19 +238,17 @@ def display_traub_vtk(datafile, cellposfile):
         mapper.SetLookupTable(colorXfun)
         actor = vtk.vtkActor()
         actor.SetMapper(mapper)
-        actor.GetProperty().SetOpacity(0.5)
+        # actor.GetProperty().SetOpacity(1)
         renderer.AddActor(actor)
-
-        scalarBar = vtk.vtkScalarBarActor()
-        scalarBar.SetLookupTable(colorXfun)
-        # scalarBar.SetNumberOfLabels(4)
-        scalarBar.SetPosition(10,10)
-        scalarBar.SetHeight(0.05)
-        scalarBar.SetWidth(0.30)
-        scalarBar.SetOrientationToHorizontal()
-        scalarBar.GetTitleTextProperty().SetOrientation(90.0)
-        # self.scalarBar[classname] = scalarBar
-        renderer.AddActor2D(scalarBar)
+        # scalarBar = vtk.vtkScalarBarActor()
+        # scalarBar.SetLookupTable(colorXfun)
+        # # scalarBar.SetNumberOfLabels(4)
+        # scalarBar.SetPosition(10,10)
+        # scalarBar.SetHeight(0.05)
+        # scalarBar.SetWidth(0.30)
+        # scalarBar.SetOrientationToHorizontal()
+        # scalarBar.GetTitleTextProperty().SetOrientation(90.0)
+        # renderer.AddActor2D(scalarBar)
     camera = vtk.vtkCamera()
     camera.SetPosition(0.0, 500.0, -1200.0)
     camera.SetFocalPoint(0, 0, -1200)
@@ -262,14 +261,17 @@ def display_traub_vtk(datafile, cellposfile):
     # for ii in it:
     #     t = times[ii]        
     #     for celltype, pos in display_data['pos'].items():
-    #         values = np.zeros(len(pos), order='C')
-    #         for jj in range(len(pos)):
+    #         values = np.zeros(len(pos[0]), order='C')
+    #         for jj in range(len(pos[0])):
     #             spikes = display_data['spike']['%s_%d' % (celltype, jj)]                
     #             if np.any((spikes < t) & (spikes > t - display_data['data'].plotdt)):
     #                 values[jj] = 1.0
     #                 print t, celltype, jj
     #         polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
+    #         print celltype, values
     #     renwin.Render()
+    # non-interactive animation tille here
+
     # For timer callback based animation
     callback = TimerCallback(display_data, polydata_dict)
     callback.actor = actor
@@ -278,9 +280,10 @@ def display_traub_vtk(datafile, cellposfile):
     interactor.Initialize()
     interactor.AddObserver('TimerEvent', callback.execute)
     timerId = interactor.CreateRepeatingTimer(100) 
+    # timer callback till here
    #start the interaction and timer
     interactor.Start()
-    return camera, renderer, renwin, interactor, polydata_dict, source_dict, glyph_dict, mapper_dict, actor_dict, points_dict, pos_dict
+    
 
     
 if __name__ == '__main__':
