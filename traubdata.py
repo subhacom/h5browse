@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Wed Dec 26 16:15:32 2012 (+0530)
+# Last-Updated: Sat Jan  5 15:13:09 2013 (+0530)
 #           By: subha
-#     Update #: 758
+#     Update #: 766
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -102,10 +102,17 @@ class TraubData(object):
         self.fnet = None
         try:
             self.fdata = h5.File(fname, 'r')
-            self.fnet = h5.File(netfilename)
         except IOError as e:
+            print 'Error opening:', fname
             print e
-            return
+            raise
+        try:
+            self.fnet = h5.File(netfilename, 'r')
+        except IOError as e:
+            print 'Error opening:', netfilename
+            print e
+            raise
+
         self.__get_cellcounts()
         self.__get_timestamp()        
         self.__get_stimuli()
