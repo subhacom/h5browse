@@ -22,7 +22,7 @@ def find_files(path, *args):
     return filenames
 
 
-def get_fname_timestamps(filepaths, start='19700101', end='30000000'):
+def get_fname_timestamps(filepaths, start='19700101', end='30001231'):
     """Get a dict of (filename, timestamp) for specified
     files where timestamp is datetime objects lying within [start,
     end] dates.
