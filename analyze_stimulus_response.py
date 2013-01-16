@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 10:07:34 2013 (+0530)
 # Version: 
-# Last-Updated: Fri Jan 11 16:32:59 2013 (+0530)
+# Last-Updated: Wed Jan 16 18:32:22 2013 (+0530)
 #           By: subha
-#     Update #: 329
+#     Update #: 550
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -30,6 +30,7 @@
 
 # Code:
 
+import random
 import os
 from collections import defaultdict
 import numpy as np
@@ -37,11 +38,107 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 from traubdata import TraubData
 
+def get_cells_responding_to_bg(data):
+    """Get the TCR cells responding to background stimulus
+    """
+    bg_times = data.get_bgstim_times()    
+    # Choose the TCR cells from the background stimulated set that
+    # spiked at least once after 1 s (during which time spurious
+    # spiking due to instabilities may occur). Not all stimulated TCR
+    # cells spiked.
+    stimcells = [cell for cell in data.spikes.keys() \
+                     if cell.startswith('TCR') and \
+                     np.any(data.spikes[cell] > 1.0) and \
+                     cell in data.bg_cells]
+    goodstimcells = []
+    # plt.figure()
+    # plt.plot(bg_times, np.zeros(len(bg_times)), 'g^')
+    for idx, cell in enumerate(stimcells):
+        # Ignore cells which spiked too-much without stimulus
+        sp = data.spikes[cell].copy()        
+        # Check how many times the cell spiked in an interstimulus
+        # interval with 50 ms margin
+        outofturn = [np.any(( sp > bg_times[ii]+50e-3) & 
+                            (sp < bg_times[ii+1] - 50e-3)) \
+                         for ii in range(len(bg_times)-1)]
+        # If number of spikes without stimulus is less than
+        # half(arbitrarily chosen) the number of stimuli, this is a
+        # good cell
+        if np.nonzero(outofturn)[0].shape[0] < len(bg_times)/2.0:
+            goodstimcells.append(cell)
+            # plotmarker = 'rx'
+        # else:
+        #     plotmarker = 'b+'
+    #     plt.plot(sp, np.ones(len(sp))*(idx+1), plotmarker)
+    # plt.show()
+    print set(data.bg_cells) - set(goodstimcells)
+    return goodstimcells
+    #     if 0 in outofturn.shape:
+    #         continue
+    #     plt.plot(outofturn, np.ones(len(outofturn))*(idx+1), 'rx')
+    #     print cell, outofturn
+    # plt.show()
+
+def test_get_cells_responding_to_bg():
+    for fname in fname_stim_dict.keys():
+        get_cells_responding_to_bg(TraubData(fname))
+
+def stimresponse(datalist, cells):
+    colormap = plt.cm.jet
+    plt.close()
+    ax = None
+    axlist = []
+    # Go through each data file, pick up the stimulated cells
+    fig1 = plt.figure(1)
+    fig2 = plt.figure(2)
+    for di, data in enumerate(datalist):
+        if isinstance(cells, str):
+            cells = set([cell for cell in data.spikes.keys() if cell.startswith(cells)])
+        stimulated_cells = get_cells_responding_to_bg(data)
+        post_cells = [data.postsynaptic(pre) \
+                          for pre in stimulated_cells]
+        inputcounts = defaultdict(int)
+        for celllist in post_cells:
+            for cell in set(celllist).intersection(cells):
+                inputcounts[cell] += 1
+        inputcount_cell_map = defaultdict(list)
+        for cell, count in inputcounts.items():
+            inputcount_cell_map[count].append(cell)
+        ci = 1
+        ax = fig1.add_subplot(len(datalist), 1, di+1)
+        ax2 =fig2.add_subplot(111)
+        pop_ibi = data.get_pop_ibi(cells, maxisi=30e-3)['pop_ibi']
+        print 'pop-ibi', pop_ibi
+        for count in sorted(inputcount_cell_map.keys()):
+            for cell in inputcount_cell_map[count]:
+                pre = set(data.presynaptic(cell)).intersection(stimulated_cells)
+                assert(count == len(pre))
+                spikes = data.spikes[cell]
+                ax2.plot(spikes, np.ones(len(spikes)) * ci, 'bx')
+                nonpopspikes = []
+                for ibi in zip(*pop_ibi):
+                    print 'IBI:', ibi
+                    nonpopspikes.append(spikes[(spikes >= ibi[0]) & (spikes < ibi[1])].copy())
+                # print 'Number of bunches in pop-ibi', len(nonpopspikes)
+                # print nonpopspikes
+                spikes = np.concatenate(nonpopspikes)
+                ax.plot(spikes, np.ones(len(spikes)) * ci, 'rx')                
+                ci += 1
+        ax.bar(pop_ibi[0], height=np.ones(len(pop_ibi[0]))*ci, width=np.array(pop_ibi[1])-np.array(pop_ibi[0]), alpha=0.5)
+    plt.show()
+    plt.close()
+
+def test_stim_response():
+    datalist = [TraubData(fname) for fname in random.sample(fname_stim_dict.keys(), 2)]
+    stimresponse(datalist, 'SpinyStellate')
+
+
 def check_stimulus_response(datalist, cells):
     colormap = plt.cm.jet
     fig = plt.figure()
     ax = None
     axlist = []
+    rows = len(datalist)
     for dataindex, data in enumerate(datalist):
         print data.fdata.filename, data.cellcounts.DeepBasket
         # Select the cells of celltype
@@ -64,7 +161,7 @@ def check_stimulus_response(datalist, cells):
             precells = [row[0] for row in np.char.split(data.synapse['source'][indices], '/') if row[0] in stimcells]
             inputcounts[len(precells)].append(cell)
         print inputcounts        
-        ax = fig.add_subplot(4, 1, dataindex+1, sharex=ax)
+        ax = fig.add_subplot(rows, 1, dataindex+1, sharex=ax)
         # ax.set_title('%s: %d' % (data.fdata.filename, data.cellcounts.DeepBasket))
         axlist.append(ax)
         ax.plot(filtered, np.zeros(len(filtered)), '^', label='TCR spikes')
@@ -240,6 +337,14 @@ def min_dist_inside(point, rotation, box):
         distances.append((box.y0 - y0) / sin(rotation))
     return min(distances)
 
+def plot_stim_response():
+    stim_fname = defaultdict(list)
+    for k, v in fname_stim_dict.items():
+        stim_fname[v].append(k)
+    for key in sorted(stim_fname.keys()):
+        check_stimulus_response([TraubData(fname) for fname in stim_fname[key]], 'SpinyStellate')
+        
+
 def plot_spikeraster_by_stim_count(timerange=(10.0, 12.0)):
     cm = plt.cm.jet    
     stim_fname = defaultdict(list)
@@ -305,7 +410,10 @@ def plot_spikeraster_by_stim_count(timerange=(10.0, 12.0)):
     
         
 if __name__ == '__main__':
-    plot_spikeraster_by_stim_count()
+    test_stim_response()
+    # test_get_cells_responding_to_bg()
+    # plot_stim_response()
+    # plot_spikeraster_by_stim_count()
     # get_file_notes(datadir, '-mtime', '-140', '-iname', 'data*.h5')
     # check_stimulus_response([TraubData(os.path.join(datadir, filename)) for filename in filenames], 'SpinyStellate')
 
