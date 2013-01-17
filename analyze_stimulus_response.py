@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 10:07:34 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan 17 19:22:02 2013 (+0530)
+# Last-Updated: Thu Jan 17 19:42:55 2013 (+0530)
 #           By: subha
-#     Update #: 667
+#     Update #: 703
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -36,6 +36,7 @@ from collections import defaultdict
 import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from traubdata import TraubData
 
 def get_cells_responding_to_bg(data):
@@ -91,6 +92,7 @@ def stimresponse(datalist, cells, figlabel='1'):
     # Go through each data file, pick up the stimulated cells
     fig1 = plt.figure(figlabel)
     # fig2 = plt.figure(2)
+    axdata = []
     for di, data in enumerate(datalist):
         if isinstance(cells, str):
             cells = set([cell for cell in data.spikes.keys() if cell.startswith(cells)])
@@ -104,17 +106,14 @@ def stimresponse(datalist, cells, figlabel='1'):
         inputcount_cell_map = defaultdict(list)
         for cell, count in inputcounts.items():
             inputcount_cell_map[count].append(cell)
-        ax = fig1.add_subplot(len(datalist), 1, di+1)
-        # ax.set_title(data.fdata.filename)
-        # ax2 =fig2.add_subplot(len(datalist), 1, di+1)
-        # ax2.set_title(data.fdata.filename)
+        pop_ibi = data.get_pop_ibi(cells, maxisi=30e-3)['pop_ibi']
+        ci = 0 # index of the cell in the raster plot (used as Y)
+        cellcount = 0 # (total number of cells)
         norm = mpl.colors.Normalize(vmin=1, vmax=max(inputcount_cell_map.keys()))
         mappable = mpl.cm.ScalarMappable(norm=norm, cmap=colormap)
         carray = np.arange(1, 10)
         mappable.set_array(carray)
-        pop_ibi = data.get_pop_ibi(cells, maxisi=30e-3)['pop_ibi']
-        ci = 1 # index of the cell in the raster plot (used as Y)
-        cellcount = 0 # (total number of cells)
+        xlist, ylist, clist = [], [], []
         for count in sorted(inputcount_cell_map.keys()):
             print count, len(inputcount_cell_map[count])
             for cell in inputcount_cell_map[count]:
@@ -131,17 +130,31 @@ def stimresponse(datalist, cells, figlabel='1'):
                 spikes = np.concatenate(nonpopspikes)
                 peristim_spikes = np.concatenate([spikes[(spikes > t) & (spikes < t + 50e-3)] for t in data.get_bgstim_times()])
                 if len(np.nonzero(peristim_spikes)[0]) >= len(data.get_bgstim_times()) * 0.5:
-                    ax.plot(spikes, np.ones(len(spikes)) * ci, ',', mew=0.0, color=mappable.to_rgba(count))                
+                    xlist.append(spikes.copy())
+                    ylist.append(np.ones(len(spikes)) * (ci+1))
+                    clist.append(mappable.to_rgba(count))
                     ci += 1
                 cellcount += 1
+        if not xlist:
+            continue
+        print data.fdata.filename, len(xlist)
+        axdata.append((xlist, ylist, clist))
+    for ai, (xlist, ylist, clist) in enumerate(axdata):
+        ax = fig1.add_subplot(len(axdata), 1, ai+1)
+        axlist.append(ax)
+        # ax.set_title(data.fdata.filename)
+        # ax2 =fig2.add_subplot(len(datalist), 1, di+1)
+        # ax2.set_title(data.fdata.filename)
         print 'number of cells', ci
         ax.plot(data.get_bgstim_times(), np.zeros(len(data.get_bgstim_times())), '^')
+        for x, y, c in zip(xlist, ylist, clist):
+            ax.plot(x, y, ',', mew=0.0, color=c)                
         # ax.bar(pop_ibi[0], height=np.ones(len(pop_ibi[0]))*ci, width=np.array(pop_ibi[1])-np.array(pop_ibi[0]), alpha=0.5)
         ylim = ax.get_ylim()
         dy = 1
         if ylim[1] - ylim[0] > 10:
             dy = (ylim[1] - ylim[0])/5
-        yticks = range(int(ylim[0]), int(ylim[1]), int(dy))
+        yticks = range(int(ylim[0]), int(ylim[1])+int(dy)+1, int(dy))
         ax.set_yticks(yticks)
         # ax.patch.set_facecolor('black')
         ylabels = ax.set_yticklabels([str(label) for label in yticks])
@@ -150,6 +163,8 @@ def stimresponse(datalist, cells, figlabel='1'):
         ticks = range(carray[0], carray[-1])
         cbar.set_ticks(ticks)
         cbar.set_ticklabels(['%d' % (t) for t in ticks])
+    axlist[-1].set_ylabel('Cell #')
+    axlist[-1].set_xlabel('Time (s)')
     return fig1
     # plt.show()
     # plt.close()
@@ -257,16 +272,19 @@ fname_stim_dict = {
     '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_21/data_20121221_151958_9665.h5': 15,
     }
 
-def plot_stimcount_response():
+def plot_stimcount_response(outfilepath='stimcount_response.pdf'):
     """Plot stimulus response for each stimulus count"""
     stim_fname = defaultdict(list) # Stimulus count -> data-list map
     for k, v in fname_stim_dict.items():
         stim_fname[v].append(k)
     # Now we do the plotting for each stimulus count in increasing order
+    outfile = PdfPages(outfilepath)
     for key in sorted(stim_fname.keys()):
         fig = stimresponse([TraubData(fname) for fname in stim_fname[key]], 'SpinyStellate', 'Stimulated TCR: %d' % (key))
         fig.suptitle('Stimulated TCR: %d' % (key))
+        outfile.savefig(fig)
         plt.show()
+    outfile.close()
 
 def plot_stim_response():
     """Plot stimulus response for each stimulus count"""
