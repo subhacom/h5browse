@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 10:07:34 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan 17 19:42:55 2013 (+0530)
+# Last-Updated: Fri Jan 18 21:40:11 2013 (+0530)
 #           By: subha
-#     Update #: 703
+#     Update #: 730
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -148,16 +148,19 @@ def stimresponse(datalist, cells, figlabel='1'):
         print 'number of cells', ci
         ax.plot(data.get_bgstim_times(), np.zeros(len(data.get_bgstim_times())), '^')
         for x, y, c in zip(xlist, ylist, clist):
-            ax.plot(x, y, ',', mew=0.0, color=c)                
+            ax.plot(x, y, '|', markersize=3, color=c)                
         # ax.bar(pop_ibi[0], height=np.ones(len(pop_ibi[0]))*ci, width=np.array(pop_ibi[1])-np.array(pop_ibi[0]), alpha=0.5)
         ylim = ax.get_ylim()
         dy = 1
         if ylim[1] - ylim[0] > 10:
             dy = (ylim[1] - ylim[0])/5
-        yticks = range(int(ylim[0]), int(ylim[1])+int(dy)+1, int(dy))
+        yticks = range(int(ylim[0]), int(ylim[1])+1, int(dy))
         ax.set_yticks(yticks)
+        ax.set_ylim(0, ylim[1]+1)
         # ax.patch.set_facecolor('black')
         ylabels = ax.set_yticklabels([str(label) for label in yticks])
+        # ax.set_ylim(int(ylim[1]))
+        ax.tick_params(axis='x', which='major', top='off')
         # print 'ylim', ax.get_ylim()
         cbar = plt.colorbar(mappable)
         ticks = range(carray[0], carray[-1])
@@ -281,9 +284,10 @@ def plot_stimcount_response(outfilepath='stimcount_response.pdf'):
     outfile = PdfPages(outfilepath)
     for key in sorted(stim_fname.keys()):
         fig = stimresponse([TraubData(fname) for fname in stim_fname[key]], 'SpinyStellate', 'Stimulated TCR: %d' % (key))
-        fig.suptitle('Stimulated TCR: %d' % (key))
+        # fig.suptitle('Stimulated TCR: %d' % (key))
         outfile.savefig(fig)
-        plt.show()
+        plt.savefig('stim%dtcr.png' % (key), dpi=300, papertype='a4', bbox_inches='tight')
+        plt.close()
     outfile.close()
 
 def plot_stim_response():
