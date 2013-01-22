@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Sat Jan  5 15:13:09 2013 (+0530)
+# Last-Updated: Tue Jan 22 17:15:41 2013 (+0530)
 #           By: subha
-#     Update #: 766
+#     Update #: 767
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -220,7 +220,7 @@ class TraubData(object):
         raise NotImplementedError('TODO: finish')
 
     def get_bgstim_times(self):
-        indices = np.nonzero(np.diff(self.bg_stimulus))[0]
+        indices = np.nonzero(np.diff(self.bg_stimulus)>0)[0]
         return indices * self.simtime / len(self.bg_stimulus)
 
     def get_spiking_cell_hist(self, celltype, timerange=(0,1e9), binsize=5e-3):

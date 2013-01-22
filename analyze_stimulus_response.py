@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 10:07:34 2013 (+0530)
 # Version: 
-# Last-Updated: Fri Jan 18 21:40:11 2013 (+0530)
+# Last-Updated: Tue Jan 22 17:21:19 2013 (+0530)
 #           By: subha
-#     Update #: 730
+#     Update #: 803
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -172,6 +172,69 @@ def stimresponse(datalist, cells, figlabel='1'):
     # plt.show()
     # plt.close()
 
+def stimresponse_psth(datalist, cells, offset=-100e-3, figlabel='1'):
+    """Offset is the offset from stimulus for counting PSTH"""
+    colormap = plt.cm.jet
+    plt.close()
+    ax = None
+    figs = []
+    axlist = []
+    # Go through each data file, pick up the stimulated cells
+    # fig1 = plt.figure(figlabel)
+    # fig2 = plt.figure(2)
+    axdata = []
+    for di, data in enumerate(datalist):
+        if isinstance(cells, str):
+            cells = set([cell for cell in data.spikes.keys() if cell.startswith(cells)])
+        stimulated_cells = get_cells_responding_to_bg(data)
+        post_cells = [data.postsynaptic(pre) \
+                          for pre in stimulated_cells]
+        inputcounts = defaultdict(int)
+        for celllist in post_cells:
+            for cell in set(celllist).intersection(cells):
+                inputcounts[cell] += 1
+        inputcount_cell_map = defaultdict(list)
+        for cell, count in inputcounts.items():
+            inputcount_cell_map[count].append(cell)
+        pop_ibi = data.get_pop_ibi(cells, maxisi=30e-3)['pop_ibi']
+        bg_times = data.get_bgstim_times()
+        ci = 0 # index of the cell in the raster plot (used as Y)
+        cellcount = 0 # (total number of cells)
+        norm = mpl.colors.Normalize(vmin=1, vmax=max(inputcount_cell_map.keys()))
+        mappable = mpl.cm.ScalarMappable(norm=norm, cmap=colormap)
+        carray = np.arange(1, 10)
+        mappable.set_array(carray)
+        xlist, ylist, clist = [], [], []
+        peristim_spikes = []
+        min_bgtime = min(np.diff(bg_times))
+        # plt.plot(bg_times, 'x')
+        # plt.show()
+        # plt.close()
+        print data.fdata.filename, 'minimum stimulus interval:', min_bgtime
+        for count in sorted(inputcount_cell_map.keys()):
+            print count, len(inputcount_cell_map[count])
+            for cell in inputcount_cell_map[count]:
+                pre = set(data.presynaptic(cell)).intersection(stimulated_cells)
+                assert(count == len(pre))
+                spikes = data.spikes[cell]
+                # ax2.plot(spikes, np.ones(len(spikes)) * ci, 'bx')
+                nonpopspikes = []
+                for ibi in zip(*pop_ibi):
+                    nonpopspikes.append(spikes[(spikes >= ibi[0]) & (spikes < ibi[1])])
+                spikes = np.concatenate(nonpopspikes)
+                spikes = np.concatenate([spikes[(spikes > bg_times[ii] + offset) & (spikes < bg_times[ii] + offset + min_bgtime)] - bg_times[ii] for ii in range(len(bg_times))])                
+                if len(spikes) == 0:
+                    continue
+                peristim_spikes.append(spikes)
+        if len(peristim_spikes) == 0:
+            continue
+        axdata.append(np.concatenate(peristim_spikes))
+    fig = plt.figure()
+    for ii, data in enumerate(axdata):
+        ax = fig.add_subplot(len(axdata), 1, ii+1)
+        ax.hist(axdata[ii], normed=1)
+    return fig
+
 def test_stim_response():
     # datalist = [TraubData(fname) for fname in random.sample(fname_stim_dict.keys(), 2)]
     datalist = [TraubData(fname) for fname in fname_stim_dict.keys()]
@@ -258,21 +321,21 @@ filenames = [
 	/data/subha/rsync_ghevar_cortical_data_clone/2012_11_18/data_20121118_132702_5610.h5 5"""
 
 fname_stim_dict = {
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_14/data_20121114_091030_2716.h5': 5,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_16/data_20121116_091100_3774.h5': 5,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_18/data_20121118_132702_5610.h5': 5,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_20/data_20121120_090612_6590.h5': 5,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_22/data_20121122_145449_8016.h5': 5,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_24/data_20121124_162657_9363.h5': 10,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_26/data_20121126_092942_10181.h5': 10,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_28/data_20121128_092639_11369.h5': 10,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_30/data_20121130_083256_12326.h5': 10,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_05/data_20121205_165444_16910.h5': 10,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_08/data_20121208_105807_15611.h5': 15,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_11/data_20121211_103522_12008.h5': 15,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_14/data_20121214_095338_17603.h5': 15,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_18/data_20121218_090355_29114.h5': 15,
-    '/data/subha/rsync_ghevar_cortical_data_clone/2012_12_21/data_20121221_151958_9665.h5': 15,
+    '/data/subha/cortical/py/data/2012_11_14/data_20121114_091030_2716.h5': 5,
+    '/data/subha/cortical/py/data/2012_11_16/data_20121116_091100_3774.h5': 5,
+    '/data/subha/cortical/py/data/2012_11_18/data_20121118_132702_5610.h5': 5,
+    '/data/subha/cortical/py/data/2012_11_20/data_20121120_090612_6590.h5': 5,
+    '/data/subha/cortical/py/data/2012_11_22/data_20121122_145449_8016.h5': 5,
+    '/data/subha/cortical/py/data/2012_11_24/data_20121124_162657_9363.h5': 10,
+    '/data/subha/cortical/py/data/2012_11_26/data_20121126_092942_10181.h5': 10,
+    '/data/subha/cortical/py/data/2012_11_28/data_20121128_092639_11369.h5': 10,
+    '/data/subha/cortical/py/data/2012_11_30/data_20121130_083256_12326.h5': 10,
+    '/data/subha/cortical/py/data/2012_12_05/data_20121205_165444_16910.h5': 10,
+    '/data/subha/cortical/py/data/2012_12_08/data_20121208_105807_15611.h5': 15,
+    '/data/subha/cortical/py/data/2012_12_11/data_20121211_103522_12008.h5': 15,
+    '/data/subha/cortical/py/data/2012_12_14/data_20121214_095338_17603.h5': 15,
+    '/data/subha/cortical/py/data/2012_12_18/data_20121218_090355_29114.h5': 15,
+    '/data/subha/cortical/py/data/2012_12_21/data_20121221_151958_9665.h5': 15,
     }
 
 def plot_stimcount_response(outfilepath='stimcount_response.pdf'):
@@ -287,6 +350,21 @@ def plot_stimcount_response(outfilepath='stimcount_response.pdf'):
         # fig.suptitle('Stimulated TCR: %d' % (key))
         outfile.savefig(fig)
         plt.savefig('stim%dtcr.png' % (key), dpi=300, papertype='a4', bbox_inches='tight')
+        plt.close()
+    outfile.close()
+
+def plot_stimcount_psth(outfilepath='stimcount_psth.pdf'):
+    """Plot PSTH for each stimulus count"""
+    stim_fname = defaultdict(list) # Stimulus count -> data-list map
+    for k, v in fname_stim_dict.items():
+        stim_fname[v].append(k)
+    # Now we do the plotting for each stimulus count in increasing order
+    outfile = PdfPages(outfilepath)
+    for key in sorted(stim_fname.keys()):
+        fig = stimresponse_psth([TraubData(fname) for fname in stim_fname[key]], 'SpinyStellate')
+        fig.suptitle('Stimulated TCR: %d' % (key))
+        outfile.savefig(fig)
+        # plt.savefig('stim%dtcr.png' % (key), dpi=300, papertype='a4', bbox_inches='tight')
         plt.close()
     outfile.close()
 
@@ -365,7 +443,7 @@ def plot_spikeraster_by_stim_count(timerange=(10.0, 12.0)):
     
         
 if __name__ == '__main__':
-    plot_stimcount_response()
+    plot_stimcount_psth()
     # test_stim_response()
     # test_get_cells_responding_to_bg()
     # plot_stim_response()
