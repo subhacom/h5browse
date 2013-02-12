@@ -87,11 +87,13 @@ def classify_files_by_cellcount(filelist):
         with h5.File(filename, 'r') as fd:
             cc = {}
             try:
-                cc = dict([(k, int(v)) for k, v in np.asarray(fd['/runconfig/cellcount'])])                
+                cc = dict([(k, int(v)) for k, v in np.asarray(fd['/runconfig/cellcount'])])        
                 cctuple = cellcount_tuple(**cc)
                 categories[cctuple].add(filename)
             except KeyError, e:
-                print e            
+                print fd.filename, e     
+            except TypeError, e1:
+                print fd.filename, e1
             finally:
                 fd.close()
     return categories
@@ -171,20 +173,22 @@ def get_notes_from_files(filelist):
 if __name__ == '__main__':
     filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5')
     # This is the list of current filename, timestamp pairs
-    current_fts = get_fname_timestamps(filenames, '20120601', '20121201')
+    current_fts = get_fname_timestamps(filenames, '20120101', '20140101').items()
     current_fts = sorted(current_fts, key=itemgetter(1))
     # We'll store the file (descriptor, timestamp)  in fdts
     fdts = []
 
     for v in current_fts:
+        print v,
         try:
             fd = h5.File(v[0], 'r')
             fdts.append((fd, v[1]))
+            print 'opened'
         except IOError, e:
             print 'Error accessing file %s: %s' % (v[0], e)
     print '=== printing filenames and notes ==='
     for f, t in fdts:
-        print '^', os.path.basename(f.filename), f.attrs['notes']
+        print 'notes: "%s" "%s"' % (os.path.basename(f.filename), ' '.join(f.attrs['notes'].split('\n')))
         f.close()
     classify_files_by_cellcount([item[0] for item in current_fts])
 
