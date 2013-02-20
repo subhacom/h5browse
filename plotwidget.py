@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Tue Apr 12 10:54:53 2011 (+0530)
 # Version: 
-# Last-Updated: Thu Dec 27 09:56:50 2012 (+0530)
+# Last-Updated: Thu Feb 14 12:41:25 2013 (+0530)
 #           By: subha
-#     Update #: 1219
+#     Update #: 1227
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -32,7 +32,7 @@
 from collections import defaultdict
 import re
 import numpy
-
+import numpy as np
 from PyQt4 import Qt, QtCore, QtGui, QtSvg
 from PyQt4 import Qwt5 as Qwt
 import analyzer
@@ -587,6 +587,9 @@ class PlotWidget(Qwt.QwtPlot):
             if curve not in self.__selectedCurves:
                 unselected.append(curve)
         self.__selectedCurves = unselected
+
+    def getSelecteCurvesData(self):
+        return [(np.asarray(curve.data().xData()), np.asarray(curve.data().yData())) for curve in self.__selectedCurves]
 
     def makeSpectrogram(self, datalist):
         """Display an array of time series data as spectrogram"""

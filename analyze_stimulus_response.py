@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 10:07:34 2013 (+0530)
 # Version: 
-# Last-Updated: Tue Jan 22 17:21:19 2013 (+0530)
+# Last-Updated: Tue Jan 29 11:54:05 2013 (+0530)
 #           By: subha
-#     Update #: 803
+#     Update #: 819
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -320,29 +320,38 @@ filenames = [
 	/data/subha/rsync_ghevar_cortical_data_clone/2012_12_18/data_20121218_090355_29114.h5 15
 	/data/subha/rsync_ghevar_cortical_data_clone/2012_11_18/data_20121118_132702_5610.h5 5"""
 
+datadir = '/data/subha/cortical/py/data'
+import socket
+if socket.gethostname() == 'chamcham':
+    datadir = '/data/subha/rsync_ghevar_cortical_data_clone'
+
 fname_stim_dict = {
-    '/data/subha/cortical/py/data/2012_11_14/data_20121114_091030_2716.h5': 5,
-    '/data/subha/cortical/py/data/2012_11_16/data_20121116_091100_3774.h5': 5,
-    '/data/subha/cortical/py/data/2012_11_18/data_20121118_132702_5610.h5': 5,
-    '/data/subha/cortical/py/data/2012_11_20/data_20121120_090612_6590.h5': 5,
-    '/data/subha/cortical/py/data/2012_11_22/data_20121122_145449_8016.h5': 5,
-    '/data/subha/cortical/py/data/2012_11_24/data_20121124_162657_9363.h5': 10,
-    '/data/subha/cortical/py/data/2012_11_26/data_20121126_092942_10181.h5': 10,
-    '/data/subha/cortical/py/data/2012_11_28/data_20121128_092639_11369.h5': 10,
-    '/data/subha/cortical/py/data/2012_11_30/data_20121130_083256_12326.h5': 10,
-    '/data/subha/cortical/py/data/2012_12_05/data_20121205_165444_16910.h5': 10,
-    '/data/subha/cortical/py/data/2012_12_08/data_20121208_105807_15611.h5': 15,
-    '/data/subha/cortical/py/data/2012_12_11/data_20121211_103522_12008.h5': 15,
-    '/data/subha/cortical/py/data/2012_12_14/data_20121214_095338_17603.h5': 15,
-    '/data/subha/cortical/py/data/2012_12_18/data_20121218_090355_29114.h5': 15,
-    '/data/subha/cortical/py/data/2012_12_21/data_20121221_151958_9665.h5': 15,
+    '2012_11_14/data_20121114_091030_2716.h5': 5,
+    '2012_11_16/data_20121116_091100_3774.h5': 5,
+    '2012_11_18/data_20121118_132702_5610.h5': 5,
+    '2012_11_20/data_20121120_090612_6590.h5': 5,
+    '2012_11_22/data_20121122_145449_8016.h5': 5,
+    '2012_11_24/data_20121124_162657_9363.h5': 10,
+    '2012_11_26/data_20121126_092942_10181.h5': 10,
+    '2012_11_28/data_20121128_092639_11369.h5': 10,
+    '2012_11_30/data_20121130_083256_12326.h5': 10,
+    '2012_12_05/data_20121205_165444_16910.h5': 10,
+    '2012_12_08/data_20121208_105807_15611.h5': 15,
+    '2012_12_11/data_20121211_103522_12008.h5': 15,
+    '2012_12_14/data_20121214_095338_17603.h5': 15,
+    '2012_12_18/data_20121218_090355_29114.h5': 15,
+    '2012_12_21/data_20121221_151958_9665.h5': 15,
+    '2013_01_19/data_20130119_114614_12793.h5': 20,
+    '2013_01_21/data_20130121_150010_15584.h5': 20,
+    '2013_01_23/data_20130123_091433_23206.h5': 20,
+    '2013_01_25/data_20130125_120631_30768.h5': 20,
     }
 
 def plot_stimcount_response(outfilepath='stimcount_response.pdf'):
     """Plot stimulus response for each stimulus count"""
     stim_fname = defaultdict(list) # Stimulus count -> data-list map
     for k, v in fname_stim_dict.items():
-        stim_fname[v].append(k)
+        stim_fname[v].append(os.path.join(datadir, k))
     # Now we do the plotting for each stimulus count in increasing order
     outfile = PdfPages(outfilepath)
     for key in sorted(stim_fname.keys()):
@@ -357,7 +366,7 @@ def plot_stimcount_psth(outfilepath='stimcount_psth.pdf'):
     """Plot PSTH for each stimulus count"""
     stim_fname = defaultdict(list) # Stimulus count -> data-list map
     for k, v in fname_stim_dict.items():
-        stim_fname[v].append(k)
+        stim_fname[v].append(os.path.join(datadir, k))
     # Now we do the plotting for each stimulus count in increasing order
     outfile = PdfPages(outfilepath)
     for key in sorted(stim_fname.keys()):
@@ -372,7 +381,7 @@ def plot_stim_response():
     """Plot stimulus response for each stimulus count"""
     stim_fname = defaultdict(list) # Stimulus count -> data-list map
     for k, v in fname_stim_dict.items():
-        stim_fname[v].append(k)
+        stim_fname[v].append(os.path.join(datadir, k))
     # Now we do the plotting for each stimulus count in increasing order
     for key in sorted(stim_fname.keys()):
         check_stimulus_response([TraubData(fname) for fname in stim_fname[key]], 'SpinyStellate')
@@ -382,7 +391,7 @@ def plot_spikeraster_by_stim_count(timerange=(10.0, 12.0)):
     cm = plt.cm.jet    
     stim_fname = defaultdict(list)
     for k, v in fname_stim_dict.items():
-        stim_fname[v].append(k)    
+        stim_fname[v].append(os.path.join(datadir, k))
     figures = []
     for k, v in stim_fname.items():
         f = plt.figure()
@@ -443,7 +452,8 @@ def plot_spikeraster_by_stim_count(timerange=(10.0, 12.0)):
     
         
 if __name__ == '__main__':
-    plot_stimcount_psth()
+    # plot_stimcount_psth()
+    plot_stimcount_response()
     # test_stim_response()
     # test_get_cells_responding_to_bg()
     # plot_stim_response()

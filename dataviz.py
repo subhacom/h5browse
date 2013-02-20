@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Mon Dec 31 12:09:15 2012 (+0530)
+# Last-Updated: Thu Feb 14 16:35:59 2013 (+0530)
 #           By: subha
-#     Update #: 3610
+#     Update #: 3734
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -58,6 +58,7 @@
 import os
 import sys
 import numpy
+import numpy as np
 from collections import defaultdict
 from PyQt4 import QtCore, QtGui, Qt
 from PyQt4 import Qwt5 as Qwt
@@ -1297,20 +1298,63 @@ class DataVizWidget(QtGui.QMainWindow):
             self.h5tree.saveSelectedDataToCsvFile(str(filename))
 
     def __plotPowerSpectrumSelectedCurves(self, subwindow=None, start=0, end=None, apply_filter=None, method='fft', cutoff=450.0, rolloff=10.0, newplot=True):
+        """Plot power spectrum for selected curves.  Returns True if
+        there were curves selected, so that some curves were
+        created. False otherwise.
+        """
+        if subwindow is None:
+            print 'Active subwindow is empty!'
+            return False
+        activePlot = subwindow.widget()
+        if not isinstance(activePlot, PlotWidget):
+            print 'Active subwindow does not have a plot widget!'
+            return False
+        datalist = activePlot.getSelecteCurvesData()
+        pathlist = activePlot.getSelecteCurvePaths()        
+        if len(datalist) == 0:
+            print 'No curves selected'
+            return False
+        new_datalist = []
+        new_pathlist = []
+        for path, data in zip(pathlist, datalist):
+            si = data[0][1] - data[0][0]
+            if apply_filter == 'blackman':
+                fdata = analyzer.blackmann_windowedsinc_filter([data[1]], si, cutoff=cutoff, rolloff=rolloff)[0]
+            elif apply_filter == 'fir':
+                fdata = analyzer.fir_filter([data[1]], si, cutoff=cutoff, rolloff=rolloff)[0]
+            else:
+                fdata = numpy.asarray(data)
+            if method == 'fft':                    
+                xform = numpy.fft.rfft(fdata)
+                freq = numpy.linspace(0, 0.5/si, len(xform))
+                new_datalist.append((freq, numpy.abs(xform)**2))
+            else:
+                print 'Only power spectrum via FFT is implemented'
+                return
+            new_pathlist.append('Power spectrum %s' % (path))
+        if newplot:
+            activePlot = PlotWidget()
+            subwindow = self.mdiArea.addSubWindow(activePlot)
+            subwindow.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        activePlot.addPlotCurveList(new_pathlist, new_datalist, curvenames=new_pathlist)
+        self.connect(activePlot, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        activePlot.setAxisTitle(0, 'Power')
+        activePlot.setAxisTitle(2, 'Frequency (Hz)')
+        activePlot.setLogLogScale(None, None)
+        subwindow.showMaximized()
+        self.enablePlotConfigActions()
+        return True
+        
+
+    def __plotPowerSpectrumSelectedData(self, subwindow=None, start=0, end=None, apply_filter=None, method='fft', cutoff=450.0, rolloff=10.0, newplot=True):
         """Plot the power spectrum of the selected data after applying a filter."""
         file_path_dict = defaultdict(list)
         for item in self.h5tree.selectedItems():
             path = item.path()
             file_path_dict[self.h5tree.getOpenFileName(path)].append(path)
         if not file_path_dict:
-            return        
-        data_dict = defaultdict(list)
-        mdiChild = subwindow
-        if newplot or (mdiChild is None) or (mdiChild.widget() is None):
-            print 'Creating new plot widget'
-            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
-            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
-        plotWidget = mdiChild.widget()
+            return False
+        plotWidgetEntries = []
         for filename in file_path_dict.keys():
             plotdts = []
             path_list = file_path_dict[filename]
@@ -1340,13 +1384,25 @@ class DataVizWidget(QtGui.QMainWindow):
                     xform = numpy.fft.rfft(data)
                     freq = numpy.linspace(0, 0.5/plotdts[ii], len(xform))
                     new_datalist.append((freq, numpy.abs(xform)**2))
+            plotWidgetEntries.append((path_list, new_datalist))
+
+        if len(plotWidgetEntries) == 0:
+            return False
+        mdiChild = subwindow
+        if newplot or (mdiChild is None) or (mdiChild.widget() is None):
+            print 'Creating new plot widget'
+            mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+            mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        plotWidget = mdiChild.widget()
+        for path_list, new_datalist in plotWidgetEntries:
             plotWidget.addPlotCurveList(path_list, new_datalist, curvenames=path_list)
-            self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        self.connect(plotWidget, QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
         plotWidget.setAxisTitle(0, 'Power')
         plotWidget.setAxisTitle(2, 'Frequency (Hz)')
         plotWidget.setLogLogScale((0.1, 500.0), None)
         mdiChild.showMaximized()
         self.enablePlotConfigActions()
+        return True
 
     def __colorCurvesByCelltype(self):
         activeSubWindow = self.mdiArea.activeSubWindow()
@@ -1356,85 +1412,96 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot = activeSubWindow.widget()
         activePlot.colorCurvesByCelltype()
         
-    def __plotPowerSpectrum(self):
+    def __createPowerSpectrumDialog(self):
         dialog = QtGui.QDialog(self)
-        filterLabel = QtGui.QLabel(dialog)
-        filterLabel.setText('Filter')
-        filterCombo = QtGui.QComboBox()
-        filterCombo.addItem('Blackmann-windowed sinc')
-        filterCombo.addItem('FIR')
-        filterCombo.addItem('None')
-        methodLabel = QtGui.QLabel('Transformation method')
-        methodCombo = QtGui.QComboBox()
-        methodCombo.addItem('FFT')
-        cutoffLabel = QtGui.QLabel('Cut-off', dialog)
-        cutoffText = QtGui.QLineEdit(dialog)
-        cutoffText.setText(self.settings.value('/lfpfilter/cutoff').toString())
-        rolloffLabel = QtGui.QLabel('Roll-off width', dialog)
-        rolloffText = QtGui.QLineEdit(dialog)
-        rolloffText.setText(self.settings.value('/lfpfilter/rolloff').toString())
-        dataRangeLabel = QtGui.QLabel(dialog)
-        dataRangeLabel.setText('Data range:')
-        dataStartText = QtGui.QLineEdit(dialog)
-        dataStartText.setText('0.0')
-        dataEndText =  QtGui.QLineEdit(dialog)
-        dataEndText.setText('5.0')
-        newplotButton = QtGui.QRadioButton('New plot window', dialog)
-        okButton = QtGui.QPushButton('OK')
-        cancelButton = QtGui.QPushButton('Cancel')
-        self.connect(okButton, QtCore.SIGNAL('clicked()'), dialog.accept)
-        self.connect(cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
+        dialog.filterLabel = QtGui.QLabel(dialog)
+        dialog.filterLabel.setText('Filter')
+        dialog.filterCombo = QtGui.QComboBox()
+        dialog.filterCombo.addItem('Blackmann-windowed sinc')
+        dialog.filterCombo.addItem('FIR')
+        dialog.filterCombo.addItem('None')
+        dialog.methodLabel = QtGui.QLabel('Transformation method')
+        dialog.methodCombo = QtGui.QComboBox()
+        dialog.methodCombo.addItem('FFT')
+        dialog.cutoffLabel = QtGui.QLabel('Cut-off', dialog)
+        dialog.cutoffText = QtGui.QLineEdit(dialog)
+        dialog.cutoffText.setText(self.settings.value('/lfpfilter/cutoff').toString())
+        dialog.rolloffLabel = QtGui.QLabel('Roll-off width', dialog)
+        dialog.rolloffText = QtGui.QLineEdit(dialog)
+        dialog.rolloffText.setText(self.settings.value('/lfpfilter/rolloff').toString())
+        dialog.dataRangeLabel = QtGui.QLabel(dialog)
+        dialog.dataRangeLabel.setText('Data range:')
+        dialog.dataStartText = QtGui.QLineEdit(dialog)
+        dialog.dataStartText.setText('0.0')
+        dialog.dataEndText =  QtGui.QLineEdit(dialog)
+        dialog.dataEndText.setText('5.0')
+        dialog.newplotButton = QtGui.QRadioButton('New plot window', dialog)
+        dialog.newplotButton.setChecked(True)
+        dialog.okButton = QtGui.QPushButton('OK')
+        dialog.cancelButton = QtGui.QPushButton('Cancel')
+        self.connect(dialog.okButton, QtCore.SIGNAL('clicked()'), dialog.accept)
+        self.connect(dialog.cancelButton, QtCore.SIGNAL('clicked()'), dialog.reject)
         layout = QtGui.QGridLayout()
-        layout.addWidget(filterLabel, 0, 0)
-        layout.addWidget(filterCombo, 0, 1)
-        layout.addWidget(cutoffLabel, 0, 2)
-        layout.addWidget(cutoffText, 0, 3)
-        layout.addWidget(rolloffLabel, 0, 4)
-        layout.addWidget(rolloffText, 0, 5)
-        layout.addWidget(methodLabel, 1, 0)
-        layout.addWidget(methodCombo, 1, 1)
-        layout.addWidget(dataRangeLabel, 2, 0)
-        layout.addWidget(dataStartText, 2, 1)
-        layout.addWidget(dataEndText, 2, 2)
-        layout.addWidget(newplotButton, 3, 0, 1, 2)
-        layout.addWidget(okButton, 4, 0)
-        layout.addWidget(cancelButton, 4, 1)
+        layout.addWidget(dialog.filterLabel, 0, 0)
+        layout.addWidget(dialog.filterCombo, 0, 1)
+        layout.addWidget(dialog.cutoffLabel, 0, 2)
+        layout.addWidget(dialog.cutoffText, 0, 3)
+        layout.addWidget(dialog.rolloffLabel, 0, 4)
+        layout.addWidget(dialog.rolloffText, 0, 5)
+        layout.addWidget(dialog.methodLabel, 1, 0)
+        layout.addWidget(dialog.methodCombo, 1, 1)
+        layout.addWidget(dialog.dataRangeLabel, 2, 0)
+        layout.addWidget(dialog.dataStartText, 2, 1)
+        layout.addWidget(dialog.dataEndText, 2, 2)
+        layout.addWidget(dialog.newplotButton, 3, 0, 1, 2)
+        layout.addWidget(dialog.okButton, 4, 0)
+        layout.addWidget(dialog.cancelButton, 4, 1)
         dialog.setLayout(layout)
+        return dialog
+
+    def __plotPowerSpectrum(self):
         activeSubWindow = self.mdiArea.activeSubWindow()
+        dialog = self.__createPowerSpectrumDialog()
         dialog.exec_()
         if dialog.result() == dialog.Accepted:
             filterName = None
-            if filterCombo.currentIndex() == 0:
+            if dialog.filterCombo.currentIndex() == 0:
                 filterName = 'blackman'
             elif filterCombo.currentIndex() == 1:
                 filterName = 'fir'
             method = None
-            if methodCombo.currentIndex() == 0:
+            if dialog.methodCombo.currentIndex() == 0:
                 method = 'fft'
             else:
                 method = None
-            cutoff, ok = cutoffText.text().toFloat()
+            cutoff, ok = dialog.cutoffText.text().toFloat()
             if ok:
                 self.settings.setValue('/lfpfilter/cutoff', str(cutoff))
             else:
                 cutoff = 450.0
-            rolloff, ok = rolloffText.text().toFloat()
+            rolloff, ok = dialog.rolloffText.text().toFloat()
             if ok:
                 self.settings.setValue('/lfpfilter/rolloff', str(rolloff))
             else:
                 rolloff = cutoff / 50.0
                 
-            newplot = newplotButton.isChecked()
-            start, ok = dataStartText.text().toFloat()
+            newplot = dialog.newplotButton.isChecked()
+            start, ok = dialog.dataStartText.text().toFloat()
             
             if not ok:
                 print 'Need a number for data start time'
                 start = 0.0
-            end, ok = dataEndText.text().toFloat()
+            end, ok = dialog.dataEndText.text().toFloat()
             if not ok:
                 print 'Need a number for data end time'            
                 end = None
-            self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot)
+            pwidget = activeSubWindow.widget()
+            if isinstance(pwidget, PlotWidget):
+                self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot)
+                # if self.__plotPowerSpectrumSelectedCurves(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot):
+                #     return
+                # else:
+                #     self.__plotPowerSpectrumSelectedData(subwindow=activeSubWindow, start=start, end=end, apply_filter=filterName, method=method, cutoff=cutoff, rolloff=rolloff, newplot=newplot)
 
     def _plotPSTHByRegex(self):
         """Plot the distribution of spike times with respect to

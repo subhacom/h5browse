@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Oct 29 16:03:56 2011 (+0530)
 # Version: 
-# Last-Updated: Wed Nov 14 14:32:19 2012 (+0530)
+# Last-Updated: Thu Feb 14 13:28:06 2013 (+0530)
 #           By: subha
-#     Update #: 1505
+#     Update #: 1506
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -83,6 +83,7 @@ def blackmann_windowedsinc_filter(datalist, sampling_interval, cutoff=450.0, rol
     lowpass = lowpass/ np.sum(lowpass)
     filtered_data_list = []
     for data in datalist:
+        print '^^^^', data
         filtered_data = np.convolve(lowpass, data, mode='same')
         filtered_data_list.append(filtered_data)
     end = datetime.now()
