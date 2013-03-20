@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jan  2 20:16:06 2013 (+0530)
 # Version: 
-# Last-Updated: Thu Jan  3 12:03:40 2013 (+0530)
+# Last-Updated: Wed Feb 20 22:09:20 2013 (+0530)
 #           By: subha
-#     Update #: 430
+#     Update #: 552
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -129,6 +129,112 @@ def display_traub_mplot3d(datafile, cellposfile):
     ax.set_axis_off()
     plt.show()
 
+def make_movie_vtk(datafile, cellposfile, timerange=(0, 1.0), outfile='traub3d.avi'):
+    data = get_display_data(datafile, cellposfile)
+    renderer = vtk.vtkRenderer()
+    renwin = vtk.vtkRenderWindow()
+    renwin.AddRenderer(renderer)
+    renwin.SetSize(1024, 768)
+    colorXfun = vtk.vtkColorTransferFunction()
+    cmap_matrix = np.loadtxt('autumn.cmp')
+    values = np.linspace(0, 1, len(cmap_matrix))
+    for ii in range(len(cmap_matrix)):                
+        colorXfun.AddRGBPoint(values[ii], cmap_matrix[ii][0], cmap_matrix[ii][1], cmap_matrix[ii][2])
+    polydata_dict = {}
+    for celltype, pos in data['pos'].items():
+        a = np.array(np.column_stack(pos), copy=True, order='C')
+        vtkpos = vtknp.numpy_to_vtk(a, deep=True) # vtk needs column major array
+        points = vtk.vtkPoints()
+        points.SetData(vtkpos)
+        polydata = vtk.vtkPolyData()
+        polydata.SetPoints(points)
+        polydata_dict[celltype] = polydata
+        if celltype == 'SpinyStellate':
+            source = vtk.vtkSuperquadricSource()
+            source.SetThetaResolution(6)
+            source.SetPhiResolution(6)
+            source.SetPhiRoundness(5)
+            source.SetThetaRoundness(5)
+            source.SetScale(5, 5, 5)
+        elif celltype == 'DeepBasket':
+            source = vtk.vtkSphereSource()
+            source.SetThetaResolution(6)
+            source.SetPhiResolution(6)
+            source.SetRadius(2)
+            # source.SetPhiRoundness(1)
+            # source.SetThetaRoundness(1)
+            # source.SetScale(3, 3, 3)
+        elif celltype == 'DeepLTS':
+            source = vtk.vtkSuperquadricSource()
+            source.SetThetaResolution(6)
+            source.SetPhiResolution(6)
+            source.SetPhiRoundness(1)
+            source.SetThetaRoundness(0.5)
+            source.SetScale(3, 3, 3)
+        elif celltype == 'TCR':
+            source = vtk.vtkSuperquadricSource()
+            source.SetThetaResolution(6)
+            source.SetPhiResolution(6)
+            source.SetPhiRoundness(2)
+            source.SetThetaRoundness(0)
+            source.SetScale(3, 3, 3)        
+        # source.SetThetaResolution(20)
+        # source.SetPhiResolution(20)       
+        glyph = vtk.vtkGlyph3D()
+        glyph.SetSource(source.GetOutput())
+        glyph.SetInput(polydata)
+        glyph.SetScaleModeToDataScalingOff()
+        glyph.SetScaleFactor(10)
+        mapper = vtk.vtkPolyDataMapper()
+        mapper.SetInput(glyph.GetOutput())
+        mapper.ImmediateModeRenderingOn()
+        mapper.SetLookupTable(colorXfun)
+        actor = vtk.vtkActor()
+        actor.SetMapper(mapper)
+        # actor.GetProperty().SetOpacity(0.5)
+        renderer.AddActor(actor)
+    camera = vtk.vtkCamera()
+    camera.SetPosition(0.0, 500.0, -1200.0)
+    camera.SetFocalPoint(0, 0, -1200)
+    camera.ComputeViewPlaneNormal()
+    renderer.SetActiveCamera(camera)
+    renderer.ResetCamera()
+    renwin.SetOffScreenRendering(True)
+    w2img = vtk.vtkWindowToImageFilter()
+    w2img.SetInput(renwin)        
+    w2img.SetInputBufferTypeToRGBA();
+    imwriter = vtk.vtkPNGWriter()
+    imwriter.SetInputConnection(w2img.GetOutputPort())
+    # For animation without interaction
+    tend = data['data'].simtime
+    if tend > timerange[1]:
+        tend = timerange[1]
+    tstart = 0.0
+    if tstart < timerange[0]:
+        tstart = timerange[0]
+    dt = data['data'].plotdt
+    times = np.arange(tstart, tend, dt)
+    for ii, t in enumerate(times):
+        for celltype, pos in data['pos'].items():
+            values = np.zeros(len(pos[0]), order='C')
+            for jj in range(len(pos[0])):
+                spikes = data['spike']['%s_%d' % (celltype, jj)]
+                if np.any((spikes < t) & (spikes > t - dt)):
+                    values[jj] = 1.0
+                    print t, celltype, jj
+            polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
+        camera.Azimuth(360.0/len(times))
+        renwin.Render()
+        w2img.Modified()
+        imwriter.SetFileName('frame_%06d.png' % (ii))
+        imwriter.Write()
+    renwin.Render()
+    # non-interactive animation tille here
+    
+    
+    
+    
+
 # sources = {'SupPyrRS': vtk.vtkConeSource,
 #              'SupPyrFRB': vtk.vtkConeSource,
 #              'SupLTS': vtk.vtkSphereSource,
@@ -146,17 +252,19 @@ def display_traub_mplot3d(datafile, cellposfile):
 #              }
 
 class TimerCallback():
-    def __init__(self, display_data, polydata_dict):
+    def __init__(self, display_data, polydata_dict, moviewriter=None):
         self.display_data = display_data
         self.polydata_dict = polydata_dict
         self.times = np.arange(1.0, display_data['data'].simtime, display_data['data'].plotdt)
         self.it = itertools.cycle(range(len(self.times)))
+        self.moviewriter = moviewriter
 
     def execute(self, obj, event):
         print self.actor.GetPosition()
         ii = self.it.next()
         t = self.times[ii]        
-        self.txtActor.SetInput('%.6f' % (t))
+        if hasattr(self, 'txtActor'):
+            self.txtActor.SetInput('%.6f' % (t))
         for celltype, pos in self.display_data['pos'].items():            
             values = np.zeros(len(pos[0]), order='C')
             for jj in range(len(pos[0])):
@@ -166,16 +274,22 @@ class TimerCallback():
             # print celltype, values
             self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
         obj.Render()
+        if self.moviewriter is not None:
+            self.moviewriter.Write()
+
+    def __del__(self):
+        if self.moviewriter is not None:
+            self.moviewriter.End()
                 
         
-def display_traub_vtk(datafile, cellposfile):
+def display_traub_vtk(datafile, cellposfile, moviefile=None):
     display_data = get_display_data(datafile, cellposfile)
     renderer = vtk.vtkRenderer()
     renwin = vtk.vtkRenderWindow()
     renwin.StereoCapableWindowOn()
     renwin.StereoRenderOn()
     renwin.SetStereoTypeToCrystalEyes()
-    # renwin.SetStereoTypeToAnaglyph()
+    renwin.SetStereoTypeToAnaglyph()
     renwin.AddRenderer(renderer)
     renwin.SetSize(1280, 900)
     polydata_dict = {}
@@ -242,12 +356,12 @@ def display_traub_vtk(datafile, cellposfile):
         actor.SetMapper(mapper)
         # actor.GetProperty().SetOpacity(0.5)
         renderer.AddActor(actor)
-    txtActor = vtk.vtkTextActor()
-    txtActor.GetTextProperty().SetFontSize(24)
-    # txtActor.SetPosition2(100, 10)
-    renderer.AddActor2D(txtActor)
-    txtActor.SetInput('Starting ...')
-    txtActor.GetTextProperty().SetColor(1, 1, 0)
+    # txtActor = vtk.vtkTextActor()
+    # txtActor.GetTextProperty().SetFontSize(24)
+    # # txtActor.SetPosition2(100, 10)
+    # renderer.AddActor2D(txtActor)
+    # txtActor.SetInput('Starting ...')
+    # txtActor.GetTextProperty().SetColor(1, 1, 0)
     camera = vtk.vtkCamera()
     camera.SetPosition(0.0, 500.0, -1200.0)
     camera.SetFocalPoint(0, 0, -1200)
@@ -270,23 +384,37 @@ def display_traub_vtk(datafile, cellposfile):
     #         print celltype, values
     #     renwin.Render()
     # non-interactive animation tille here
-
+    mwriter = None
+    if moviefile is not None:
+        mwriter = vtk.vtkFFMPEGWriter()
+        mwriter.SetQuality(2)
+        mwriter.SetFileName(moviefile)
+        # mwriter.SetRate(30)
+        w2img = vtk.vtkWindowToImageFilter()
+        w2img.SetInput(renwin)        
+        mwriter.SetInputConnection(w2img.GetOutputPort())
+        mwriter.SetQuality(2)
+        mwriter.SetRate(30)
     # For timer callback based animation
-    callback = TimerCallback(display_data, polydata_dict)
+    callback = TimerCallback(display_data, polydata_dict, mwriter)
     callback.actor = actor
-    callback.txtActor = txtActor
+    # callback.txtActor = txtActor
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renwin)
     interactor.Initialize()
     interactor.AddObserver('TimerEvent', callback.execute)
-    timerId = interactor.CreateRepeatingTimer(1) 
+    timerId = interactor.CreateRepeatingTimer(1)
     # timer callback till here
-   #start the interaction and timer
+    # start the interaction and timer
+    if mwriter is not None:
+        mwriter.Start()
     interactor.Start()
+    
     
 
     
 if __name__ == '__main__':
-    x = display_traub_vtk(datafile, posfile)
+    # x = display_traub_vtk(datafile, posfile, 'traub3d.avi')
+    make_movie_vtk(datafile, posfile, (1.0, 1.2), 'traub3d.avi')
 # 
 # traub3dvis.py ends here

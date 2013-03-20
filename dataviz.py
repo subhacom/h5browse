@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Thu Feb 14 16:35:59 2013 (+0530)
+# Last-Updated: Fri Mar 15 17:06:33 2013 (+0530)
 #           By: subha
-#     Update #: 3734
+#     Update #: 3760
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,13 +71,15 @@ from datalist import UniqueListModel, UniqueListView
 from plotconfig import PlotConfig
 from datasetmodel import HDFDatasetModel
 import analyzer
-
+import code
+from shell import get_shell_class
 
 default_settings = {
     'lfpfilter/cutoff': '450.0',
     'lfpfilter/rolloff': '45.0'
 }
 
+from hdftree import fhandles
 
 def compare_paths(x, y):
     """Compare paths of format nodepath/{cellname}_{cellno} such that
@@ -155,6 +157,12 @@ class DataVizWidget(QtGui.QMainWindow):
         self.dataList.setContextMenuPolicy(Qt.Qt.CustomContextMenu)        
         self.rightDock.setWidget(self.dataList)
         self.rightDock.hide()
+        self.bottomDock = QtGui.QDockWidget('Python')
+        cls = get_shell_class()
+        self.shellWidget = cls(code.InteractiveInterpreter())
+        self.shellWidget.interpreter.runsource('from __main__ import *')
+        self.bottomDock.setWidget(self.shellWidget)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.bottomDock)
         self.setCentralWidget(self.mdiArea)
         self.setStatusBar(QtGui.QStatusBar())
         self.windowMapper = QtCore.QSignalMapper(self)
@@ -1676,12 +1684,11 @@ class DataVizWidget(QtGui.QMainWindow):
         else:
             del plotWidget
         
-        
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     QtGui.qApp = app
-    mainwin = DataVizWidget()
-    mainwin.show()
+    mw = DataVizWidget()
+    mw.show()
     app.exec_()
 # 
 # dataviz.py ends here

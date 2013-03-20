@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug 11 09:49:49 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Sep 27 20:51:36 2011 (+0530)
-#           By: Subhasis Ray
-#     Update #: 730
+# Last-Updated: Wed Feb 20 21:41:48 2013 (+0530)
+#           By: subha
+#     Update #: 734
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -324,8 +324,8 @@ class TraubDataVis(object):
             self.interactor.Start()
         else:
             # self.renwin.SetOffScreenRendering(True)
-            # self.win2image = vtk.vtkWindowToImageFilter()
-            # self.win2image.SetInput(self.renwin)
+            self.win2image = vtk.vtkWindowToImageFilter()
+            self.win2image.SetInput(self.renwin)
 	    if movie:
                 self.moviewriter = vtk.vtkFFMPEGWriter()
                 self.moviewriter.SetQuality(2)
@@ -348,7 +348,7 @@ class TraubDataVis(object):
                         continue
                     self.positionSource[cellclass].GetPointData().SetScalars(vtknp.numpy_to_vtk(vm))
                 self.renwin.Render()
-                # self.win2image.Modified()
+                self.win2image.Modified()
                 if movie:
                     self.moviewriter.Write()
                 else:
@@ -364,7 +364,7 @@ if __name__ == '__main__':
     posfile = None
     datafile = None
     animate = False
-    movie = False
+    movie = True
     filename = 'traub_animated.avi'
     print 'Args', args, len(args)
     if len(args) >= 3:
@@ -376,8 +376,8 @@ if __name__ == '__main__':
             movie = True
             filename = args[4]
     else:
-        posfile = '/home/subha/src/sim/cortical/dataviz/cellpos.csv'
-        datafile = '/home/subha/src/sim/cortical/py/data/data_20101201_102647_8854.h5'
+        posfile = 'cellpos.csv'
+        datafile = '/data/subha/rsync_ghevar_cortical_data_clone/2010_12_01/data_20101201_102647_8854.h5'
     print 'Visualizing: positions from %s and data from %s' % (posfile, datafile)
     vis = TraubDataVis()
     vis.load_data(posfile, datafile)

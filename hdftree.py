@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Fri Mar  4 17:54:30 2011 (+0530)
 # Version: 
-# Last-Updated: Tue Jan 29 15:28:26 2013 (+0530)
+# Last-Updated: Fri Mar 15 17:07:54 2013 (+0530)
 #           By: subha
-#     Update #: 502
+#     Update #: 507
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -35,6 +35,8 @@ import re
 import h5py
 import numpy
 from PyQt4 import Qt, QtCore, QtGui
+
+fhandles = {}
 
 class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
     def __init__(self, parent, h5node):
@@ -68,7 +70,7 @@ class H5TreeWidgetItem(QtGui.QTreeWidgetItem):
 class H5TreeWidget(QtGui.QTreeWidget):
     def __init__(self, *args):
         QtGui.QTreeWidget.__init__(self, *args)
-        self.fhandles = {}
+        self.fhandles = fhandles
         self.header().hide()
         
     def addH5Handle(self, filename):
@@ -142,7 +144,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
                 if isinstance(obj, h5py.Dataset) and 'ectopic' not in obj.name and regex.match(str(obj.name)):
                     table_path = path + '/' + name
                     ret[table_path] = obj
-                    print 'matched', obj.name
+                    # print 'matched', obj.name
                 return None
             if isinstance(current_node, h5py.Group):
                 current_node.visititems(check_n_select)
@@ -231,7 +233,7 @@ class H5TreeWidget(QtGui.QTreeWidget):
         data_list = []
         headers = []
         paths = []
-        print 'Fields in file:'
+        # print 'Fields in file:'
         for item in self.selectedItems():
             if isinstance(item.h5node, h5py.Dataset):
                 # Avoid the spurious 0-th entry in MOOSE table
@@ -239,16 +241,16 @@ class H5TreeWidget(QtGui.QTreeWidget):
                 data_list[-1][:] = item.h5node[1:]
                 headers.append(item.h5node.name)
                 paths.append(item.path())
-                print paths[-1]
+                # print paths[-1]
         if data_list:
             length = len(data_list[0])            
-            print 'Number of datapoints', length
+            # print 'Number of datapoints', length
             array_to_save = numpy.zeros((length, len(data_list)+1))
             array_to_save[:,0] = self.getTimeSeries(paths[0])[:]
             for ii in range(len(data_list)): 
                 assert(len(data_list[ii]) == length)                
                 array_to_save[:, ii+1] = data_list[ii][:]
-            print 'Array shape:', array_to_save.shape
+            # print 'Array shape:', array_to_save.shape
         numpy.savetxt(filename, array_to_save)
         print 'Saved', paths, 'to', filename
                 

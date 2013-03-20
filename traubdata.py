@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Jan 22 17:15:41 2013 (+0530)
+# Last-Updated: Tue Feb 26 17:27:06 2013 (+0530)
 #           By: subha
-#     Update #: 767
+#     Update #: 772
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -222,6 +222,13 @@ class TraubData(object):
     def get_bgstim_times(self):
         indices = np.nonzero(np.diff(self.bg_stimulus)>0)[0]
         return indices * self.simtime / len(self.bg_stimulus)
+
+    def get_spiking_cells(self, celltype, bins):
+        """TODO Get the sets of spiking cells in each bin. The aim is
+        to get something like a histogram but the set of cell
+        identities should be maintained for the spikes in a bin."""
+        pass
+        
 
     def get_spiking_cell_hist(self, celltype, timerange=(0,1e9), binsize=5e-3):
         """Get the number of cells spiking in each time bin of width

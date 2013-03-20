@@ -21,6 +21,26 @@ def find_files(path, *args):
     filenames = [fname for fname in out.split('\n') if fname.strip() ]
     return filenames
 
+def get_files_by_ts(directory, namepattern='data*h5', start='19700101', end='30001231'):
+    startdate = datetime.strptime(start, '%Y%m%d')
+    enddate = datetime.strptime(end, '%Y%m%d')
+    current = datetime.now()
+    startdays = current - startdate
+    args = ['find', directory, 
+            '-name', namepattern, 
+            '-mmin',
+            '-%d' % (startdays.days*1440),
+            ]
+    if current > enddate:
+        enddays = current - enddate
+        args += ['-mmin', '+%d' % (enddays.days*1440)]
+
+    print args
+    po = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = po.communicate()
+    filenames = [fname for fname in out.split('\n') if fname.strip()]
+    return filenames
+    
 
 def get_fname_timestamps(filepaths, start='19700101', end='30001231'):
     """Get a dict of (filename, timestamp) for specified
