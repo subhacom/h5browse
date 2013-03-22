@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jun  5 13:59:40 2009 (+0530)
 # Version: 
-# Last-Updated: Tue Dec 18 18:29:35 2012 (+0530)
+# Last-Updated: Thu Mar 21 16:40:13 2013 (+0530)
 #           By: subha
-#     Update #: 94
+#     Update #: 95
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -53,6 +53,17 @@ from scipy import signal
 import numpy as np
 import os
 import csv
+
+datadir = '/data/subha/rsync_ghevar_cortical_data_clone'
+from datetime import datetime
+def makepath(fname, datadir=datadir):
+    """Create the full path from file name and datadir."""
+    ts = fname.partition('_')[-1].partition('.')[0].rpartition('_')[0]
+    ts = datetime.strptime(ts, '%Y%m%d_%H%M%S')
+    dirname = ts.strftime('%Y_%m_%d')
+    path = os.path.join(datadir, dirname, fname)
+    return path
+
 
 def almost_equal(left, right, epsilon=1e-6):
     """check if two floats are almost equal"""

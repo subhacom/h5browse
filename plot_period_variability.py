@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Feb 18 18:04:02 2013 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 20 20:57:23 2013 (+0530)
+# Last-Updated: Thu Mar 21 16:41:54 2013 (+0530)
 #           By: subha
-#     Update #: 782
+#     Update #: 787
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -32,6 +32,7 @@ import os
 import numpy as np
 import sys
 sys.path.append('/home/subha/src/dataviz')
+from util import *
 import peakdetect as pd
 from matplotlib import gridspec as gs
 from statsmodels.graphics import boxplots as bp
@@ -104,17 +105,9 @@ dbcnt_fname = {
          'data_20121122_145449_8016.h5')
     }
 
-datadir = '/data/subha/rsync_ghevar_cortical_data_clone'
-from datetime import datetime
-def makepath(fname, datadir=datadir):
-    """Create the full path from file name and datadir."""
-    ts = fname.partition('_')[-1].partition('.')[0].rpartition('_')[0]
-    ts = datetime.strptime(ts, '%Y%m%d_%H%M%S')
-    dirname = ts.strftime('%Y_%m_%d')
-    path = os.path.join(datadir, dirname, fname)
-    return path
-
 from matplotlib import pyplot as plt
+
+datadir = '/data/subha/rsync_ghevar_cortical_data_clone'
 
 def plot_histograms(histdict):
     """Draw line plots joining the number of cells spiking in each

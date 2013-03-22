@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Mar 14 15:26:03 2013 (+0530)
 # Version: 
-# Last-Updated: Wed Mar 20 21:10:10 2013 (+0530)
+# Last-Updated: Thu Mar 21 17:26:42 2013 (+0530)
 #           By: subha
-#     Update #: 362
+#     Update #: 373
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -74,35 +74,37 @@ def disable_latex():
         rcParams.update(current_font)
 
 flist = set([
-'data_20120919_172536_12276.h5',
-'data_20120922_195344_13808.h5',
-'data_20120925_140523_15171.h5',
-'data_20120928_095506_16949.h5',
-'data_20120929_184651_17981.h5',
-'data_20121003_091501_19886.h5',
-'data_20121004_201146_20645.h5',
-'data_20121006_081815_23857.h5',
-'data_20121008_104359_25161.h5',
-'data_20121012_140308_27319.h5',
-'data_20121014_184919_28619.h5',
-'data_20121105_144428_16400.h5',
-'data_20121107_100729_29479.h5',
-'data_20121108_210758_30357.h5',
-'data_20121112_112211_685.h5',
-'data_20121114_091030_2716.h5',
-'data_20121116_091100_3774.h5',
-'data_20121118_132702_5610.h5',
-'data_20121120_090612_6590.h5',
-'data_20121122_145449_8016.h5',
-    # 'data_20121114_091030_2716.h5',
-    'data_20130220_133500_24268.h5',
-    'data_20130225_151150_27463.h5',
-    'data_20130222_172520_25513.h5',
-    'data_20130227_090938_28653.h5',
-    'data_20130318_085236_2590.h5',
-    # 'data_20130301_101425_29754.h5',
-    # 'data_20130303_153540_31841.h5',
-])
+# These are different number of TCR cells stimulated
+        'data_20120919_172536_12276.h5',
+        'data_20120922_195344_13808.h5',
+        'data_20120925_140523_15171.h5',
+        'data_20120928_095506_16949.h5',
+        'data_20120929_184651_17981.h5',
+        'data_20121003_091501_19886.h5',
+        'data_20121004_201146_20645.h5',
+        'data_20121006_081815_23857.h5',
+        'data_20121008_104359_25161.h5',
+        'data_20121012_140308_27319.h5',
+        'data_20121014_184919_28619.h5',
+        'data_20121105_144428_16400.h5',
+        'data_20121107_100729_29479.h5',
+        'data_20121108_210758_30357.h5',
+        'data_20121112_112211_685.h5',
+        'data_20121114_091030_2716.h5',
+        'data_20121116_091100_3774.h5',
+        'data_20121118_132702_5610.h5',
+        'data_20121120_090612_6590.h5',
+        'data_20121122_145449_8016.h5',
+        # 'data_20121114_091030_2716.h5', ## This is the network template for the rest
+        # 'data_20130220_133500_24268.h5',
+        # 'data_20130225_151150_27463.h5',
+        # 'data_20130222_172520_25513.h5',
+        # 'data_20130227_090938_28653.h5',
+        # 'data_20130318_085236_2590.h5',
+        # 'data_20130319_205710_3880.h5',
+        # 'data_20130301_101425_29754.h5',
+        # 'data_20130303_153540_31841.h5',
+        ])
 
 
 def get_mean_gbar(data, syntype, pretype, posttype):
@@ -119,10 +121,7 @@ def plot_hist(datalist):
     for d in datalist:
         gaba_dict[d] = get_mean_gbar(d, 'gaba', 'DeepBasket', 'SpinyStellate')
     for d in datalist:
-        hist, bins = d.get_spiking_cell_hist('SpinyStellate', timerange=(1.0, 20.0))        
-        ncell = d.cellcounts._asdict()['SpinyStellate']
-        hist /= ncell
-        histdict[d] = (hist, bins)
+        histdict[d] =  d.get_spiking_cell_hist('SpinyStellate', timerange=(1.0, 20.0), frac=True)        
     for k, v in gaba_dict.items():
         print k.fdata.filename, v
     ax = None    

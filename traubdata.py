@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Feb 26 17:27:06 2013 (+0530)
+# Last-Updated: Thu Mar 21 17:25:53 2013 (+0530)
 #           By: subha
-#     Update #: 772
+#     Update #: 778
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -230,7 +230,7 @@ class TraubData(object):
         pass
         
 
-    def get_spiking_cell_hist(self, celltype, timerange=(0,1e9), binsize=5e-3):
+    def get_spiking_cell_hist(self, celltype, timerange=(0,1e9), binsize=5e-3, frac=False):
         """Get the number of cells spiking in each time bin of width
         `binsize`.
 
@@ -264,7 +264,10 @@ class TraubData(object):
         # If there was nonzero spike in the bin, the cell counts
         # towards firing cell in that bin
         histlist = [np.where(hist > 0, 1.0, 0.0) for hist in histlist]
-        return (np.sum(histlist, axis=0), bins)
+        hist = np.sum(histlist, axis=0)
+        if frac:
+            hist /= self.cellcounts._asdict()[celltype]
+        return (hist, bins)
 
     def get_popspike_times(self, celltype, cutoff=0.5, timerange=(0,1e9), binsize=5e-3):
         """Return the centre of the bins in which more than `cutoff`
