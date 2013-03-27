@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 21 17:25:53 2013 (+0530)
+# Last-Updated: Tue Mar 26 22:28:38 2013 (+0530)
 #           By: subha
-#     Update #: 778
+#     Update #: 780
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -222,6 +222,10 @@ class TraubData(object):
     def get_bgstim_times(self):
         indices = np.nonzero(np.diff(self.bg_stimulus)>0)[0]
         return indices * self.simtime / len(self.bg_stimulus)
+
+    def get_probestim_times(self):
+        indices = np.flatnonzero(np.diff(self.probe_stimulus) > 0)
+        return indices * self.simtime / len(self.probe_stimulus)
 
     def get_spiking_cells(self, celltype, bins):
         """TODO Get the sets of spiking cells in each bin. The aim is
