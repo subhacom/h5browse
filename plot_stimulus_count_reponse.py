@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Mar  4 10:41:54 2013 (+0530)
 # Version: 
-# Last-Updated: Mon Mar  4 17:56:38 2013 (+0530)
+# Last-Updated: Fri Mar 29 16:21:17 2013 (+0530)
 #           By: subha
-#     Update #: 105
+#     Update #: 107
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -37,7 +37,7 @@ import numpy as np
 
 from traubdata import TraubData
 
-# Dictionary containing the mapping from cell count to data files
+# Dictionary containing the mapping from stimulated cell count to data files
 stimcnt_fnames = {
     5: ['data_20121114_091030_2716.h5',
         'data_20121116_091100_3774.h5', 
@@ -107,7 +107,7 @@ def plot_stimcount_response():
             # ll = [axs.plot(st, np.ones(len(st))*(ii+1+len(tcr)), 'b,', mew=0) for ii, st in enumerate(ss)]
             axs.plot(np.linspace(0, data.simtime, len(data.bg_stimulus)), axs.yaxis.get_data_interval()[1] * data.bg_stimulus/max(data.bg_stimulus) , 'g-', alpha=0.5)
             # axs.set_xlim((15, 20))
-    # plt.show()
+    plt.show()
     return stimcount_datalist
 
 if __name__ == '__main__':
