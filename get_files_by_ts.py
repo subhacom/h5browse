@@ -104,18 +104,21 @@ def classify_files_by_cellcount(filelist):
     """
     categories = defaultdict(set)
     for filename in filelist:
-        with h5.File(filename, 'r') as fd:
-            cc = {}
-            try:
-                cc = dict([(k, int(v)) for k, v in np.asarray(fd['/runconfig/cellcount'])])        
-                cctuple = cellcount_tuple(**cc)
-                categories[cctuple].add(filename)
-            except KeyError, e:
-                print fd.filename, e     
-            except TypeError, e1:
-                print fd.filename, e1
-            finally:
-                fd.close()
+        try:
+            with h5.File(filename, 'r') as fd:
+                cc = {}
+                try:
+                    cc = dict([(k, int(v)) for k, v in np.asarray(fd['/runconfig/cellcount'])])        
+                    cctuple = cellcount_tuple(**cc)
+                    categories[cctuple].add(filename)
+                except KeyError, e:
+                    print fd.filename, e     
+                except TypeError, e1:
+                    print fd.filename, e1
+                finally:
+                    fd.close()
+        except (IOError) as e:
+            print filename, e
     return categories
 
 def load_spike_data(fnames):
@@ -145,6 +148,8 @@ def get_simtime(files):
         try:
             fd = h5.File(fn, 'r')
             data[fn] = float(dict(fd['/runconfig/scheduling'])['simtime'])
+        except (IOError, KeyError) as e:
+            print fn, e
         finally:
             if fd:
                 fd.close()
