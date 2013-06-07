@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov 26 20:44:46 2012 (+0530)
 # Version: 
-# Last-Updated: Tue Mar 26 22:28:38 2013 (+0530)
+# Last-Updated: Fri Jun  7 15:19:05 2013 (+0530)
 #           By: subha
-#     Update #: 780
+#     Update #: 968
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,7 +52,7 @@ from collections import deque
 print 'Working directory:', os.getcwd()
 from datetime import datetime
 import numpy as np
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 import random
 import igraph as ig
 import networkx as nx
@@ -544,8 +544,61 @@ class TraubData(object):
         return self.cell_graph
 
         
+    def _ig_create_cellgraph(self):
+        if hasattr(self, '_ig_cellgraph'):
+            return self._ig_cellgraph        
+        self._ig_cellgraph = ig.Graph(n=sum(self.cellcounts), directed=True)
+        self._ig_cellgraph.vs['name'] = ['%s_%d' % (celltype, ii) for celltype in self.cellcounts._asdict().keys() for ii in range(self.cellcounts._asdict()[celltype])]
+        synapses = self.fnet['/network/synapse']
+        pre_cells = [row[0] for row in np.char.split(synapses['source'], '/')]
+        post_cells = [row[0] for row in np.char.split(synapses['dest'], '/')]
+        weights = np.array([g for g in synapses['Gbar']])
+        types = [t for t in synapses['type']]
+        name_index = dict([(v['name'], ii) for ii, v in enumerate(self._ig_cellgraph.vs)])
+        pre_index = [name_index[name] for name in pre_cells]
+        post_index = [name_index[name] for name in post_cells]
+        self._ig_cellgraph.add_edges(zip(pre_index, post_index))
+        self._ig_cellgraph.es['w'] = weights
+        self._ig_cellgraph.es['t'] = types
+        # Shortest hops are shortest paths with path length 1 for all
+        # edges. shortest_paths take the resistances as weights
+        self.ampa_graph = self._ig_cellgraph.subgraph_edges(self._ig_cellgraph.es.select(t_eq='ampa'))
+        ampa_w = np.array(self.ampa_graph.es['w'])
+        self.shortest_ampa_hops = np.array(self.ampa_graph.shortest_paths())
+        self.shortest_ampa_paths = np.array(self.ampa_graph.shortest_paths(weights=1/ampa_w))
+        # For testing
+        # e260 = self._ig_cellgraph.es[260]
+        # print pre_cells[260], post_cells[260], weights[260], types[260], e260, self._ig_cellgraph.vs[e260.source], self._ig_cellgraph.vs[e260.target]
+        return self._ig_cellgraph
+        
+    def get_shortest_ampa_paths_from_stim(self, stimcells, cutoff):
+        """Get the shortest paths from cells in `stimcells` list.
+        
+        Returns a dict mapping each cell name to a list of its
+        shortest distances from `stimcells`
+        """
+        self._ig_create_cellgraph()
+        g = self.ampa_graph
+        if isinstance(cutoff, int):
+            paths = self.shortest_ampa_hops
+        elif isinstance(cutoff, float):
+            paths = self.shortest_ampa_paths
+        src, tgt = np.nonzero((paths != np.inf) & (paths < cutoff))
+        vstim = [v.index for v in g.vs.select(name_in=stimcells)]
+        ret = defaultdict(list)
+        for si, ti in zip(src, tgt):
+            s, t = int(si), int(ti) # This is because ti is numpy.int64 and igraph expects Python int32
+            if s in vstim:
+                ret[g.vs[t]['name']].append(paths[s][t])
+        return ret
 
-            
+    def get_gsyn(self, sourcetype, targettype, syntype):
+        """Return a histogram of synaptic conductances of type `syntype`
+        between `sourcetype` cells and `targettype` cells."""
+        return self.synapse[(np.char.find(self.synapse['source'], sourcetype) >= 0) & 
+                         (np.char.find(self.synapse['dest'], targettype) >= 0) &
+                         (self.synapse['type'] == syntype)]['Gbar'].copy()
+        
             
 def get_bursts(spikes, mincount=3, maxisi=15e-3):
     """Get a 2-column array for bursts from spikes.
