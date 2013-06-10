@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu May 16 11:51:53 2013 (+0530)
 # Version: 
-# Last-Updated: Thu May 16 17:06:35 2013 (+0530)
+# Last-Updated: Mon Jun 10 16:48:34 2013 (+0530)
 #           By: subha
-#     Update #: 105
+#     Update #: 118
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -73,17 +73,17 @@ def diff_nodes(fromfile, tofile, nodepath):
     from_proc = subprocess.Popen(args + [fromfile], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     to_proc = subprocess.Popen(args + [tofile], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     from_out, from_err = from_proc.communicate()
-    print '*****', from_out
-    print '###', from_err
+    # print '*****', from_out
+    # print '###', from_err
     from_strlist = from_out.split('\n')
-    print from_strlist
+    # print from_strlist
     to_out, to_err = to_proc.communicate()
-    print '*****', to_out
+    # print '*****', to_out
     to_strlist = to_out.split('\n')
-    print to_strlist
+    # print to_strlist
     differ = difflib.HtmlDiff()
     tab = differ.make_file(from_strlist, to_strlist)
-    print tab
+    # print tab
     return tab
 
 def view_diff(fromfile, tofile, nodepath):    
@@ -96,13 +96,19 @@ def view_diff(fromfile, tofile, nodepath):
     view.show()
     
 fromfile = '/data/subha/rsync_ghevar_cortical_data_clone/2013_05_13/data_20130513_090344_30246.h5'
-tofile = '/data/subha/rsync_ghevar_cortical_data_clone/2011_09_26/data_20110926_211607_10136.h5'
+tofile = '/data/subha/rsync_ghevar_cortical_data_clone/2013_05_15/data_20130515_144005_31732.h5'
+
+import sys
+
 if __name__ == '__main__':
+    if len(sys.argv) != 4:
+        print 'Usage: diffhdf file1 file2 node\nDisplay a visual diff between hdf5 files file1 and file2 at specified node.'
+        print 'got', sys.argv
+        sys.exit(0)
     app = qgui.QApplication(sys.argv)
-    tab = diff_nodes(fromfile, tofile, '/runconfig')
+    tab = diff_nodes(sys.argv[1], sys.argv[2], sys.argv[3])
     view = qgui.QTextBrowser()
     view.setText(tab)
-    print 'Here'
     view.show()
     sys.exit(app.exec_())
 
