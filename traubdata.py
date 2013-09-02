@@ -193,11 +193,16 @@ class TraubData(object):
         """
         if hasattr(self, 'bg_cells'):
             return
-        stiminfo = np.asarray(self.fnet['/stimulus/connection'])
-        self.bg_cells = [ token[-2] \
-                          for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_bg')]['f1'], '/')]
-        self.probe_cells = [token[-2] \
-                            for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_probe')]['f1'], '/')]
+        try:
+            stiminfo = np.asarray(self.fnet['/stimulus/connection'])
+            self.bg_cells = [ token[-2] \
+                              for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_bg')]['f1'], '/')]
+            self.probe_cells = [token[-2] \
+                                for token in np.char.split(stiminfo[np.char.endswith(stiminfo['f0'], 'stim_probe')]['f1'], '/')]
+        except KeyError: # In this case, TCR cells were replaced by spikegens corresponding to each stimulated cell
+            self.bg_cells = []
+            self.probe_cells = []
+            
 
     def get_bg_stimulated_cells(self, celltype):
         """Get the cells which get input from a TCR cell receiving

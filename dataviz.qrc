@@ -24,6 +24,8 @@
     <file>icons/togglecurve.gif</file>
     <file>icons/relineplot.gif</file>
     <file>icons/allcurve.gif</file>
+    <file>icons/newhist.gif</file>
+    <file>icons/newrehist.gif</file>
   </qresource>
 </RCC>
 

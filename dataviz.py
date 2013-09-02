@@ -7,9 +7,9 @@
 # Copyright (C) 2010 Subhasis Ray, all rights reserved.
 # Created: Wed Dec 15 10:16:41 2010 (+0530)
 # Version: 
-# Last-Updated: Fri Mar 15 17:06:33 2013 (+0530)
+# Last-Updated: Thu Jul  4 12:03:18 2013 (+0530)
 #           By: subha
-#     Update #: 3760
+#     Update #: 3790
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -65,6 +65,7 @@ from PyQt4 import Qwt5 as Qwt
 
 from datavizresources import *
 
+# from HistogramDemo import HistogramItem
 from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
@@ -386,6 +387,11 @@ class DataVizWidget(QtGui.QMainWindow):
                      QtCore.SIGNAL('triggered()'),
                      self._plotSpikeTimeDistributionByRegex)
         self.toolActions.append(self.plotSpikeTimeDistributionByRegexAction)
+        self.plotSumAction = QtGui.QAction('Plot sum of selected curves', self)
+        self.connect(self.plotSumAction, 
+                     QtCore.SIGNAL('triggered()'),
+                     self._plotSum)
+        self.toolActions.append(self.plotSumAction)
         return self.toolActions
         
 
@@ -449,6 +455,14 @@ class DataVizWidget(QtGui.QMainWindow):
         self.rasterPlotByRegexAction = QtGui.QAction(
             QtGui.QIcon(':/icons/rerasterplot.gif'), 'Raster plot by regular expression in current subwindow', self)
         self.connect(self.rasterPlotByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeRasterPlotByRegex)
+
+        self.newHistogramAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/histogram.gif'), 'New histogram', self)
+        self.connect(self.newHistogramAction, QtCore.SIGNAL('triggered()'), self.__makeNewHistogram)
+
+        self.newHistogramByRegexAction = QtGui.QAction(
+            QtGui.QIcon(':/icons/histogram.gif'), 'New histogram by regular expression', self)
+        self.connect(self.newHistogramByRegexAction, QtCore.SIGNAL('triggered()'), self.__makeNewHistogramByRegex)
 
         # Actions for Edit menu - works on HDFTree and DataList.
         self.removeSelectedAction = QtGui.QAction('Remove selected items', self)
@@ -521,6 +535,9 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotMenu.addAction(self.rasterPlotAction)
         self.plotMenu.addAction(self.rasterPlotByRegexAction)
         self.plotMenu.addAction(self.newSpectrogramAction)
+
+        self.plotMenu.addAction(self.newHistogramAction)
+        
 
         self.getPlotConfigActions()
         self.editPlotMenu = self.plotMenu.addMenu(self.tr('&Edit Plot'))
@@ -733,6 +750,28 @@ class DataVizWidget(QtGui.QMainWindow):
         self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)        
         mdiChild.showMaximized()
         self.__makeRasterPlot()
+
+    def __makeNewHistogram(self):
+        return
+    # self.dataList.model().clear()
+# self.__selectForPlot()
+# mdiChild = self.mdiArea.activeSubWindow()
+# if (mdiChild is None) or (mdiChild.widget() is not None):
+#     mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+#     mdiChild.setWindowTitle('Histogram %d' % (len(self.mdiArea.subWindowList())))
+# else:
+#     mdiChild.setWidget(PlotWidget())
+# mdiChild.showMaximized()
+# self.__makeHistogram()
+
+# def __makeHistogram(self):
+#     """Display histogram"""
+#     for item in self.dataList.model().stringList():
+#         path = str(item)
+#         pathlist.append(path)
+
+    def __makeNewHistogramByRegex(self):
+        pass
 
     def __makeNewLinePlotByRegex(self):
         self.dataList.model().clear()
@@ -1147,6 +1186,25 @@ class DataVizWidget(QtGui.QMainWindow):
         
     def __showStatusMessage(self, message):
         self.statusBar().showMessage(message)
+
+    def _plotSum(self):
+        file_path_dict = defaultdict(list)
+        sumdata = None        
+        for item in self.dataList.model().stringList():
+            path = str(item)
+            try:
+                sumdata += np.asarray(self.h5tree.getData(path))
+            except TypeError:
+                sumdata = np.asarray(self.h5tree.getData(path))
+        if sumdata is None:
+            return
+        mdiChild = self.mdiArea.addSubWindow(PlotWidget())
+        mdiChild.setWindowTitle('Plot %d' % len(self.mdiArea.subWindowList()))
+        ts = self.h5tree.getTimeSeries(path)
+        mdiChild.widget().addPlotCurveList([path], [sumdata], curvenames=[path])
+        self.connect(mdiChild.widget(), QtCore.SIGNAL('curveSelected'), self.__showStatusMessage)
+        mdiChild.showMaximized()
+
 
     def __plotFilteredLFP(self):
         """Filter LFP at 450 Hz upper cutoff and plot"""
