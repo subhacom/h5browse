@@ -1544,7 +1544,7 @@ class DataVizWidget(QtGui.QMainWindow):
             filterName = None
             if dialog.filterCombo.currentIndex() == 0:
                 filterName = 'blackman'
-            elif filterCombo.currentIndex() == 1:
+            elif dialog.filterCombo.currentIndex() == 1:
                 filterName = 'fir'
             method = None
             if dialog.methodCombo.currentIndex() == 0:
