@@ -1,0 +1,330 @@
+/home/subha/src/dataviz
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093750_5589.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093750_5589.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131449_16448.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131449_16448.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120019_29963.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120019_29963.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144712_31468.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144712_31468.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195423_10961.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195423_10961.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195421_10938.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195421_10938.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131455_16498.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131455_16498.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092550_14913.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092550_14913.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154315_2853.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154315_2853.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/data_20120309_092324_5012.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/data_20120309_092324_5012.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091518_27066.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091518_27066.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095226_25321.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095226_25321.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093408_14277.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093408_14277.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_06/data_20120206_112440_1220.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_06/data_20120206_112440_1220.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115006_24578.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115006_24578.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131453_16471.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131453_16471.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120020_30001.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120020_30001.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093411_14379.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093411_14379.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112233_16317.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112233_16317.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154318_2943.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154318_2943.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093746_5495.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093746_5495.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154317_2914.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154317_2914.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144711_31441.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144711_31441.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091516_27020.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091516_27020.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_28/data_20120228_175456_20931.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_28/data_20120228_175456_20931.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092150_14871.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092150_14871.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092104_29340.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092104_29340.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_18/data_20120118_142820_7865.h5 {'NontuftedRS': 0, 'DeepBasket': 0, 'DeepAxoaxonic': 0, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_18/data_20120118_142820_7865.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092558_14940.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092558_14940.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142250_7843.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142250_7843.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112235_16381.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112235_16381.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093747_5518.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093747_5518.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092059_29226.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092059_29226.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092102_29305.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092102_29305.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115007_24601.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115007_24601.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093748_5541.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093748_5541.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_10/data_20120210_153047_7156.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_10/data_20120210_153047_7156.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172345_4429.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172345_4429.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091517_27043.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091517_27043.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093409_14316.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093409_14316.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154315_2851.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154315_2851.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115005_24555.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115005_24555.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120022_30039.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120022_30039.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_16/data_20120216_172956_12356.h5 {'NontuftedRS': 500, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 200, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 800, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_16/data_20120216_172956_12356.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172347_4452.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172347_4452.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120018_29940.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120018_29940.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_09/data_20120409_092925_10461.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_09/data_20120409_092925_10461.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093406_14222.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093406_14222.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_06/data_20120206_112441_1248.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_06/data_20120206_112441_1248.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_114143_4367.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_114143_4367.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_10/data_20120210_153833_7522.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_10/data_20120210_153833_7522.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093410_14339.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093410_14339.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095234_25406.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095234_25406.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_01/data_20120201_143411_29609.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_01/data_20120201_143411_29609.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095228_25344.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095228_25344.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095225_25298.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095225_25298.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_19/data_20120119_201036_10692.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_19/data_20120119_201036_10692.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_115556_4589.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_115556_4589.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/data_20120309_092344_5040.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/data_20120309_092344_5040.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_01/data_20120201_204744_29839.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_01/data_20120201_204744_29839.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_114922_24526.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_114922_24526.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195424_10984.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195424_10984.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_11/data_20120111_135100_30693.h5 {'NontuftedRS': 0, 'DeepBasket': 0, 'DeepAxoaxonic': 0, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_11/data_20120111_135100_30693.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144709_31418.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144709_31418.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_19/data_20120319_183805_31958.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_19/data_20120319_183805_31958.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091519_27093.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091519_27093.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095229_25371.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095229_25371.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142300_7898.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142300_7898.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_114141_4344.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_114141_4344.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091520_27120.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091520_27120.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093749_5564.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093749_5564.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_17/data_20120117_114805_6302.h5 {'NontuftedRS': 0, 'DeepBasket': 0, 'DeepAxoaxonic': 0, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_17/data_20120117_114805_6302.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142251_7866.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142251_7866.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092600_14963.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092600_14963.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131456_16525.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 0, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131456_16525.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112234_16352.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112234_16352.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172349_4483.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172349_4483.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112240_16481.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112240_16481.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120014_29860.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120014_29860.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172342_4406.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172342_4406.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154316_2855.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 100}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154316_2855.h5
+/data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_132826_7763.h5 {'NontuftedRS': 0, 'DeepBasket': 100, 'DeepAxoaxonic': 100, 'TCR': 100, 'SupPyrRS': 0, 'TuftedRS': 0, 'SupAxoaxonic': 0, 'SupPyrFRB': 0, 'TuftedIB': 0, 'DeepLTS': 100, 'SpinyStellate': 240, 'SupLTS': 0, 'SupBasket': 0, 'nRT': 0}
+Loaded /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_132826_7763.h5
+=== printing filenames and notes ===
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093750_5589.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131449_16448.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120019_29963.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144712_31468.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195423_10961.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195421_10938.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131455_16498.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092550_14913.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154315_2853.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/data_20120309_092324_5012.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091518_27066.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095226_25321.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093408_14277.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_06/data_20120206_112440_1220.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115006_24578.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131453_16471.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120020_30001.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093411_14379.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112233_16317.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154318_2943.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093746_5495.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154317_2914.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144711_31441.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091516_27020.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_28/data_20120228_175456_20931.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092150_14871.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092104_29340.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_18/data_20120118_142820_7865.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=0, DeepAxoaxonic=0, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092558_14940.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142250_7843.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112235_16381.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093747_5518.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092059_29226.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_10/data_20120410_092102_29305.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115007_24601.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093748_5541.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_10/data_20120210_153047_7156.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172345_4429.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091517_27043.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093409_14316.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154315_2851.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_115005_24555.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120022_30039.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_16/data_20120216_172956_12356.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=800, TuftedRS=200, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=500, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172347_4452.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120018_29940.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_09/data_20120409_092925_10461.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093406_14222.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_06/data_20120206_112441_1248.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_114143_4367.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_10/data_20120210_153833_7522.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_04/data_20120404_093410_14339.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095234_25406.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_01/data_20120201_143411_29609.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095228_25344.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095225_25298.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_19/data_20120119_201036_10692.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_115556_4589.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_09/data_20120309_092344_5040.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_01/data_20120201_204744_29839.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_22/data_20120322_114922_24526.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_13/data_20120313_195424_10984.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_11/data_20120111_135100_30693.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=0, DeepAxoaxonic=0, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_03/data_20120203_144709_31418.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_19/data_20120319_183805_31958.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091519_27093.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_28/data_20120328_095229_25371.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142300_7898.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_02_08/data_20120208_114141_4344.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_30/data_20120330_091520_27120.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_26/data_20120326_093749_5564.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_17/data_20120117_114805_6302.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=0, DeepAxoaxonic=0, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_142251_7866.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_23/data_20120123_092600_14963.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_01_25/data_20120125_131456_16525.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=0, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112234_16352.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172349_4483.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_30/data_20120430_112240_16481.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_06/data_20120406_120014_29860.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_03_24/data_20120324_172342_4406.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_02/data_20120402_154316_2855.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=100)
+^ /data/subha/rsync_ghevar_cortical_data_clone/2012_04_26/data_20120426_132826_7763.h5
+   cellcount(SupPyrRS=0, SupPyrFRB=0, SupBasket=0, SupAxoaxonic=0, SupLTS=0, SpinyStellate=240, TuftedIB=0, TuftedRS=0, DeepBasket=100, DeepAxoaxonic=100, DeepLTS=100, NontuftedRS=0, TCR=100, nRT=0)
