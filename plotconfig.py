@@ -49,7 +49,26 @@ from PyQt4.Qt import Qt
 from PyQt4 import QtGui, QtCore
 from PyQt4 import Qwt5 as Qwt
 
-class PlotConfig(QtGui.QDialog):
+class PlotConfigDialog(QtGui.QDialog):
+    def __init__(self, *args):
+        QtGui.QDialog.__init__(self, *args)
+        layout = QtGui.QVBoxLayout()
+        self.widget = PlotConfigWidget()
+        layout.addWidget(self.widget)
+        buttonLayout = QtGui.QHBoxLayout()
+        self.cancelButton = QtGui.QPushButton(self.tr('Cancel'), self)
+        self.connect(self.cancelButton, QtCore.SIGNAL('clicked()'), self.reject)
+        buttonLayout.addWidget(self.cancelButton)
+
+        self.okButton = QtGui.QPushButton(self.tr('OK'), self)
+        self.connect(self.okButton, QtCore.SIGNAL('clicked()'), self.accept)
+        buttonLayout.addWidget(self.okButton)
+        self.okButton.setDefault(True)
+        layout.addLayout(buttonLayout)
+        self.setLayout(layout)
+        
+
+class PlotConfigWidget(QtGui.QWidget):
     """Widget to visually configure plots."""
 
     curveStyleNames = [
@@ -134,7 +153,7 @@ class PlotConfig(QtGui.QDialog):
         'StyleCnt': Qwt.QwtSymbol.StyleCnt
         }
     def __init__(self, *args):
-        QtGui.QDialog.__init__(self, *args)
+        QtGui.QWidget.__init__(self, *args)
         self.currentLineColor = QtGui.QColor(Qt.black)
         self.currentSymbolPenColor = QtGui.QColor(Qt.black)
         self.currentSymbolFillColor = QtGui.QColor(Qt.black)
@@ -146,8 +165,8 @@ class PlotConfig(QtGui.QDialog):
         layout.addWidget(self.styleLabel, row, 0)
 
         self.styleCombo = QtGui.QComboBox(self)
-        self.styleCombo.addItems(PlotConfig.curveStyleNames)
-        self.styleCombo.setCurrentIndex(PlotConfig.curveStyleNames.index('Lines'))
+        self.styleCombo.addItems(PlotConfigWidget.curveStyleNames)
+        self.styleCombo.setCurrentIndex(PlotConfigWidget.curveStyleNames.index('Lines'))
         layout.addWidget(self.styleCombo, row, 1)
 
         row += 1
@@ -156,7 +175,7 @@ class PlotConfig(QtGui.QDialog):
         
 
         self.attributeCombo = QtGui.QComboBox(self)
-        self.attributeCombo.addItems(PlotConfig.curveAttributeNames)
+        self.attributeCombo.addItems(PlotConfigWidget.curveAttributeNames)
         self.attributeCombo.setCurrentIndex(0)
         layout.addWidget(self.attributeCombo, row, 1)
 
@@ -188,8 +207,8 @@ class PlotConfig(QtGui.QDialog):
         layout.addWidget(self.lineStyleLabel, row, 0)
 
         self.lineStyleCombo = QtGui.QComboBox(self)
-        self.lineStyleCombo.addItems(PlotConfig.penStyleNames)
-        self.lineStyleCombo.setCurrentIndex(PlotConfig.penStyleNames.index('SolidLine'))
+        self.lineStyleCombo.addItems(PlotConfigWidget.penStyleNames)
+        self.lineStyleCombo.setCurrentIndex(PlotConfigWidget.penStyleNames.index('SolidLine'))
         layout.addWidget(self.lineStyleCombo, row, 1)
         
         # Options for plot symbol
@@ -203,8 +222,8 @@ class PlotConfig(QtGui.QDialog):
         layout.addWidget(self.symbolStyleLabel, row, 0)
 
         self.symbolStyleCombo = QtGui.QComboBox(self)
-        self.symbolStyleCombo.addItems(PlotConfig.symbolStyleNames)
-        self.symbolStyleCombo.setCurrentIndex(PlotConfig.symbolStyleNames.index('NoSymbol'))
+        self.symbolStyleCombo.addItems(PlotConfigWidget.symbolStyleNames)
+        self.symbolStyleCombo.setCurrentIndex(PlotConfigWidget.symbolStyleNames.index('NoSymbol'))
         layout.addWidget(self.symbolStyleCombo, row, 1)
 
         row += 1
@@ -250,17 +269,6 @@ class PlotConfig(QtGui.QDialog):
         self.symbolHeightText = QtGui.QLineEdit('3', self)        
         layout.addWidget(self.symbolHeightText, row, 1)
 
-        row += 1
-        self.cancelButton = QtGui.QPushButton(self.tr('Cancel'), self)
-        self.connect(self.cancelButton, QtCore.SIGNAL('clicked()'), self.reject)
-        layout.addWidget(self.cancelButton, row, 0)
-
-        self.okButton = QtGui.QPushButton(self.tr('OK'), self)
-        self.connect(self.okButton, QtCore.SIGNAL('clicked()'), self.accept)
-        layout.addWidget(self.okButton, row, 1)
-
-        self.okButton.setDefault(True)
-        
         self.setLayout(layout)
 
     def setLineColor(self):
@@ -300,7 +308,7 @@ class PlotConfig(QtGui.QDialog):
 
     def getSymbol(self):
         """return a QwtSymbol object with the selected settings."""
-        style = PlotConfig.symbolStyleMap[str(self.symbolStyleCombo.currentText())]
+        style = PlotConfigWidget.symbolStyleMap[str(self.symbolStyleCombo.currentText())]
         brush = QtGui.QBrush(self.currentSymbolFillColor)
         pen = QtGui.QPen(self.currentSymbolPenColor)
         pen.setWidth(float(self.symbolLineWidthText.text()))
@@ -310,14 +318,14 @@ class PlotConfig(QtGui.QDialog):
         return symbol
 
     def getStyle(self):
-        return PlotConfig.curveStyleMap[str(self.styleCombo.currentText())]
+        return PlotConfigWidget.curveStyleMap[str(self.styleCombo.currentText())]
 
     def getAttribute(self):
-        return PlotConfig.curveAttributeMap[str(self.attributeCombo.currentText())]
+        return PlotConfigWidget.curveAttributeMap[str(self.attributeCombo.currentText())]
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    widget = PlotConfig()
+    widget = PlotConfigDialog()
     widget.show()
     app.exec_()
 

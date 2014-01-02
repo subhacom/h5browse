@@ -69,7 +69,7 @@ from datavizresources import *
 from plotwidget import PlotWidget
 from hdftree import H5TreeWidget
 from datalist import UniqueListModel, UniqueListView
-from plotconfig import PlotConfig
+from plotconfig import PlotConfigWidget, PlotConfigDialog
 from datasetmodel import HDFDatasetModel
 import analyzer
 import code
@@ -171,7 +171,7 @@ class DataVizWidget(QtGui.QMainWindow):
         #              self.__setActiveSubWindow)
         self.connect(self.h5tree, QtCore.SIGNAL('itemDoubleClicked(QTreeWidgetItem *, int )'), self.__displayData)
 
-        self.plotConfig = PlotConfig(self)
+        self.plotConfig = PlotConfigDialog(self)
         self.plotConfig.setVisible(False)        
         self.__setupActions()
         self.__setupMenuBar()
@@ -666,7 +666,7 @@ class DataVizWidget(QtGui.QMainWindow):
             return (x.currentIndex(), y.currentIndex())
         else:
             return (-1, -1)
-                                    
+
     def __makeLinePlot(self):
         if self.mdiArea.activeSubWindow() is None or self.mdiArea.activeSubWindow().widget() is None:
             plotWidget = PlotWidget()
@@ -1030,12 +1030,13 @@ class DataVizWidget(QtGui.QMainWindow):
         activePlot.editLegendText()
 
     def __editPlotTitle(self):
-        activePlot = self.mdiArea.activeSubWindow().widget()
+        subwindow = self.mdiArea.activeSubWindow()
+        activePlot = subwindow.widget()
         title, ok, = QtGui.QInputDialog.getText(self, self.tr('Change Plot Title'), self.tr('Plot title:'), QtGui.QLineEdit.Normal, activePlot.title().text())
         if ok:
             activePlot.setTitle(title)
             # We set the sub window title to the same
-            self.mdiArea.activeSubWindow.setWindowTitle(title)
+            subwindow.setWindowTitle(title)
         
     def __configurePlots(self):
         """Interactively allow the user to configure everything about
@@ -1044,10 +1045,10 @@ class DataVizWidget(QtGui.QMainWindow):
         self.plotConfig.setVisible(True)
         ret = self.plotConfig.exec_()
         if ret == QtGui.QDialog.Accepted:
-            pen = self.plotConfig.getPen()
-            symbol = self.plotConfig.getSymbol()
-            style = self.plotConfig.getStyle()
-            attribute = self.plotConfig.getAttribute()
+            pen = self.plotConfig.widget.getPen()
+            symbol = self.plotConfig.widget.getSymbol()
+            style = self.plotConfig.widget.getStyle()
+            attribute = self.plotConfig.widget.getAttribute()
             activePlot.reconfigureSelectedCurves(pen, symbol, style, attribute)
 
     def __togglePlotVisibility(self, hide):
