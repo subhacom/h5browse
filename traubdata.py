@@ -537,7 +537,8 @@ class TraubData(object):
         synapses = self.fnet['/network/synapse']
         pre_cells = [row[0] for row in np.char.split(synapses['source'], '/')]
         post_cells = [row[0] for row in np.char.split(synapses['dest'], '/')]
-        weights = [g for g in synapses['Gbar']]        
+        weights = np.array([g for g in synapses['Gbar']])
+        weights = np.log(weights/max(weights))
         self.cell_graph.add_weighted_edges_from(zip(pre_cells, post_cells, weights))
         index = 0
         for e in self.cell_graph.edges_iter(data=True):

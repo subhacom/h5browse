@@ -17,9 +17,10 @@
 
 # Commentary: 
 # 
+# Use of vtkLookupTable from
+# http://www.vtk.org/Wiki/VTK/Examples/Python/MeshLabelImageColor
 # 
-# 
-# 
+# Animation of chart: http://www.vtk.org/pipermail/vtkusers/2012-January/072004.html
 
 # Change log:
 # 
@@ -65,16 +66,16 @@ import itertools
 
 
 # These are the default cellposition and data files
-posfile = '/home/subha/src/dataviz/cellpos.csv'
+posfile = '/home/subha/src/dataviz/cellpos_const_dia.csv'
 datafile = '/data/subha/rsync_ghevar_cortical_data_clone/2012_05_22/data_20120522_152734_10973.h5'
 
 # This uses:
 # hue, saturation, value (hsv) colorspec to get well separated colours. 
-# ((hue_min, hue_max), (saturation_min, saturation_max), (value_mean, value_max))
+# ((hue_min, hue_max), (saturation_min, saturation_max), (value_mean, value_max), (alpha_min, alpha_max))
 cmap = {'SupPyrRS': ((0.0,0.0), (1, 0.0), (1.0, 1.0), (0.7, 0.7)),
-        'SupPyrFRB': ((0.1,0.1), (1,0.0), (1.0, 1.0), (0.7, 0.7)),
+        'SupPyrFRB': ((0.15,0.15), (1,0.0), (1.0, 1.0), (0.7, 0.7)),
         'SupLTS': ((0.25,0.25), (1, 0.0), (1.0, 1.0), (0.7, 0.7)),
-        'SupAxoaxonic': ((0.35,0.35), (1, 0.0), (1.0, 1.0), (0.7, 0.7)),
+        'SupAxoaxonic': ((0.35,0.35), (1, 0.0), (0.5, 1.0), (0.7, 0.7)),
         'SupBasket': ((0.45,0.45), (1, 0.0), (1.0, 1.0), (0.7, 0.7)),
         'SpinyStellate': ((0.9,0.9), (1, 0.0), (1.0, 1.0), (0.7, 0.7)),
         'TuftedIB': ((0.0,0.0), (1, 0.0), (1.0, 1.0), (0.7, 0.7)),
@@ -143,46 +144,97 @@ def generate_cell_positions(data, cellposfile):
 def get_display_data(datafile, cellposfile):
     data = TraubData(datafile)
     spiketimes = data.spikes
+    vm = dict([(cell, data.fdata['/Vm'][cell][:]) for cell in data.fdata['/Vm' ]])
     pos = generate_cell_positions(data, cellposfile)
     return {
-            'spike': spiketimes,
-            'pos': pos,
-            'data': data}
+        'spike': spiketimes,
+        'pos': pos,
+        'vm': vm,
+        'data': data}
 
-class TimerCallback():
-    def __init__(self, display_data, polydata_dict, moviewriter=None):
-        self.display_data = display_data
-        self.polydata_dict = polydata_dict
-        self.times = np.arange(1.0, display_data['data'].simtime, display_data['data'].plotdt)
-        self.it = itertools.cycle(range(len(self.times)))
+import threading
+import time
+
+t = 0.0
+
+class Animator():
+    def __init__(self, lock, moviewriter=None):
+        self.lock = lock
         self.moviewriter = moviewriter
-        self.spikewindow = 5e-3 # Keep effect of spikes in this window
 
-    def execute(self, obj, event):
-        print self.actor.GetPosition()
-        ii = self.it.next()
-        t = self.times[ii]        
-        if hasattr(self, 'txtActor'):
-            self.txtActor.SetInput('%.6f' % (t))
-        for celltype, pos in self.display_data['pos'].items():            
-            values = np.zeros(len(pos[0]), order='C')
-            for jj in range(len(pos[0])):
-                spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]
-                # Get all the spikes in last 5 ms
-                st = spikes[np.flatnonzero((spikes < t) & (spikes > t - self.spikewindow))]
-                values[jj] = sum(np.exp(st - t))                  
-            # print celltype, values
-            self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
+    def animate(self, obj=None, event=None):
+        time.sleep(0.003)
+        self.lock.acquire()
         obj.Render()
         if self.moviewriter is not None:
             self.moviewriter.Write()
-
+        self.lock.release()
+    
     def __del__(self):
         if self.moviewriter is not None:
             self.moviewriter.End()
+
+class UpdateThread(threading.Thread):
+    """For updating the visualization data"""
+    def __init__(self, threadID, threadLock, display_data, polydata_dict, tstart=1.0, tend=None, vmdata_dict=None, vmplot_dict=None):
+        self.threadLock = threadLock
+        self.threadId = threadID
+        self.display_data = display_data
+        self.polydata_dict = polydata_dict
+        if tend is None:
+            tend = display_data['data'].simtime
+        self.times = np.arange(tstart, tend, display_data['data'].plotdt)
+        self.it = xrange(len(self.times)).__iter__()
+        self.vmdata_dict = vmdata_dict
+        self.vmplot_dict = vmplot_dict
+        self.spikewindow = 5e-3 # Keep effect of spikes in this window
+        threading.Thread.__init__(self)        
+
+    def run(self):
+        global update_on, t
+        while update_on:
+            time.sleep(0.001)
+            self.threadLock.acquire()
+            # print 'Position:', self.actor.GetPosition()
+            ii = self.it.next()
+            t = self.times[ii]        
+            if hasattr(self, 'txtActor'):
+                self.txtActor.SetInput('%.6f' % (t))
+            for celltype, pos in self.display_data['pos'].items():            
+                values = np.zeros(len(pos[0]), order='C')
+                for jj in range(len(pos[0])):
+                    spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]
+                    # Get all the spikes in last 5 ms
+                    st = spikes[np.flatnonzero((spikes < t) & (spikes > t - self.spikewindow))]
+                    values[jj] = sum(np.exp(st - t))                  
+                # print celltype, values
+                self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
+            # We display data from 100 ms before present time till 100 ms after present time
+            tback = t - thalf
+            idxback = int(tback / self.display_data['data'].plotdt)
+            print 'Past time:', tback, 'index:', idxback
+            # NOTE: no correction for the cycle
+            for celltype in celltypes:
+                if not self.vmdata_dict:
+                    break
+                for cellname, vmdata in self.vmdata_dict.items():
+                    if not cellname.startswith(celltype):
+                        continue
+                    for jj in range(vmdata.GetNumberOfRows()):
+                        tj = tback + jj * self.display_data['data'].plotdt
+                        vj = self.display_data['vm'][cellname][jj + idxback]
+                        vmdata.SetValue(jj, 0, tj)
+                        vmdata.SetValue(jj, 1, vj)
+                    print cellname, vmdata.GetValue(jj, 0), vmdata.GetValue(jj, 1), vmdata.GetNumberOfRows()
+                    vmdata.Modified()
+            self.threadLock.release()
                 
 
+update_on = True
+thalf = 100e-3
+
 def display_3d(datafile, cellposfile, moviefile=None):
+    global update_on
     display_data = get_display_data(datafile, cellposfile)
     renderer = vtk.vtkRenderer()
     renwin = vtk.vtkRenderWindow()
@@ -194,8 +246,11 @@ def display_3d(datafile, cellposfile, moviefile=None):
     renwin.SetSize(1280, 900)
     scalarbarX = 0.01
     scalarbarY = 0.95
-
+    tstart = 1.0
+    tend = 2.0
     polydata_dict = {}
+    vmplot_dict = {}
+    vmdata_dict = {}
     source_dict = {}
     glyph_dict = {}
     mapper_dict = {}
@@ -203,13 +258,16 @@ def display_3d(datafile, cellposfile, moviefile=None):
     points_dict = {}
     pos_dict = {}
     color_xfn = {}
-    # cmap_matrix = np.loadtxt('autumn.cmp')
-    # values = np.linspace(0, 1, len(cmap_matrix))
-    # for ii in range(len(cmap_matrix)):                
-    #     colorXfun.AddRGBPoint(values[ii], cmap_matrix[ii][0], cmap_matrix[ii][1], cmap_matrix[ii][2])
-    scalarbarX = 0.01
-    scalarbarY = 0.95
-    
+    scalarbarY_dict = {}
+    # 2D plot stuff was figured out from:
+    # https://github.com/Kitware/VTK/blob/master/Charts/Core/Testing/Cxx/TestChartsOn3D.cxx
+    plot_scene = vtk.vtkContextScene()
+    plot_actor = vtk.vtkContextActor()
+    plot_actor.SetScene(plot_scene)
+    plot_scene.SetRenderer(renderer)
+    renderer.AddActor(plot_actor)
+    time = vtk.vtkFloatArray()
+    time.SetName('time')
     for celltype in celltypes:
         try:
             pos = display_data['pos'][celltype]
@@ -234,12 +292,12 @@ def display_3d(datafile, cellposfile, moviefile=None):
             source.SetPhiResolution(6)
             source.SetPhiRoundness(5)
             source.SetThetaRoundness(5)
-            source.SetScale(5, 5, 5)
+            source.SetScale(5, 5, 7)
         elif celltype.endswith('Basket') or celltype.endswith('Axoaxonic') or celltype.endswith('LTS') or celltype == 'nRT':
             source = vtk.vtkSphereSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
-            source.SetRadius(2)
+            source.SetRadius(1)
             # source.SetPhiRoundness(1)
             # source.SetThetaRoundness(1)
             # source.SetScale(3, 3, 3)
@@ -252,9 +310,9 @@ def display_3d(datafile, cellposfile, moviefile=None):
             source.SetScale(3, 3, 3)        
         elif ('Pyr' in celltype) or celltype in ('NontuftedRS', 'TuftedIB', 'TuftedRS'):
             source = vtk.vtkConeSource()
-            source.SetRadius(1)
+            source.SetRadius(2)
             source.SetResolution(20)
-            source.SetHeight(2)
+            source.SetHeight(3)
             source.SetDirection(0, 0, 1)
         # source.SetThetaResolution(20)
         # source.SetPhiResolution(20)       
@@ -275,19 +333,56 @@ def display_3d(datafile, cellposfile, moviefile=None):
         scalarBar.SetTitle(celltype)
         # scalarBar.SetNumberOfLabels(4)
         scalarBar.SetPosition(scalarbarX, scalarbarY)
-        scalarbarY -= 0.07
         scalarBar.SetHeight(0.05)
-        scalarBar.SetWidth(0.30)
+        scalarBar.SetWidth(0.10)
         scalarBar.SetOrientationToHorizontal()
         scalarBar.GetTitleTextProperty().SetOrientation(90.0)
         renderer.AddActor2D(scalarBar)        
         renderer.AddActor(actor)
-    # txtActor = vtk.vtkTextActor()
-    # txtActor.GetTextProperty().SetFontSize(24)
-    # # txtActor.SetPosition2(100, 10)
-    # renderer.AddActor2D(txtActor)
-    # txtActor.SetInput('Starting ...')
-    # txtActor.GetTextProperty().SetColor(1, 1, 0)
+        # For each cell type add one cell's Vm
+        chart = vtk.vtkChartXY()
+        chart.SetAutoSize(False);
+        chart.SetSize(vtk.vtkRectf(900.0, (scalarbarY-0.07)*900, 300, 100));
+        xaxis = chart.GetAxis(0)
+        xaxis.SetRange(-thalf, thalf)
+        yaxis = chart.GetAxis(1)
+        yaxis.SetRange(-120e-3, 100e-3)    
+        plot_scene.AddItem(chart)
+        for name, vm in display_data['vm'].items():
+            if name.startswith(celltype) and len(display_data['spike'][name]) > 0:
+                vm = display_data['vm'][name]
+                vmtab = vtk.vtkTable()
+                vmdata_dict[name] = vmtab
+                vmarray = vtk.vtkFloatArray()
+                vmarray.SetName('Vm')
+                timearray = vtk.vtkFloatArray()
+                timearray.SetName('time')
+                vmtab.AddColumn(timearray)
+                vmtab.AddColumn(vmarray)
+                vmtab.SetNumberOfRows(int(2*thalf/display_data['data'].plotdt))
+                
+                # for ii in range(vmtab.GetNumberOfRows()):
+                #     # print '##', ii
+                #     vmtab.SetValue(ii, 0, tstart + ii * display_data['data'].plotdt)
+                #     vmtab.SetValue(ii, 1, vm[ii+int(tstart/display_data['data'].plotdt)])
+                plot = chart.AddPlot(vtk.vtkChart.LINE)
+                # print 'Here'
+                plot.SetInput(vmtab, 0, 1)
+                # print '** Here'
+                # plot.SetInputArray(0, 'time')
+                # plot.SetInputArray(1, 'Vm')
+                color = [255, 255, 255]
+                colortab.GetColor(0, color)
+                plot.SetColor(*color)
+                vmplot_dict[name] = plot
+                break
+        scalarbarY -= 0.07
+    txtActor = vtk.vtkTextActor()
+    txtActor.GetTextProperty().SetFontSize(24)
+    # txtActor.SetPosition2(100, 10)
+    renderer.AddActor2D(txtActor)
+    txtActor.SetInput('Starting ...')
+    txtActor.GetTextProperty().SetColor(1, 1, 0)
     camera = vtk.vtkCamera()
     camera.SetPosition(0.0, 500.0, -1200.0)
     camera.SetFocalPoint(0, 0, -1200)
@@ -321,20 +416,29 @@ def display_3d(datafile, cellposfile, moviefile=None):
         mwriter.SetInputConnection(w2img.GetOutputPort())
         mwriter.SetQuality(2)
         mwriter.SetRate(30)
+    update_on = True
+    threadLock = threading.Lock()
+    updateThread = UpdateThread(0, threadLock, display_data, polydata_dict, tstart=tstart, tend=tend, vmdata_dict=vmdata_dict, vmplot_dict=vmplot_dict)
+    updateThread.start()
     # For timer callback based animation
-    callback = TimerCallback(display_data, polydata_dict, mwriter)
+    # callback = TimerCallback(display_data, polydata_dict, tstart=tstart, tend=tend, vmdata_dict=vmdata_dict, vmplot_dict=vmplot_dict, moviewriter=mwriter)
+    callback = Animator(threadLock, moviewriter=mwriter)
     callback.actor = actor
-    # callback.txtActor = txtActor
+    updateThread.txtActor = txtActor
+    renwin.SetMultiSamples(0)
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renwin)
     interactor.Initialize()
-    interactor.AddObserver('TimerEvent', callback.execute)
+    interactor.AddObserver('TimerEvent', callback.animate)
     timerId = interactor.CreateRepeatingTimer(1)
     # timer callback till here
     # start the interaction and timer
     if mwriter is not None:
         mwriter.Start()
     interactor.Start()
+    update_on = False
+    interactor.DestroyTimer(timerId)
+    updateThread.join()
     
 if __name__ == '__main__':
     args = sys.argv
