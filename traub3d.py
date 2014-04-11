@@ -21,6 +21,7 @@
 # http://www.vtk.org/Wiki/VTK/Examples/Python/MeshLabelImageColor
 # 
 # Animation of chart: http://www.vtk.org/pipermail/vtkusers/2012-January/072004.html
+# The threading stuff is unnecessary
 
 # Change log:
 # 
@@ -152,35 +153,15 @@ def get_display_data(datafile, cellposfile):
         'vm': vm,
         'data': data}
 
-import threading
-import time
 
-t = 0.0
 
 class Animator():
-    def __init__(self, lock, moviewriter=None):
-        self.lock = lock
-        self.moviewriter = moviewriter
-
-    def animate(self, obj=None, event=None):
-        time.sleep(0.003)
-        self.lock.acquire()
-        obj.Render()
-        if self.moviewriter is not None:
-            self.moviewriter.Write()
-        self.lock.release()
-    
-    def __del__(self):
-        if self.moviewriter is not None:
-            self.moviewriter.End()
-
-class UpdateThread(threading.Thread):
     """For updating the visualization data"""
-    def __init__(self, threadID, threadLock, display_data, polydata_dict, tstart=1.0, tend=None, vmdata_dict=None, vmplot_dict=None):
-        self.threadLock = threadLock
-        self.threadId = threadID
+    def __init__(self, display_data, polydata_dict, tstart=1.0, tend=None, vmdata_dict=None, vmplot_dict=None, imwriter=None, moviewriter=None):
+        self.imwriter = imwriter
         self.display_data = display_data
         self.polydata_dict = polydata_dict
+        self.moviewriter = moviewriter
         if tend is None:
             tend = display_data['data'].simtime
         self.times = np.arange(tstart, tend, display_data['data'].plotdt)
@@ -188,53 +169,57 @@ class UpdateThread(threading.Thread):
         self.vmdata_dict = vmdata_dict
         self.vmplot_dict = vmplot_dict
         self.spikewindow = 5e-3 # Keep effect of spikes in this window
-        threading.Thread.__init__(self)        
+        self.lastupdateVm = 0.0
 
-    def run(self):
-        global update_on, t
-        while update_on:
-            time.sleep(0.001)
-            self.threadLock.acquire()
-            # print 'Position:', self.actor.GetPosition()
-            ii = self.it.next()
-            t = self.times[ii]        
-            if hasattr(self, 'txtActor'):
-                self.txtActor.SetInput('%.6f' % (t))
-            for celltype, pos in self.display_data['pos'].items():            
-                values = np.zeros(len(pos[0]), order='C')
-                for jj in range(len(pos[0])):
-                    spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]
-                    # Get all the spikes in last 5 ms
-                    st = spikes[np.flatnonzero((spikes < t) & (spikes > t - self.spikewindow))]
-                    values[jj] = sum(np.exp(st - t))                  
-                # print celltype, values
-                self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))
-            # We display data from 100 ms before present time till 100 ms after present time
+    def animate(self, obj=None, event=None):
+        # print 'Position:', self.actor.GetPosition()
+        ii = self.it.next()
+        t = self.times[ii]        
+        self.camera.Azimuth(360.0/(t*1e2))
+        self.camera.Elevation(0.5/t)
+        # self.camera.Yaw(0.5/t)
+        if hasattr(self, 'txtActor'):
+            self.txtActor.SetInput('%0.3f s' % (t))
+        for celltype, pos in self.display_data['pos'].items():            
+            values = np.zeros(len(pos[0]), order='C')
+            for jj in range(len(pos[0])):
+                spikes = self.display_data['spike']['%s_%d' % (celltype, jj)]
+                # Get all the spikes in last 5 ms
+                st = spikes[np.flatnonzero((spikes < t) & (spikes > t - self.spikewindow))]
+                values[jj] = sum(np.exp(st - t))
+            # print celltype, values
+            self.polydata_dict[celltype].GetPointData().SetScalars(vtknp.numpy_to_vtk(values))                
+        # We display data from 100 ms before present time till 100 ms after present time
+        if self.vmdata_dict and (t - self.lastupdateVm) > thalf/10.0:
+            self.lastupdateVm = t
             tback = t - thalf
             idxback = int(tback / self.display_data['data'].plotdt)
-            print 'Past time:', tback, 'index:', idxback
-            # NOTE: no correction for the cycle
-            for celltype in celltypes:
-                if not self.vmdata_dict:
-                    break
-                for cellname, vmdata in self.vmdata_dict.items():
-                    if not cellname.startswith(celltype):
-                        continue
-                    for jj in range(vmdata.GetNumberOfRows()):
-                        tj = tback + jj * self.display_data['data'].plotdt
-                        vj = self.display_data['vm'][cellname][jj + idxback]
-                        vmdata.SetValue(jj, 0, tj)
-                        vmdata.SetValue(jj, 1, vj)
-                    print cellname, vmdata.GetValue(jj, 0), vmdata.GetValue(jj, 1), vmdata.GetNumberOfRows()
-                    vmdata.Modified()
-            self.threadLock.release()
+            print 'Past time:', tback, 'index:', idxback, 'plotdt:', self.display_data['data'].plotdt
+            for cellname, vmdata in self.vmdata_dict.items():
+                for jj in range(vmdata.GetNumberOfRows()):
+                    # tj = tback + jj * self.display_data['data'].plotdt
+                    vj = self.display_data['vm'][cellname][jj + idxback]
+                    # vmdata.SetValue(jj, 0, tj)
+                    vmdata.SetValue(jj, 1, vj)
+                print cellname, vmdata.GetValue(0, 0), vmdata.GetValue(0, 1), vmdata.GetValue(jj, 0), vmdata.GetValue(jj, 1), vmdata.GetNumberOfRows()
+                vmdata.Modified()
+        if hasattr(self, 'win2image'):
+            self.win2image.Modified()
+        obj.Render()
+        if self.imwriter is not None:
+            self.imwriter.SetFileName('frame_%05d.png' % (ii))
+            self.imwriter.Write()
+        if self.moviewriter is not None:
+            self.moviewriter.Write()
                 
+    def __del__(self):
+        if self.moviewriter is not None:
+            self.moviewriter.End()
 
-update_on = True
 thalf = 100e-3
 
-def display_3d(datafile, cellposfile, moviefile=None):
-    global update_on
+def display_3d(datafile, cellposfile, tstart=1.0, tend=2.0, moviefile=None):
+    
     display_data = get_display_data(datafile, cellposfile)
     renderer = vtk.vtkRenderer()
     renwin = vtk.vtkRenderWindow()
@@ -243,11 +228,10 @@ def display_3d(datafile, cellposfile, moviefile=None):
     # renwin.SetStereoTypeToCrystalEyes()
     # renwin.SetStereoTypeToAnaglyph()
     renwin.AddRenderer(renderer)
-    renwin.SetSize(1280, 900)
+    wWidth, wHeight = 1280, 900
+    renwin.SetSize(wWidth, wHeight)
     scalarbarX = 0.01
     scalarbarY = 0.95
-    tstart = 1.0
-    tend = 2.0
     polydata_dict = {}
     vmplot_dict = {}
     vmdata_dict = {}
@@ -285,7 +269,6 @@ def display_3d(datafile, cellposfile, moviefile=None):
         colortab.SetSaturationRange(cmap[celltype][1])
         colortab.SetValueRange(cmap[celltype][2])
         colortab.Build()
-        colorXfun = vtk.vtkColorTransferFunction()
         if celltype == 'SpinyStellate':
             source = vtk.vtkSuperquadricSource()
             source.SetThetaResolution(6)
@@ -297,7 +280,7 @@ def display_3d(datafile, cellposfile, moviefile=None):
             source = vtk.vtkSphereSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
-            source.SetRadius(1)
+            source.SetRadius(1.5)
             # source.SetPhiRoundness(1)
             # source.SetThetaRoundness(1)
             # source.SetScale(3, 3, 3)
@@ -342,11 +325,22 @@ def display_3d(datafile, cellposfile, moviefile=None):
         # For each cell type add one cell's Vm
         chart = vtk.vtkChartXY()
         chart.SetAutoSize(False);
-        chart.SetSize(vtk.vtkRectf(900.0, (scalarbarY-0.07)*900, 300, 100));
+        chY =  (scalarbarY - 0.07) * wHeight
+        chHeight = 90.0 #0.06 * wHeight
+        chart.SetSize(vtk.vtkRectf(900.0, chY, 300, chHeight));
+        print chart.GetSize()
         xaxis = chart.GetAxis(0)
+        xaxis.SetGridVisible(False)
         xaxis.SetRange(-thalf, thalf)
+        xaxis.AutoScale()
+        xaxis.Update()
         yaxis = chart.GetAxis(1)
-        yaxis.SetRange(-120e-3, 100e-3)    
+        yaxis.SetRange(-120e-3, 100e-3)
+        yaxis.SetGridVisible(False)
+        # yaxis.SetBehavior(1)
+        yaxis.AutoScale()
+        yaxis.Update()
+        print yaxis.GetMinimum(), yaxis.GetMaximum()
         plot_scene.AddItem(chart)
         for name, vm in display_data['vm'].items():
             if name.startswith(celltype) and len(display_data['spike'][name]) > 0:
@@ -361,10 +355,10 @@ def display_3d(datafile, cellposfile, moviefile=None):
                 vmtab.AddColumn(vmarray)
                 vmtab.SetNumberOfRows(int(2*thalf/display_data['data'].plotdt))
                 
-                # for ii in range(vmtab.GetNumberOfRows()):
-                #     # print '##', ii
-                #     vmtab.SetValue(ii, 0, tstart + ii * display_data['data'].plotdt)
-                #     vmtab.SetValue(ii, 1, vm[ii+int(tstart/display_data['data'].plotdt)])
+                for ii in range(vmtab.GetNumberOfRows()):
+                    # print '##', ii
+                    vmtab.SetValue(ii, 0, tstart + ii * display_data['data'].plotdt - thalf)
+                    vmtab.SetValue(ii, 1, vm[ii+int((tstart-thalf)/display_data['data'].plotdt)])
                 plot = chart.AddPlot(vtk.vtkChart.LINE)
                 # print 'Here'
                 plot.SetInput(vmtab, 0, 1)
@@ -379,6 +373,7 @@ def display_3d(datafile, cellposfile, moviefile=None):
         scalarbarY -= 0.07
     txtActor = vtk.vtkTextActor()
     txtActor.GetTextProperty().SetFontSize(24)
+    # txtActor.SetTextScaleMode(txtActor.TEXT_SCALE_MODE_VIEWPORT)
     # txtActor.SetPosition2(100, 10)
     renderer.AddActor2D(txtActor)
     txtActor.SetInput('Starting ...')
@@ -405,26 +400,25 @@ def display_3d(datafile, cellposfile, moviefile=None):
     #         print celltype, values
     #     renwin.Render()
     # non-interactive animation tille here
+    win2image = vtk.vtkWindowToImageFilter()
+    win2image.SetInput(renwin)    
+    imwriter = vtk.vtkPNGWriter()
+    imwriter.SetInputConnection(win2image.GetOutputPort())
     mwriter = None
     if moviefile is not None:
         mwriter = vtk.vtkFFMPEGWriter()
         mwriter.SetQuality(2)
         mwriter.SetFileName(moviefile)
         # mwriter.SetRate(30)
-        w2img = vtk.vtkWindowToImageFilter()
-        w2img.SetInput(renwin)        
-        mwriter.SetInputConnection(w2img.GetOutputPort())
+        mwriter.SetInputConnection(win2image.GetOutputPort())
         mwriter.SetQuality(2)
         mwriter.SetRate(30)
-    update_on = True
-    threadLock = threading.Lock()
-    updateThread = UpdateThread(0, threadLock, display_data, polydata_dict, tstart=tstart, tend=tend, vmdata_dict=vmdata_dict, vmplot_dict=vmplot_dict)
-    updateThread.start()
     # For timer callback based animation
-    # callback = TimerCallback(display_data, polydata_dict, tstart=tstart, tend=tend, vmdata_dict=vmdata_dict, vmplot_dict=vmplot_dict, moviewriter=mwriter)
-    callback = Animator(threadLock, moviewriter=mwriter)
+    callback = Animator(display_data, polydata_dict, tstart=tstart, tend=tend, vmdata_dict=vmdata_dict, vmplot_dict=vmplot_dict, imwriter=imwriter, moviewriter=mwriter)
     callback.actor = actor
-    updateThread.txtActor = txtActor
+    callback.txtActor = txtActor
+    callback.camera = camera
+    callback.win2image = win2image
     renwin.SetMultiSamples(0)
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renwin)
@@ -438,23 +432,21 @@ def display_3d(datafile, cellposfile, moviefile=None):
     interactor.Start()
     update_on = False
     interactor.DestroyTimer(timerId)
-    updateThread.join()
     
 if __name__ == '__main__':
     args = sys.argv
-    animate = True
-    movie = False
+    tstart = 1.0
+    tend = 2.0
     filename = 'traub_animated.avi'
     print 'Args', args, len(args)
     if len(args) >= 3:
         posfile = args[1]
         datafile = args[2]
         if len(args) > 3:
-            animate = True
+            tstart = float(args[3])
         if len(args) > 4:
-            movie = True
-            filename = args[4]
+            tend = float(args[4])
     print 'Visualizing: positions from %s and data from %s' % (posfile, datafile)
-    display_3d(datafile, posfile)
+    display_3d(datafile, posfile, tstart=tstart, tend=tend, moviefile=None)
 # 
 # traub3d.py ends here

@@ -268,7 +268,10 @@ class TraubData(object):
         cells = np.asarray(self.spikes.keys())
         cells = cells[np.char.startswith(cells, celltype)]
         bins = np.arange(tstart, tend, binsize)
-        # Get the histograms of spikes for each cell
+        # Get the histograms of spikes for each cell - we do not
+        # concatenate spikes because we want histogram of cells, not
+        # spikes - so that each cell is counted only once though it
+        # may have multiple spikes within a bin.
         histlist = [np.histogram(self.spikes[cell], bins)[0] for cell in cells]
         # If there was nonzero spike in the bin, the cell counts
         # towards firing cell in that bin

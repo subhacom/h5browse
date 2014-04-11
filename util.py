@@ -53,6 +53,8 @@ from scipy import signal
 import numpy as np
 import os
 import csv
+from scipy.signal import gaussian
+from scipy.ndimage import filters
 
 datadir = '/data/subha/rsync_ghevar_cortical_data_clone'
 from datetime import datetime
@@ -92,6 +94,21 @@ def ncc(a, b):
     res = numpy.fft.ifft(ffta * numpy.conj(fftb)).real
     res = numpy.fft.fftshift(res)/(len(a) - 1)
     return res
+
+def smooth_gaussian(y, binsize, twindow=100e-3, std=1.0):
+    """Do gaussian smoothing with window size `twindow`. Number of points
+    is determined using interval between points given by binsize.
+
+    """
+    size = int(twindow/binsize)
+    b = gaussian(size, std)
+    ga = filters.convolve1d(y, b/b.sum())
+    # plt.figure()
+    # plt.plot(ga)    
+    # plt.show()
+    return ga
+        
+
 
 def print_diff(message, left, right, ldiff, rdiff):
     print '%s: %s [%s] <-> %s [%s]' % (message, left.name, ldiff, right.name, rdiff)
