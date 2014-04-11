@@ -202,7 +202,36 @@ class TraubData(object):
         except KeyError: # In this case, TCR cells were replaced by spikegens corresponding to each stimulated cell
             self.bg_cells = []
             self.probe_cells = []
-            
+
+    def get_synapses(self, pretype, posttype, syntype=None):
+        """Obtain the array of synapses from pretype to post type.  If syntype
+        is not specified, it will return all kinds of synapses for the
+        celltype pair - which will consist of AMPA and NMDA synapses
+        when presynaptic cell is excitatory but only GABA when
+        inhibitory. 
+
+        pretype: str    presynaptic cell type
+        
+        posttype: str postsynaptic cell type
+
+        syntype: str type of the synapse - one of ampa, nmda,
+        gaba. Case insensitive. Default: None
+
+        Returns
+        
+        numpy record array of synapses from `pretype` cells to
+        `posttype` cell of type `syntype`. If `syntype` is unspecified
+        or None, all kinds of synapses between the specified cell
+        types are included.
+
+        """
+        if syntype is not None:
+            return self.synapse[np.char.startswith(self.synapse['source'], pretype) & \
+                                np.char.startswith(self.synapse['dest'], posttype)]
+        else:
+            return self.synapse[(self.synapse['type'] == syntype.lower()) & \
+                                np.char.startswith(self.synapse['source'], pretype) & \
+                                np.char.startswith(self.synapse['dest'], posttype)]
 
     def get_bg_stimulated_cells(self, celltype):
         """Get the cells which get input from a TCR cell receiving
