@@ -121,7 +121,7 @@ class TraubData(object):
         self.__get_schedinfo()
         self.__get_synapse()
         self.__get_stimulated_cells()
-        self.colordict = util.load_celltype_colors()
+        self.colordict = util.get_celltype_colors()
         print 'Loaded', fname
 
     def __del__(self):

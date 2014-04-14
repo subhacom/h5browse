@@ -62,7 +62,7 @@ sys.path.append(os.path.expanduser('~/src/dataviz'))
 
 from traubdata import TraubData, cellcount_tuple
 from analyze_excitation_inhibition_balance import get_spiking_cell_counts
-from get_files_by_ts import load_celltype_colors
+from util import get_celltype_colors
 
 
 files = [

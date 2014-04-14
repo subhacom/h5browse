@@ -51,7 +51,8 @@ import sys
 import os
 sys.path.append('/home/subha/src/dataviz')
 from traubdata import TraubData
-from get_files_by_ts import find_files, get_fname_timestamps, load_celltype_colors, get_files_by_ts
+from get_files_by_ts import find_files, get_fname_timestamps, get_files_by_ts
+from util import get_celltype_colors
 from plot_period_variability import makepath, get_spiking_cell_hist, plot_colormapped
 from matplotlib import rc, rcParams
 from matplotlib import pyplot as plt

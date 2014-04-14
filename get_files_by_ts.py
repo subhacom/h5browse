@@ -156,15 +156,6 @@ def get_simtime(files):
     return data
     
 
-def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
-    filename = os.path.normpath(os.path.expanduser(os.path.expandvars(filename)))
-    colordict = {}
-    with open(filename) as fd:
-        reader = csv.reader(fd, delimiter=' ', quotechar="'")
-        for tokens in reader:
-            colordict[tokens[0]] = tokens[1]
-    return colordict
-
 def load_stim_data(files):
     data = {}
     for fn in files:
@@ -195,28 +186,93 @@ def get_notes_from_files(filelist):
                 fd.close()
     return notes
 
-if __name__ == '__main__':
-    filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5')
-    # This is the list of current filename, timestamp pairs
-    current_fts = get_fname_timestamps(filenames, '20120101', '20140101').items()
-    current_fts = sorted(current_fts, key=itemgetter(1))
-    # We'll store the file (descriptor, timestamp)  in fdts
-    fdts = []
-
-    for v in current_fts:
-        print v,
+def get_file_info(directory, startdate, enddate=None, outfile='datafileinfo.csv'):
+    if enddate is None:
+        enddate = datetime.now().strftime('%Y%m%d')
+    finfo = namedtuple('fileinfo', ['timestamp', 'name', 'simtime', 'syn_distr', 'sd_ampa', 'sd_gaba', 'sd_nmda', 'sd_Em', 'DeepBasket', 'DeepLTS', 'SpinyStellate', 'DeepAxoaxonic', 'TCR', 'SupPyrRS', 'SupPyrFRB', 'SupLTS', 'SupBasket', 'SupAxoaxonic', 'TuftedIB', 'TuftedRS', 'NontuftedRS', 'nRT'])
+    finfo_list = []
+    for fname in get_files_by_ts(directory, namepattern='data*h5', start=startdate, end=enddate):
         try:
-            fd = h5.File(v[0], 'r')
-            fdts.append((fd, v[1]))
-            print 'opened'
+            with h5.File(fname, 'r') as fd:
+                info = dict([(key, 'NA') for key in finfo._fields])
+                
+                info['timestamp'] = fd.attrs['timestamp']
+                info['name'] = fname.split('/')[-1]
+                try:
+                    runconfig = fd['/runconfig']
+                except KeyError:
+                    print '"%s" no runconfig' % (fname)
+                    continue
+                
+                try:
+                    info['simtime'] = dict(runconfig['scheduling'])['simtime']
+                except KeyError:
+                    print fname, 'does not have simtime.'
+                try:
+                    info['syn_distr'] = dict(runconfig['synapse'])['distr']
+                except KeyError:
+                    pass
+                try:
+                    info['sd_ampa'] = dict(runconfig['AMPA'])['sd']
+                except KeyError:
+                    pass
+                try:
+                    info['sd_nmda'] = dict(runconfig['NMDA'])['sd']
+                except KeyError:
+                    pass
+                try:
+                    info['sd_gaba'] = dict(runconfig['GABA'])['sd']
+                except KeyError:
+                    pass
+                try:
+                    info['sd_Em'] = dict(runconfig['sd_passive'])['Em']
+                except KeyError:
+                    pass
+                for key, value in runconfig['cellcount']:
+                    info[key] = value
+                # print fname
+                # print info
+                try:
+                    finfo_list.append(finfo(**info))
+                except Exception, e1:
+                    print 'Encountered an exception processing "%s":' % (fname)
+                    print 'Exceotion:', e1
+                    
         except IOError, e:
-            print 'Error accessing file %s: %s' % (v[0], e)
-    print '=== printing filenames and notes ==='
-    for f, t in fdts:
-        print 'notes: "%s" "%s"' % (os.path.basename(f.filename), ' '.join(f.attrs['notes'].split('\n')))
-        f.close()
-    classify_files_by_cellcount([item[0] for item in current_fts])
+            print '%s could not be opened for reading.' % (fname)
+            print 'Exception:', e
+    with open(outfile, 'w') as outfile:
+        writer = csv.writer(outfile, delimiter='\t', quotechar='"', quoting=csv.QUOTE_ALL)
+        writer.writerow(finfo._fields)
+        for info in finfo_list:
+            writer.writerow(info)
+    return finfo_list
+        
+        
 
+if __name__ == '__main__':
+    # filenames = find_files('/data/subha/rsync_ghevar_cortical_data_clone', '-iname', 'data_*.h5')
+    # # This is the list of current filename, timestamp pairs
+    # current_fts = get_fname_timestamps(filenames, '20120101', '20140101').items()
+    # current_fts = sorted(current_fts, key=itemgetter(1))
+    # # We'll store the file (descriptor, timestamp)  in fdts
+    # fdts = []
 
+    # for v in current_fts:
+    #     print v,
+    #     try:
+    #         fd = h5.File(v[0], 'r')
+    #         fdts.append((fd, v[1]))
+    #         print 'opened'
+    #     except IOError, e:
+    #         print 'Error accessing file %s: %s' % (v[0], e)
+    # print '=== printing filenames and notes ==='
+    # for f, t in fdts:
+    #     print 'notes: "%s" "%s"' % (os.path.basename(f.filename), ' '.join(f.attrs['notes'].split('\n')))
+    #     f.close()
+    # classify_files_by_cellcount([item[0] for item in current_fts])
+    get_file_info('/data/subha/rsync_ghevar_cortical_data_clone',
+                  startdate='20120101')
 
+    
 

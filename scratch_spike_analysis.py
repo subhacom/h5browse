@@ -293,7 +293,7 @@ def do_affinity_cluster_on_somatic_density(data, celltype):
         
 
 if __name__ == '__main__':
-    colordict = util.load_celltype_colors()
+    colordict = util.get_celltype_colors()
     datalist = []
     with open('exc_inh_stim_balance_20121224.txt') as flistfile:
         for line in flistfile:

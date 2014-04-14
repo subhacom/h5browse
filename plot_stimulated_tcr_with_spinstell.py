@@ -61,7 +61,7 @@ sys.path.append(os.path.expanduser('~/src/dataviz'))
 from traubdata import TraubData, cellcount_tuple
 from util import *
 from analyze_excitation_inhibition_balance import get_spiking_cell_counts
-from get_files_by_ts import load_celltype_colors
+from util import get_celltype_colors
 
 datadir = '/data/subha/rsync_ghevar_cortical_data_clone'
 
@@ -231,7 +231,7 @@ def plot_incoming_spikes_with_vm(timerange, files, colordict):
     # fig.savefig('../images/gexcinhbalance.png')
 
 if __name__ == '__main__':
-    colordict = load_celltype_colors()
+    colordict = get_celltype_colors()
     # plot_high_stim_cells((0, 20), files, colordict)
     plot_incoming_spikes_with_vm((0.0, 20.0), files, colordict)
     plt.show()

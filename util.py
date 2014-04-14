@@ -187,7 +187,7 @@ def get_contiguous_regions(indices):
     brk = np.nonzero(np.diff(indices) > 1)[0]
     return np.c_[np.r_[indices[0], indices[brk+1]], np.r_[indices[brk], indices[-1]]]
 
-def load_celltype_colors(filename='~/Documents/thesis/data/colorscheme.txt'):
+def get_celltype_colors(filename='celltypecolors.txt'):
     filename = os.path.normpath(os.path.expanduser(os.path.expandvars(filename)))
     colordict = {}
     with open(filename) as fd:

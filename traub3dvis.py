@@ -56,7 +56,8 @@ from vtk.util import numpy_support as vtknp
 import itertools
 
 posfile = '/home/subha/src/dataviz/cellpos_compact.csv'
-datafile = '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_05/data_20121105_144428_16400.h5'
+# datafile = '/data/subha/rsync_ghevar_cortical_data_clone/2012_11_05/data_20121105_144428_16400.h5'
+datafile = '/data/subha/rsync_ghevar_cortical_data_clone/2012_05_22/data_20120522_152734_10973.h5'
 markers = {'SupPyrRS': '^',
              'SupPyrFRB': '^',
              'SupLTS': 'o',
@@ -156,7 +157,7 @@ def make_movie_vtk(datafile, cellposfile, timerange=(0, 1.0), outfile='traub3d.a
             source.SetPhiRoundness(5)
             source.SetThetaRoundness(5)
             source.SetScale(5, 5, 5)
-        elif celltype == 'DeepBasket':
+        elif celltype.endswith('Basket') or celltype == 'nRT' or celltype.endswith('Axoaxonic'):
             source = vtk.vtkSphereSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
@@ -164,7 +165,7 @@ def make_movie_vtk(datafile, cellposfile, timerange=(0, 1.0), outfile='traub3d.a
             # source.SetPhiRoundness(1)
             # source.SetThetaRoundness(1)
             # source.SetScale(3, 3, 3)
-        elif celltype == 'DeepLTS':
+        elif celltype.endswith('LTS'):
             source = vtk.vtkSuperquadricSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
@@ -177,7 +178,15 @@ def make_movie_vtk(datafile, cellposfile, timerange=(0, 1.0), outfile='traub3d.a
             source.SetPhiResolution(6)
             source.SetPhiRoundness(2)
             source.SetThetaRoundness(0)
-            source.SetScale(3, 3, 3)        
+            source.SetScale(3, 3, 3)
+        elif ('Pyr' in celltype) or celltype in ('NontuftedRS', 'TuftedIB', 'TuftedRS'):
+            source = vtk.vtkConeSource()
+            source.SetRadius(1)
+            source.SetResolution(20)
+            source.SetHeight(2)
+            source.SetDirection(0, 0, 1)
+            # source.SetScale(3, 3, 3)
+            
         # source.SetThetaResolution(20)
         # source.SetPhiResolution(20)       
         glyph = vtk.vtkGlyph3D()
@@ -319,7 +328,7 @@ def display_traub_vtk(datafile, cellposfile, moviefile=None):
             source.SetPhiRoundness(5)
             source.SetThetaRoundness(5)
             source.SetScale(5, 5, 5)
-        elif celltype == 'DeepBasket':
+        elif celltype.endswith('Basket') or celltype.endswith('Axoaxonic') or celltype == 'nRT':
             source = vtk.vtkSphereSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
@@ -327,7 +336,7 @@ def display_traub_vtk(datafile, cellposfile, moviefile=None):
             # source.SetPhiRoundness(1)
             # source.SetThetaRoundness(1)
             # source.SetScale(3, 3, 3)
-        elif celltype == 'DeepLTS':
+        elif celltype.endswith('LTS'):
             source = vtk.vtkSuperquadricSource()
             source.SetThetaResolution(6)
             source.SetPhiResolution(6)
@@ -341,6 +350,12 @@ def display_traub_vtk(datafile, cellposfile, moviefile=None):
             source.SetPhiRoundness(2)
             source.SetThetaRoundness(0)
             source.SetScale(3, 3, 3)        
+        elif ('Pyr' in celltype) or celltype in ('NontuftedRS', 'TuftedIB', 'TuftedRS'):
+            source = vtk.vtkConeSource()
+            source.SetRadius(1)
+            source.SetResolution(20)
+            source.SetHeight(2)
+            source.SetDirection(0, 0, 1)
         # source.SetThetaResolution(20)
         # source.SetPhiResolution(20)       
         glyph = vtk.vtkGlyph3D()
@@ -414,7 +429,7 @@ def display_traub_vtk(datafile, cellposfile, moviefile=None):
 
     
 if __name__ == '__main__':
-    # x = display_traub_vtk(datafile, posfile, 'traub3d.avi')
-    make_movie_vtk(datafile, posfile, (1.0, 1.2), 'traub3d.avi')
+    x = display_traub_vtk(datafile, posfile, 'traub3d.avi')
+    # make_movie_vtk(datafile, posfile, (1.0, 1.2), 'traub3d.avi')
 # 
 # traub3dvis.py ends here
