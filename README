@@ -1,4 +1,10 @@
-dataviz is a GUI utility for viewing HDF5 datasets. 
+dataviz is a GUI utility for viewing HDF5 datasets.
+
+To run it, use:
+
+python dataviz.py
+
+in this directory.
 
 It is written in Python.  It uses PyQt4 for PyQwt5 for GUI. h5py for
 reading HDF5 files. numpy is used for array/matrix data structures.
