@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 24 01:02:01 2015 (-0400)
+# Last-Updated: Fri Jul 24 02:15:57 2015 (-0400)
 #           By: subha
-#     Update #: 266
+#     Update #: 270
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -95,6 +95,9 @@ class RootItem(object):
         child = self.children.pop(position)
         return True
 
+    def hasChildren(self):
+        return len(children) > 0
+
 
 class HDFTreeItem(object):
     def __init__(self, data, parent=None):
@@ -138,6 +141,11 @@ class HDFTreeItem(object):
 
     def parent(self):
         return self.parentItem
+
+    def hasChildren(self):
+        if isinstance(self.h5node, h5.Group):
+            return len(self.h5node) > 0
+        return False
             
 
 class HDFTreeModel(QAbstractItemModel):
