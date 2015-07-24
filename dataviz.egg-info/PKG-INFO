@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: dataviz
+Version: 0.1dev-r0
+Summary: dataviz is a utility for viewing HDF5 datasets.
+Home-page: UNKNOWN
+Author: Subhasis Ray
+Author-email: lastname dot firstname at gmail dot com
+License: GPL
+Description: UNKNOWN
+Keywords: hdf5 data plotting analysis
+Platform: UNKNOWN

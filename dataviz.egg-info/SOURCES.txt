@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+dataviz/__init__.py
+dataviz.egg-info/PKG-INFO
+dataviz.egg-info/SOURCES.txt
+dataviz.egg-info/dependency_links.txt
+dataviz.egg-info/entry_points.txt
+dataviz.egg-info/not-zip-safe
+dataviz.egg-info/top_level.txt
