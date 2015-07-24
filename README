@@ -11,3 +11,30 @@ some other module).
 It uses  Python 3.x, numpy, PyQt5, h5py.
 
 Starting from scratch with new language and libraries.
+
+
+TODO 
+----
+Important features to port from old code:
+
+     HDF5 Attribute display
+
+     Plotting
+
+     Filtering
+
+     Selection by regular expression
+
+     Python shell
+
+
+Not handling in near future
+---------------------------
+Nested datasets. Datasets with entries that are variable length
+arrays.
+
+Images? Need to have a look at existing standards.
+
+
+Author: Subhasis Ray
+email: lastname dot firstname at gmail dot com
