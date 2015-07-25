@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 24 02:15:57 2015 (-0400)
+# Last-Updated: Fri Jul 24 23:23:33 2015 (-0400)
 #           By: subha
-#     Update #: 270
+#     Update #: 283
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -208,9 +208,16 @@ class HDFTreeModel(QAbstractItemModel):
         return parentItem.childCount()
 
     def openFile(self, path):
-        fd = h5.File(path, 'r')
+        fd = h5.File(str(path), 'r')
         fileItem = HDFTreeItem(fd, self.rootItem)
         self.rootItem.appendChild(fileItem)
+
+    def closeFile(self, index):
+        item = self.getItem(index)
+        position = self.rootItem.children.index(item)
+        if position >= 0:
+            item.h5node.close()
+            self.rootItem.removeChild(position)
 
 
 if __name__ == '__main__':
