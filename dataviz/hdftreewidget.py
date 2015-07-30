@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 24 23:24:26 2015 (-0400)
+# Last-Updated: Thu Jul 30 00:32:58 2015 (-0400)
 #           By: subha
-#     Update #: 60
+#     Update #: 73
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,7 +50,7 @@
 
 from PyQt5.QtWidgets import QTreeView, QWidget
 
-from hdfmodeltree import HDFTreeModel
+from hdftreemodel import HDFTreeModel
 
 class HDFTreeWidget(QWidget):
     """Convenience class to display HDF file trees. 
@@ -60,15 +60,18 @@ class HDFTreeWidget(QWidget):
 
     """
     def __init__(self, parent=None, flags=None):
-        QWidget.__init__(self, parent, flags)
+        if flags == None:
+            QWidget.__init__(self, parent)
+        else:
+            QWidget.__init__(self, parent, flags)
         self.model = HDFTreeModel([])
         self.view = QTreeView(self)
         self.view.setModel(self.model)
         layout = QVBoxLayout(self)
-        layout.addWidget(view)
+        layout.addWidget(self.view)
 
     def openFiles(self, files):
-        """Function to open the files listed in argument.
+        """Open the files listed in argument.
 
         files: list of file paths. For example, output of
                QFileDialog::getOpenFileNames
@@ -83,6 +86,17 @@ class HDFTreeWidget(QWidget):
         for index in indices:
             self.model.closeFile(index)
 
+
+if __name__ == '__main__':
+    import sys
+    from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QWidget)
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    widget = HDFTreeWidget()
+    window.setCentralWidget(widget)
+    widget.openFiles(['poolroom.h5'])
+    window.show()
+    sys.exit(app.exec_())
 
 # 
 # hdftreewidget.py ends here

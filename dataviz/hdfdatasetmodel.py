@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 24 04:28:57 2015 (-0400)
+# Last-Updated: Thu Jul 30 00:46:07 2015 (-0400)
 #           By: subha
-#     Update #: 173
+#     Update #: 243
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,19 +49,21 @@
 import h5py as h5
 from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt)
 
+
 class HDFDatasetModel(QAbstractTableModel):
     def __init__(self, dataset, parent=None):
         super(QAbstractTableModel, self).__init__(parent)
         self.dataset = dataset
+        
 
     def rowCount(self, index):
         if len(self.dataset.shape) == 0:
-            return 0
+            return 1
         return self.dataset.shape[0]
 
     def columnCount(self, index):
         if len(self.dataset.shape) == 0:
-            return 0
+            return 1
         # Handle compound datasets. 
         # We are assuming only one-column compound dataset.
         if self.dataset.dtype.names is not None:
@@ -91,18 +93,28 @@ class HDFDatasetModel(QAbstractTableModel):
             _data = self.dataset[names[index.column()]][index.row()]
         elif index.column() >= colcnt or colcnt < 1:
             return None
-        elif colcnt == 1:
-            _data = self.dataset[index.row()]            
+            
+        elif (colcnt == 1):
+            if (len(dataset.shape) > 0):
+                _data = self.dataset[index.row()]            
+            else:
+                _data = self.dataset[()] # scalar data
         else:
             _data = self.dataset[index.row()][index.column()]
+        # TODO: provide better representation of HDF object data -
+        # like object refs.
         return str(_data)
 
+
+# The reason for creating a subclass for 2D view of N-D datasets is to
+# separate the logic from 1D and 2D datasets, which are expected to be
+# more common. In
 
 class HDFDatasetNDModel(HDFDatasetModel):
     """2D projection of N-D dataset. It uses numpy advanced
     slicing/indexing via tuples.
 
-    dims should be a tuple containing integer indices along all
+    `pos` should be a tuple containing integer indices along all
     dimensions except the ones to be included entirely. The string '*'
     should be placed for the latter.  Thus (1, 1, '*', 1, '*') on a 5D
     dataset will select the third and the fifth dimension (counting
@@ -111,29 +123,22 @@ class HDFDatasetNDModel(HDFDatasetModel):
     The argiments should come from user input (a popout dialog).
 
     """
-    def __init__(self, dataset, dims, parent=None):
+    def __init__(self, dataset, pos=(), parent=None):
         HDFDatasetModel.__init__(self, dataset, parent)
-        indices = []
-        for ii, idx in enumerate(dims):
-            if isinstance(idx, int):
-                indices.append(idx)
-            else:
-                indices.append(slice(0, dataset.shape[ii]))
-        self.indices = tuple(indices)
-        self.selectedData = self.dataset[self.indices]
-
+        self.select2D(pos)
+        
     def rowCount(self, index):
-        if len(self.selectedData.shape) == 0:
+        if len(self.data2D.shape) == 0:
             return 0
-        return self.selectedData.shape[0]
+        return self.data2D.shape[0]
 
     def columnCount(self, index):
-        if len(self.selectedData.shape) == 0:
+        if len(self.data2D.shape) == 0:
             return 0
         # 1D dataset
-        if len(self.selectedData.shape) == 1:
+        if len(self.data2D.shape) == 1:
             return 1
-        return self.selectedData.shape[1]
+        return self.data2D.shape[1]
 
     def headerData(self, section, orientation, role):
         if role != Qt.DisplayRole:
@@ -142,10 +147,56 @@ class HDFDatasetNDModel(HDFDatasetModel):
 
     def data(self, index, role):
         if role != Qt.DisplayRole or (not index.isValid()) \
-           or index.row() < 0 or index.row() >self.selectedData.shape[0]:
+           or index.row() < 0 or index.row() >self.data2D.shape[0]:
             return None
-        return str(self.selectedData[index.row(), index.column()])
+        return str(self.data2D[index.row(), index.column()])
 
+    def select2D(self, pos):
+        """Select data for specified indices on each dimension except the two
+        to be displayed in their entirety.
+        
+        pos : a sequence of integers specifying the indices on each
+        dimension except the row and column dimensions for display,
+        which should be '*'. If the number of entries is less than the
+        dimensions of the dataset, 0 is taken for the missing ones. If
+        more, the trailing ones are ignored.
+
+        Thus pos=(1, 1, '*', 1, '*') on a 5D dataset will select the
+        third and the fifth dimension (counting from 1).
+
+        """
+        pos = list(pos)
+        if len(pos) < 2: # too few positions, include XY
+            pos = [slice(0, self.dataset.shape[0]),
+                   slice(0, self.dataset.shape[1])]
+        indices = []        
+        ndim = len(self.dataset.shape)  # h5py does not implement ndim attribute for datasets
+        if ndim < len(pos):
+            pos = pos[:ndim]
+        elif ndim > len(pos):
+            pos += [0] * (ndim - len(pos))
+        for idx, dimsize in zip(pos, self.dataset.shape):
+            if isinstance(idx, int):
+                indices.append(idx)
+            else:
+                indices.append(slice(0, dimsize))
+        self.indices = tuple(indices)
+        self.data2D = self.dataset[self.indices]
+
+
+def create_default_model(dataset, parent=None):
+    """Create a model suitable for a given HDF5 dataset.
+    
+    For multidimensional homogeneous datasets it defaults to the first
+    two dimensions and 0-th entry for the rest of the dimensions
+
+    """
+    if len(dataset.shape) <= 2:
+        return HDFDatasetModel(dataset, parent)
+    else:
+        return HDFDatasetNDModel(dataset, pos=(), parent=parent)
+        
+    
 
 if __name__ == '__main__':
     import sys
