@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 31 20:56:16 2015 (-0400)
+# Last-Updated: Fri Jul 31 22:27:34 2015 (-0400)
 #           By: subha
-#     Update #: 249
+#     Update #: 252
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,7 +52,7 @@ from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex,
 
 class HDFDatasetModel(QAbstractTableModel):
     def __init__(self, dataset, parent=None):
-        super.__init__(parent)
+        super().__init__(parent)
         self.dataset = dataset
         
 
@@ -127,7 +127,7 @@ class HDFDatasetNDModel(HDFDatasetModel):
 
     """
     def __init__(self, dataset, pos=(), parent=None):
-        HDFDatasetModel.__init__(self, dataset, parent)
+        super().__init__(dataset, parent)
         self.select2D(pos)
         
     def rowCount(self, index):

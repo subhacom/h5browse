@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Jul 30 00:41:58 2015 (-0400)
+# Last-Updated: Fri Jul 31 22:33:33 2015 (-0400)
 #           By: subha
-#     Update #: 58
+#     Update #: 65
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,6 +45,7 @@
 
 # Code:
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout)
 
 from hdfdatasetmodel import HDFDatasetModel, HDFDatasetNDModel, create_default_model
@@ -55,11 +56,8 @@ class HDFDatasetWidget(QWidget):
     It will create a model and view when the dataset is assigned.
 
     """
-    def __init__(self, parent=None, flags=None, dataset=None):
-        if flags == None:
-            QWidget.__init__(self, parent)
-        else:
-            QWidget.__init__(self, parent, flags)        
+    def __init__(self, parent=None, flags=Qt.WindowFlags(0), dataset=None):
+        super().__init__(parent, flags)        
         self.view = QTableView(self)
         layout = QVBoxLayout(self)
         layout.addWidget(self.view)

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Jul 30 00:32:58 2015 (-0400)
+# Last-Updated: Fri Jul 31 22:34:40 2015 (-0400)
 #           By: subha
-#     Update #: 73
+#     Update #: 81
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,7 +48,8 @@
 
 """
 
-from PyQt5.QtWidgets import QTreeView, QWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QTreeView, QWidget)
 
 from hdftreemodel import HDFTreeModel
 
@@ -59,11 +60,8 @@ class HDFTreeWidget(QWidget):
     In addition it allows opening multiple files from a list.
 
     """
-    def __init__(self, parent=None, flags=None):
-        if flags == None:
-            QWidget.__init__(self, parent)
-        else:
-            QWidget.__init__(self, parent, flags)
+    def __init__(self, parent=None, flags=Qt.WindowFlags(0)):
+        super().__init__(parent, flags)
         self.model = HDFTreeModel([])
         self.view = QTreeView(self)
         self.view.setModel(self.model)
