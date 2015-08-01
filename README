@@ -35,6 +35,11 @@ arrays.
 
 Images? Need to have a look at existing standards.
 
+Other software
+--------------
+dataviz is aimed at HDF5 files. If you want fine control over
+plotting, a possible candidate is veusz.
 
 Author: Subhasis Ray
 email: lastname dot firstname at gmail dot com
+

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Jul 30 00:46:07 2015 (-0400)
+# Last-Updated: Fri Jul 31 20:56:16 2015 (-0400)
 #           By: subha
-#     Update #: 243
+#     Update #: 249
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,7 +52,7 @@ from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex,
 
 class HDFDatasetModel(QAbstractTableModel):
     def __init__(self, dataset, parent=None):
-        super(QAbstractTableModel, self).__init__(parent)
+        super.__init__(parent)
         self.dataset = dataset
         
 
@@ -106,9 +106,12 @@ class HDFDatasetModel(QAbstractTableModel):
         return str(_data)
 
 
-# The reason for creating a subclass for 2D view of N-D datasets is to
-# separate the logic from 1D and 2D datasets, which are expected to be
-# more common. In
+# Create a subclass for 2D view of N-D datasets to separate the logic
+# from 1D and 2D datasets, which are expected to be more common. In
+# case of views into an HDF5 dataset, temporary arrays are created by
+# h5py according to the documentation (as of Fri Jul 31 20:29:50 EDT
+# 2015). We want to avoid that performance penalty for the common
+# case.
 
 class HDFDatasetNDModel(HDFDatasetModel):
     """2D projection of N-D dataset. It uses numpy advanced
