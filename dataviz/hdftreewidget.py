@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 31 22:34:40 2015 (-0400)
+# Last-Updated: Sat Aug  1 00:54:56 2015 (-0400)
 #           By: subha
-#     Update #: 81
+#     Update #: 93
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,7 +49,7 @@
 """
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QTreeView, QWidget)
+from PyQt5.QtWidgets import (QTreeView, QWidget, QVBoxLayout)
 
 from hdftreemodel import HDFTreeModel
 
@@ -87,7 +87,7 @@ class HDFTreeWidget(QWidget):
 
 if __name__ == '__main__':
     import sys
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QWidget)
+    from PyQt5.QtWidgets import (QApplication, QMainWindow)
     app = QApplication(sys.argv)
     window = QMainWindow()
     widget = HDFTreeWidget()

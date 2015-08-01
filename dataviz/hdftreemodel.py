@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 24 23:23:33 2015 (-0400)
+# Last-Updated: Sat Aug  1 00:54:45 2015 (-0400)
 #           By: subha
-#     Update #: 283
+#     Update #: 307
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,6 +52,7 @@ editabletreemodel.py
 
 """
 
+import os
 import h5py as h5
 from PyQt5.QtCore import (QAbstractItemModel, QItemSelectionModel, QModelIndex, Qt)
 
@@ -126,7 +127,7 @@ class HDFTreeItem(object):
             return ''
         if role == Qt.DisplayRole:
             if isinstance(self.h5node, h5.File):
-                return '/'
+                return os.path.basename(self.h5node.filename)
             return self.h5node.name.rsplit('/')[-1]
         elif role == Qt.ToolTipRole:
             if isinstance(self.h5node, h5.File):
@@ -211,6 +212,11 @@ class HDFTreeModel(QAbstractItemModel):
         fd = h5.File(str(path), 'r')
         fileItem = HDFTreeItem(fd, self.rootItem)
         self.rootItem.appendChild(fileItem)
+        rootIndex = self.index(0, 0, QModelIndex())
+        bottomRight = self.index(self.rowCount(rootIndex)-1,
+                                 self.columnCount(rootIndex)-1,
+                                 rootIndex)
+        self.dataChanged.emit(rootIndex, bottomRight)
 
     def closeFile(self, index):
         item = self.getItem(index)
