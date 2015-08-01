@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug  1 00:54:45 2015 (-0400)
+# Last-Updated: Sat Aug  1 02:17:52 2015 (-0400)
 #           By: subha
-#     Update #: 307
+#     Update #: 393
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -199,7 +199,7 @@ class HDFTreeModel(QAbstractItemModel):
         childItem = self.getItem(index)
         parentItem = childItem.parent()
 
-        if parentItem == self.rootItem:
+        if parentItem == self.rootItem: # is the left side childItem or parentItem?
             return QModelIndex()
 
         return self.createIndex(parentItem.childNumber(), 0, parentItem)
@@ -209,21 +209,22 @@ class HDFTreeModel(QAbstractItemModel):
         return parentItem.childCount()
 
     def openFile(self, path):
+        self.beginInsertRows(QModelIndex(),
+                             self.rootItem.childCount(),
+                             self.rootItem.childCount()+1)
         fd = h5.File(str(path), 'r')
-        fileItem = HDFTreeItem(fd, self.rootItem)
+        fileItem = HDFTreeItem(fd, parent=self.rootItem)
         self.rootItem.appendChild(fileItem)
-        rootIndex = self.index(0, 0, QModelIndex())
-        bottomRight = self.index(self.rowCount(rootIndex)-1,
-                                 self.columnCount(rootIndex)-1,
-                                 rootIndex)
-        self.dataChanged.emit(rootIndex, bottomRight)
+        self.endInsertRows()
 
     def closeFile(self, index):
         item = self.getItem(index)
         position = self.rootItem.children.index(item)
         if position >= 0:
+            self.beginRemoveRows(QModelIndex(), position, position+1)
             item.h5node.close()
             self.rootItem.removeChild(position)
+            self.endRemoveRows()
 
 
 if __name__ == '__main__':

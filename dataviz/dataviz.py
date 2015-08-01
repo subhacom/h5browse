@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug  1 00:55:07 2015 (-0400)
+# Last-Updated: Sat Aug  1 02:20:33 2015 (-0400)
 #           By: subha
-#     Update #: 141
+#     Update #: 144
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -102,7 +102,7 @@ class DataViz(QMainWindow):
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
         if len(filePaths) == 0:
             return
-        self.lastDir = QFileInfo(filePaths[-1]).dir().dirName()
+        self.lastDir = QFileInfo(filePaths[-1]).dir().absolutePath()
         # TODO handle recent files
         self.open.emit(filePaths)
         
