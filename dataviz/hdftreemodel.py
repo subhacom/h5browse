@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug  1 02:17:52 2015 (-0400)
+# Last-Updated: Mon Aug  3 22:34:16 2015 (-0400)
 #           By: subha
-#     Update #: 393
+#     Update #: 398
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -147,7 +147,16 @@ class HDFTreeItem(object):
         if isinstance(self.h5node, h5.Group):
             return len(self.h5node) > 0
         return False
-            
+
+    def isDataset(self):
+        return isinstance(self.h5node, h5.Dataset)
+
+    def isFile(self):
+        return isinstance(self.h5node, h5.File)
+
+    def isGroup(self):
+        return isinstance(self.h5node, h5.Group)
+
 
 class HDFTreeModel(QAbstractItemModel):
     def __init__(self, headers, parent=None):
@@ -218,6 +227,8 @@ class HDFTreeModel(QAbstractItemModel):
         self.endInsertRows()
 
     def closeFile(self, index):
+        """Close file associated with item at index. Returns True if
+        successful, False if the item is not a file item."""
         item = self.getItem(index)
         position = self.rootItem.children.index(item)
         if position >= 0:
@@ -225,6 +236,8 @@ class HDFTreeModel(QAbstractItemModel):
             item.h5node.close()
             self.rootItem.removeChild(position)
             self.endRemoveRows()
+            return True
+        return False
 
 
 if __name__ == '__main__':

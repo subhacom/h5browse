@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug  1 02:20:33 2015 (-0400)
+# Last-Updated: Mon Aug  3 23:45:52 2015 (-0400)
 #           By: subha
-#     Update #: 144
+#     Update #: 189
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,14 +52,13 @@ from PyQt5.QtCore import (Qt, pyqtSignal, QSettings, QPoint, QSize,
                           QFileInfo)
 from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout,
                              QMainWindow, QDockWidget, QFileDialog,
-                             QAction, QLabel)
+                             QAction, QLabel, QMdiArea)
 from PyQt5.QtGui import (QIcon, QKeySequence)
-
-
 
 
 from hdftreewidget import HDFTreeWidget
 from hdfdatasetwidget import HDFDatasetWidget
+
 
 class DataViz(QMainWindow):
     """The main application window for dataviz.
@@ -69,11 +68,16 @@ class DataViz(QMainWindow):
 
     """
     open = pyqtSignal(list)
+    closeFiles = pyqtSignal()
 
     def __init__(self, parent=None, flags=Qt.WindowFlags(0)):
         super().__init__(parent=parent, flags=flags)
         self.readSettings()
-        self.setCentralWidget(QLabel('Hello', self))
+        self.mdiArea = QMdiArea()
+        self.mdiArea = QMdiArea()
+        self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.setCentralWidget(self.mdiArea)
         self.createActions()
         self.createMenus()
         self.createTreeDock()
@@ -107,23 +111,41 @@ class DataViz(QMainWindow):
         self.open.emit(filePaths)
         
     def createActions(self):
-        self.openFileAct = QAction(QIcon(), '&Open file(s)', self,
+        self.openFileAction = QAction(QIcon(), '&Open file(s)', self,
                                    shortcut=QKeySequence.Open,
                                    statusTip='Open an HDF5 file',
                                    triggered=self.openFiles)
+        self.closeFileAction = QAction(QIcon(), '&Close file(s)', self,
+                                   shortcut=QKeySequence.Close,
+                                   statusTip='Close selected files',
+                                       triggered=self.closeFiles)
 
     def createMenus(self):
+        menuBar = self.menuBar()
+        print(menuBar)
+        menuBar.setVisible(True)
         self.fileMenu = self.menuBar().addMenu('&File')
-        self.fileMenu.addAction(self.openFileAct)
+        self.fileMenu.addAction(self.openFileAction)
+        self.fileMenu.addAction(self.closeFileAction)
         self.viewMenu = self.menuBar().addMenu('&View')        
 
     def createTreeDock(self):
         self.treeDock = QDockWidget('File tree', self)
-        self.tree = HDFTreeWidget(self.treeDock)
+        self.tree = HDFTreeWidget(parent=self.treeDock)
         self.open.connect(self.tree.openFiles)
+        self.tree.doubleClicked.connect(self.tree.createDatasetWidget)
+        self.tree.datasetWidgetCreated.connect(self.addDatasetWidget)
+        self.closeFiles.connect(self.tree.closeFiles)
         self.treeDock.setWidget(self.tree)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDock)
         self.viewMenu.addAction(self.treeDock.toggleViewAction())
+
+    def addDatasetWidget(self, widget ):
+        print('Received', widget)
+        if widget is not None:
+            self.mdiArea.addSubWindow(widget)
+            widget.show()
+
 
     def quit(self):
         self.writeSettings()

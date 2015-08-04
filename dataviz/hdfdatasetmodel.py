@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 31 22:27:34 2015 (-0400)
+# Last-Updated: Mon Aug  3 23:46:53 2015 (-0400)
 #           By: subha
-#     Update #: 252
+#     Update #: 253
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -95,7 +95,7 @@ class HDFDatasetModel(QAbstractTableModel):
             return None
             
         elif (colcnt == 1):
-            if (len(dataset.shape) > 0):
+            if (len(self.dataset.shape) > 0):
                 _data = self.dataset[index.row()]            
             else:
                 _data = self.dataset[()] # scalar data

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 31 22:33:33 2015 (-0400)
+# Last-Updated: Mon Aug  3 23:15:21 2015 (-0400)
 #           By: subha
-#     Update #: 65
+#     Update #: 69
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -57,6 +57,7 @@ class HDFDatasetWidget(QWidget):
 
     """
     def __init__(self, parent=None, flags=Qt.WindowFlags(0), dataset=None):
+        print('parent:', parent, 'flags:', flags, 'dataset:', dataset)
         super().__init__(parent, flags)        
         self.view = QTableView(self)
         layout = QVBoxLayout(self)

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug  1 00:54:56 2015 (-0400)
+# Last-Updated: Mon Aug  3 23:44:32 2015 (-0400)
 #           By: subha
-#     Update #: 93
+#     Update #: 175
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,25 +48,29 @@
 
 """
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QTreeView, QWidget, QVBoxLayout)
+from collections import defaultdict
+
+from PyQt5.QtCore import (Qt, pyqtSignal)
+from PyQt5.QtWidgets import (QTreeView, QWidget)
 
 from hdftreemodel import HDFTreeModel
+from hdfdatasetwidget import HDFDatasetWidget
 
-class HDFTreeWidget(QWidget):
+
+class HDFTreeWidget(QTreeView):
     """Convenience class to display HDF file trees. 
 
-    HDFTreeWidget wraps an HDFTreeModel and a TreeView to display it.
+    HDFTreeWidget wraps an HDFTreeModel and displays it.
     In addition it allows opening multiple files from a list.
 
     """
-    def __init__(self, parent=None, flags=Qt.WindowFlags(0)):
-        super().__init__(parent, flags)
-        self.model = HDFTreeModel([])
-        self.view = QTreeView(self)
-        self.view.setModel(self.model)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.view)
+    datasetWidgetCreated = pyqtSignal(QWidget)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        model = HDFTreeModel([])
+        self.setModel(model)
+        self.openDatasetViews = defaultdict(set)
 
     def openFiles(self, files):
         """Open the files listed in argument.
@@ -76,14 +80,37 @@ class HDFTreeWidget(QWidget):
 
         """
         for fname in files:
-            self.model.openFile(fname)
+            self.model().openFile(fname)
         
     def closeFiles(self):
         """Close the files selected in the model."""
         indices = self.view.selectedIndexes()
         for index in indices:
-            self.model.closeFile(index)
+            item = self.model().getItem(index)            
+            filename = item.h5node.file.filename
+            if self.model().closeFile(index):
+                for datasetView in self.openDatasetViews[filename]:
+                    datasetView.close()
+                    del(datasetView)
+                self.openDatasetViews[filename].clear()
 
+    def createDatasetWidget(self, index):
+        """Returns a dataset widget for specified index.
+
+        It assigns filename:datasetname as the object name for the
+        widget. This may be useful for searching for items to be
+        closed.
+
+        """
+        item = self.model().getItem(index)
+        if (item is not None) and item.isDataset():
+            # TODO maybe avoid duplicate windows for a dataset
+            widget = HDFDatasetWidget(dataset=item.h5node)
+            self.openDatasetViews[item.h5node.file.filename].add(widget)
+            print('Sending', widget)
+            self.datasetWidgetCreated.emit(widget)
+            
+        
 
 if __name__ == '__main__':
     import sys
