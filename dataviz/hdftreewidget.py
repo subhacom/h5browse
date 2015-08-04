@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Aug  3 23:44:32 2015 (-0400)
+# Last-Updated: Tue Aug  4 00:12:20 2015 (-0400)
 #           By: subha
-#     Update #: 175
+#     Update #: 187
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -65,12 +65,13 @@ class HDFTreeWidget(QTreeView):
 
     """
     datasetWidgetCreated = pyqtSignal(QWidget)
+    datasetWidgetClosed = pyqtSignal(QWidget)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         model = HDFTreeModel([])
         self.setModel(model)
-        self.openDatasetViews = defaultdict(set)
+        self.openDatasetWidgets = defaultdict(set)
 
     def openFiles(self, files):
         """Open the files listed in argument.
@@ -84,15 +85,14 @@ class HDFTreeWidget(QTreeView):
         
     def closeFiles(self):
         """Close the files selected in the model."""
-        indices = self.view.selectedIndexes()
+        indices = self.selectedIndexes()
         for index in indices:
             item = self.model().getItem(index)            
             filename = item.h5node.file.filename
             if self.model().closeFile(index):
-                for datasetView in self.openDatasetViews[filename]:
-                    datasetView.close()
-                    del(datasetView)
-                self.openDatasetViews[filename].clear()
+                for datasetWidget in self.openDatasetWidgets[filename]:
+                    self.datasetWidgetClosed.emit(datasetWidget)
+                self.openDatasetWidgets[filename].clear()
 
     def createDatasetWidget(self, index):
         """Returns a dataset widget for specified index.
@@ -105,9 +105,8 @@ class HDFTreeWidget(QTreeView):
         item = self.model().getItem(index)
         if (item is not None) and item.isDataset():
             # TODO maybe avoid duplicate windows for a dataset
-            widget = HDFDatasetWidget(dataset=item.h5node)
-            self.openDatasetViews[item.h5node.file.filename].add(widget)
-            print('Sending', widget)
+            widget = HDFDatasetWidget(dataset=item.h5node)            
+            self.openDatasetWidgets[item.h5node.file.filename].add(widget)
             self.datasetWidgetCreated.emit(widget)
             
         

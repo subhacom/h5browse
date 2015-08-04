@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Aug  3 22:34:16 2015 (-0400)
+# Last-Updated: Mon Aug  3 23:53:00 2015 (-0400)
 #           By: subha
-#     Update #: 398
+#     Update #: 399
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -230,14 +230,15 @@ class HDFTreeModel(QAbstractItemModel):
         """Close file associated with item at index. Returns True if
         successful, False if the item is not a file item."""
         item = self.getItem(index)
-        position = self.rootItem.children.index(item)
-        if position >= 0:
+        try:
+            position = self.rootItem.children.index(item)
             self.beginRemoveRows(QModelIndex(), position, position+1)
             item.h5node.close()
             self.rootItem.removeChild(position)
             self.endRemoveRows()
             return True
-        return False
+        except ValueError:
+            return False
 
 
 if __name__ == '__main__':

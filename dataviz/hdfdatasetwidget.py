@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Aug  3 23:15:21 2015 (-0400)
+# Last-Updated: Tue Aug  4 00:22:39 2015 (-0400)
 #           By: subha
-#     Update #: 69
+#     Update #: 92
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,27 +50,26 @@ from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout)
 
 from hdfdatasetmodel import HDFDatasetModel, HDFDatasetNDModel, create_default_model
 
-class HDFDatasetWidget(QWidget):
+class HDFDatasetWidget(QTableView):
     """Convenience widget to display HDF datasets.
 
-    It will create a model and view when the dataset is assigned.
+    It will create a model when the dataset is assigned. Also, it
+    assigns filename:datasetname to its `name` field which is used by
+    main window to set the window title of this subwindow.
 
     """
-    def __init__(self, parent=None, flags=Qt.WindowFlags(0), dataset=None):
-        print('parent:', parent, 'flags:', flags, 'dataset:', dataset)
-        super().__init__(parent, flags)        
-        self.view = QTableView(self)
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.view)
+    def __init__(self, parent=None, dataset=None):
+        super().__init__(parent)        
+        self.name = ''
         if dataset is not None:
-            self.model = create_default_model(dataset)
-            self.view.setModel(self.model)
-        else:
-            self.model = None
+            self.setDataset(dataset)
 
     def setDataset(self, dataset):
-        self.model = create_default_model(dataset)
-        self.view.setModel(self.model)
+        model = create_default_model(dataset)
+        self.setModel(model)
+        self.name = dataset.name
+        self.setToolTip('{}:{}'.format(dataset.file.filename,
+                                       dataset.name))
 
 
 if __name__ == '__main__':

@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Aug  3 23:45:52 2015 (-0400)
+# Last-Updated: Tue Aug  4 00:21:37 2015 (-0400)
 #           By: subha
-#     Update #: 189
+#     Update #: 207
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -119,14 +119,18 @@ class DataViz(QMainWindow):
                                    shortcut=QKeySequence.Close,
                                    statusTip='Close selected files',
                                        triggered=self.closeFiles)
+        self.quitAction = QAction(QIcon(), '&Quit', self,
+                                  shortcut=QKeySequence.Quit, 
+                                  statusTip='Quit dataviz', 
+                                  triggered=QApplication.instance().closeAllWindows)
 
     def createMenus(self):
         menuBar = self.menuBar()
-        print(menuBar)
         menuBar.setVisible(True)
         self.fileMenu = self.menuBar().addMenu('&File')
         self.fileMenu.addAction(self.openFileAction)
         self.fileMenu.addAction(self.closeFileAction)
+        self.fileMenu.addAction(self.quitAction)
         self.viewMenu = self.menuBar().addMenu('&View')        
 
     def createTreeDock(self):
@@ -135,20 +139,23 @@ class DataViz(QMainWindow):
         self.open.connect(self.tree.openFiles)
         self.tree.doubleClicked.connect(self.tree.createDatasetWidget)
         self.tree.datasetWidgetCreated.connect(self.addDatasetWidget)
+        self.tree.datasetWidgetClosed.connect(self.closeDatasetWidget)
         self.closeFiles.connect(self.tree.closeFiles)
         self.treeDock.setWidget(self.tree)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDock)
         self.viewMenu.addAction(self.treeDock.toggleViewAction())
 
-    def addDatasetWidget(self, widget ):
-        print('Received', widget)
+    def addDatasetWidget(self, widget):
         if widget is not None:
-            self.mdiArea.addSubWindow(widget)
+            subwin = self.mdiArea.addSubWindow(widget)
+            subwin.setWindowTitle(widget.name)
             widget.show()
 
-
-    def quit(self):
-        self.writeSettings()
+    def closeDatasetWidget(self, widget):
+        if widget is not None:
+            for window in self.mdiArea.subWindowList():
+                if window.widget() == widget:
+                    window.deleteLater()
 
     
 if __name__ == '__main__':
