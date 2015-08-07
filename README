@@ -37,9 +37,15 @@ Images? Need to have a look at existing standards.
 
 Other software
 --------------
-dataviz is aimed at HDF5 files. If you want fine control over
-plotting, a possible candidate is veusz.
+dataviz is aimed at reading HDF5 files. 
 
+If you want fine control over plotting, a possible candidate is veusz.
+
+If you want to edit HDF5 files, hdfview is the standard graphical tool
+for that.
+
+
+--------------------
 Author: Subhasis Ray
 email: lastname dot firstname at gmail dot com
 
