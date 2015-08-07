@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Tue Aug  4 00:12:20 2015 (-0400)
+# Last-Updated: Thu Aug  6 22:53:37 2015 (-0400)
 #           By: subha
-#     Update #: 187
+#     Update #: 222
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -55,7 +55,7 @@ from PyQt5.QtWidgets import (QTreeView, QWidget)
 
 from hdftreemodel import HDFTreeModel
 from hdfdatasetwidget import HDFDatasetWidget
-
+from hdfattributewidget import HDFAttributeWidget
 
 class HDFTreeWidget(QTreeView):
     """Convenience class to display HDF file trees. 
@@ -66,12 +66,16 @@ class HDFTreeWidget(QTreeView):
     """
     datasetWidgetCreated = pyqtSignal(QWidget)
     datasetWidgetClosed = pyqtSignal(QWidget)
+    attributeWidgetCreated = pyqtSignal(QWidget)
+    attributeWidgetClosed = pyqtSignal(QWidget)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         model = HDFTreeModel([])
         self.setModel(model)
         self.openDatasetWidgets = defaultdict(set)
+        self.openAttributeWidgets = defaultdict(set)
+        
 
     def openFiles(self, files):
         """Open the files listed in argument.
@@ -93,14 +97,13 @@ class HDFTreeWidget(QTreeView):
                 for datasetWidget in self.openDatasetWidgets[filename]:
                     self.datasetWidgetClosed.emit(datasetWidget)
                 self.openDatasetWidgets[filename].clear()
+                for attributeWidget in self.openAttributeWidgets[filename]:
+                    self.attributeWidgetClosed.emit(attributeWidget)
+                self.openAttributeWidgets[filename].clear()
 
     def createDatasetWidget(self, index):
         """Returns a dataset widget for specified index.
-
-        It assigns filename:datasetname as the object name for the
-        widget. This may be useful for searching for items to be
-        closed.
-
+        
         """
         item = self.model().getItem(index)
         if (item is not None) and item.isDataset():
@@ -109,7 +112,26 @@ class HDFTreeWidget(QTreeView):
             self.openDatasetWidgets[item.h5node.file.filename].add(widget)
             self.datasetWidgetCreated.emit(widget)
             
-        
+    def createAttributeWidget(self, index):
+        """Creates an attribute widget for specified index.
+
+        """
+        item = self.model().getItem(index)
+        if item is not None:
+            # TODO maybe avoid duplicate windows for a attributes of a
+            # single node
+            widget = HDFAttributeWidget(node=item.h5node)            
+            self.openAttributeWidgets[item.h5node.file.filename].add(widget)
+            self.attributeWidgetCreated.emit(widget)
+
+    def showAttributes(self):
+        """Create an attribute widget for currentItem"""
+        self.createAttributeWidget(self.currentIndex())
+
+    def showDataset(self):
+        """Create dataset widget for currentItem"""
+        self.createDatasetWidget(self.currentIndex())
+
 
 if __name__ == '__main__':
     import sys

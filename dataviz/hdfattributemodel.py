@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Jul 31 22:08:23 2015 (-0400)
+# Last-Updated: Fri Aug  7 00:18:22 2015 (-0400)
 #           By: subha
-#     Update #: 73
+#     Update #: 105
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,6 +46,7 @@
 # Code:
 
 import numpy as np
+import h5py as h5
 from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt)
 
 class HDFAttributeModel(QAbstractTableModel):
@@ -76,25 +77,42 @@ class HDFAttributeModel(QAbstractTableModel):
         value for column 1.
 
         """
-        if not index.isValid():
-            return None                
+        if (not index.isValid()) or \
+           (role not in (Qt.ToolTipRole, Qt.DisplayRole)):
+            return None              
+        for ii, name in enumerate(self.node.attrs):
+            if ii == index.row():
+                break
         if role == Qt.ToolTipRole:
-            attr = list(self.node.attrs.values())[index.row()]
-            if isinstance(attr, bytes) or isinstance(attr, str):
-                return 'string: scalar'
-            if isinstance(attr, np.ndarray):
-                return '{}: {}'.format(attr.dtype, attr.shape)
-            return '{}: scalar'.format(type(attr).__name__)
+            value = self.node.attrs[name]
+            # if isinstance(value, bytes) or isinstance(value, str):
+            #     return 'string: scalar'
+            if isinstance(value, np.ndarray):
+                return '{}: {}'.format(value.dtype, value.shape)
+            elif isinstance(value, h5.Reference):
+                if value.typecode == 0:
+                    return 'ObjectRef: scalar'
+                else:
+                    return 'RegionRef: scalar'
+            return '{}: scalar'.format(type(value).__name__)
         elif role == Qt.DisplayRole:
             if index.column() == 0:
-                return list(self.node.attrs.keys())[index.row()]
-            elif index.column() == 1:
-                attr =list(self.node.attrs.values())[index.row()]
+                return name
+            elif index.column() == 1:                
+                value = self.node.attrs[name]
                 # in Python 3 we have to decode the bytes to get
-                # string representation without leading 'b'
-                if isinstance(attr, bytes):
-                    return attr.decode('utf-8')
-                return str(attr)                
+                # string representation without leading 'b'. However,
+                # on second thought, it is not worth converting the
+                # strings - for large datasets it will be slow, and if
+                # we do the conversion for attributes but not for
+                # datasets it gets confusing for the user.
+                return str(value)
+                
+                # if isinstance(value, bytes):
+                #     return value.decode('utf-8')
+                # elif isinstance(value, np.ndarray) and value.dtype.type == np.string_:
+                #     return str([entry.decode('utf-8') for entry in value])                    
+                # return str(value)                
         return None
 
 

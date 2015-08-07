@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Aug  3 23:46:53 2015 (-0400)
+# Last-Updated: Thu Aug  6 23:54:10 2015 (-0400)
 #           By: subha
-#     Update #: 253
+#     Update #: 277
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -84,8 +84,9 @@ class HDFDatasetModel(QAbstractTableModel):
         return section
 
     def data(self, index, role):
-        if role != Qt.DisplayRole or (not index.isValid()) \
-           or index.row() < 0 or index.row() >self.dataset.shape[0]:
+        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+           or (not index.isValid()) \
+           or index.row() < 0 or index.row() > self.dataset.shape[0]:
             return None
         colcnt = self.columnCount(QModelIndex())
         names = self.dataset.dtype.names
@@ -101,8 +102,17 @@ class HDFDatasetModel(QAbstractTableModel):
                 _data = self.dataset[()] # scalar data
         else:
             _data = self.dataset[index.row()][index.column()]
-        # TODO: provide better representation of HDF object data -
-        # like object refs.
+        typename = type(_data).__name__
+        if isinstance(_data, h5.Reference):            
+            if _data.typecode == 0:
+                _data = 'ObjectRef({})'.format(self.dataset.file[_data].name)
+                typename = 'ObjectReference'
+            else:
+                _data = 'RegionRef({})'.format(self.dataset.file[_data].name)
+                typename = 'RegionReference'
+                
+        if role == Qt.ToolTipRole:
+            return typename
         return str(_data)
 
 

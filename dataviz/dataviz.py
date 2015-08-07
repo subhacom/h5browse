@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Tue Aug  4 00:21:37 2015 (-0400)
+# Last-Updated: Thu Aug  6 23:58:31 2015 (-0400)
 #           By: subha
-#     Update #: 207
+#     Update #: 257
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -66,9 +66,32 @@ class DataViz(QMainWindow):
     This is an MDI application with dock displaying open HDF5 files on
     the left. Attributes of the selected item at left bottom.
 
+    Signals
+    -------
+
+    open: Emitted when a set of files have been selected in the open
+          files dialog. Sends out the list of file paths selected.
+    
+    closeFiles: Emitted when the user triggers closeFilesAction. This
+                is passed on to the HDFTreeWidget which decides which
+                files to close based on selection.
+
+    showAttributes: Emitted when showAttributesAction is
+                    triggered. Connected to HDFTreeWidget's
+                    showAttributes function which creates a widget for
+                    displaying attributes of the HDF5 node of its
+                    current item.
+
+    showDataset: Emitted when showDatasetAction is
+                 triggered. Connected to HDFTreeWidget's showDataset
+                 function which creates a widget for displaying the
+                 contents of the HDF5 node if it is a dataset.
+
     """
     open = pyqtSignal(list)
     closeFiles = pyqtSignal()
+    showAttributes = pyqtSignal()
+    showDataset = pyqtSignal()
 
     def __init__(self, parent=None, flags=Qt.WindowFlags(0)):
         super().__init__(parent=parent, flags=flags)
@@ -115,14 +138,24 @@ class DataViz(QMainWindow):
                                    shortcut=QKeySequence.Open,
                                    statusTip='Open an HDF5 file',
                                    triggered=self.openFiles)
-        self.closeFileAction = QAction(QIcon(), '&Close file(s)', self,
-                                   shortcut=QKeySequence.Close,
-                                   statusTip='Close selected files',
+        self.closeFileAction = QAction(QIcon(), '&Close file(s)',
+                                       self,
+                                       shortcut=QKeySequence(Qt.CTRL+Qt.Key_K),
+                                       statusTip='Close selected files',
                                        triggered=self.closeFiles)
         self.quitAction = QAction(QIcon(), '&Quit', self,
                                   shortcut=QKeySequence.Quit, 
                                   statusTip='Quit dataviz', 
                                   triggered=QApplication.instance().closeAllWindows)
+        self.showAttributesAction = QAction(QIcon(), 'Show attributes', self,
+                                            shortcut=QKeySequence.InsertParagraphSeparator,
+                                            statusTip='Show attributes',
+                                            triggered=self.showAttributes)
+        self.showDatasetAction = QAction(QIcon(), 'Show dataset', self,
+                                            shortcut=QKeySequence(Qt.CTRL+Qt.Key_Return),
+                                            statusTip='Show dataset',
+                                            triggered=self.showDatasetFn)
+
 
     def createMenus(self):
         menuBar = self.menuBar()
@@ -132,30 +165,42 @@ class DataViz(QMainWindow):
         self.fileMenu.addAction(self.closeFileAction)
         self.fileMenu.addAction(self.quitAction)
         self.viewMenu = self.menuBar().addMenu('&View')        
+        self.dataMenu = self.menuBar().addMenu('&Data')
+        self.dataMenu.addAction(self.showAttributesAction)
+        self.dataMenu.addAction(self.showDatasetAction)
 
     def createTreeDock(self):
         self.treeDock = QDockWidget('File tree', self)
         self.tree = HDFTreeWidget(parent=self.treeDock)
         self.open.connect(self.tree.openFiles)
         self.tree.doubleClicked.connect(self.tree.createDatasetWidget)
-        self.tree.datasetWidgetCreated.connect(self.addDatasetWidget)
-        self.tree.datasetWidgetClosed.connect(self.closeDatasetWidget)
+        self.tree.datasetWidgetCreated.connect(self.addMdiChildWindow)
+        self.tree.datasetWidgetClosed.connect(self.closeMdiChildWindow)
+        self.tree.attributeWidgetCreated.connect(self.addMdiChildWindow)
+        self.tree.attributeWidgetClosed.connect(self.closeMdiChildWindow)
+        # pipe signals of dataviz to those of hdftree widget
+        self.showAttributes.connect(self.tree.showAttributes)
+        self.showDataset.connect(self.tree.showDataset)
         self.closeFiles.connect(self.tree.closeFiles)
         self.treeDock.setWidget(self.tree)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDock)
         self.viewMenu.addAction(self.treeDock.toggleViewAction())
 
-    def addDatasetWidget(self, widget):
+    def addMdiChildWindow(self, widget):
         if widget is not None:
             subwin = self.mdiArea.addSubWindow(widget)
             subwin.setWindowTitle(widget.name)
             widget.show()
 
-    def closeDatasetWidget(self, widget):
+    def closeMdiChildWindow(self, widget):
         if widget is not None:
             for window in self.mdiArea.subWindowList():
                 if window.widget() == widget:
                     window.deleteLater()
+
+    def showDatasetFn(self):
+        print('Here')
+        self.showDataset.emit()
 
     
 if __name__ == '__main__':

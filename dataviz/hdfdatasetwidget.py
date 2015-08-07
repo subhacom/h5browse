@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Tue Aug  4 00:22:39 2015 (-0400)
+# Last-Updated: Thu Aug  6 21:51:37 2015 (-0400)
 #           By: subha
-#     Update #: 92
+#     Update #: 100
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,7 +48,8 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout)
 
-from hdfdatasetmodel import HDFDatasetModel, HDFDatasetNDModel, create_default_model
+from hdfdatasetmodel import (HDFDatasetModel, HDFDatasetNDModel,
+                             create_default_model)
 
 class HDFDatasetWidget(QTableView):
     """Convenience widget to display HDF datasets.
@@ -67,9 +68,9 @@ class HDFDatasetWidget(QTableView):
     def setDataset(self, dataset):
         model = create_default_model(dataset)
         self.setModel(model)
-        self.name = dataset.name
-        self.setToolTip('{}:{}'.format(dataset.file.filename,
-                                       dataset.name))
+        self.name = '{}:{}'.format(dataset.file.filename,
+                                   dataset.name)
+        self.setToolTip(self.name)
 
 
 if __name__ == '__main__':
