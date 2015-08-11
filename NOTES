@@ -1,0 +1,13 @@
+What module for plotting?
+
+- Abandoning PyQwt, which seems to be an abandoned project.
+
+- Matplotlib - does not fit very well into PyQt (the programming
+  styles conflict).
+
+- PyQtGraph seems to be the only candidate.
+ 
+- VisPy is still under heavy development and as of 2015-08-08 is very
+  OpenGL focused. Hoping that it will be incorporated smoothly into
+  PyQtGraph in the future.
+
