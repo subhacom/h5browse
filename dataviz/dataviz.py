@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug  6 23:58:31 2015 (-0400)
+# Last-Updated: Sat Aug  8 20:09:49 2015 (-0400)
 #           By: subha
-#     Update #: 257
+#     Update #: 265
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -77,15 +77,25 @@ class DataViz(QMainWindow):
                 files to close based on selection.
 
     showAttributes: Emitted when showAttributesAction is
-                    triggered. Connected to HDFTreeWidget's
-                    showAttributes function which creates a widget for
-                    displaying attributes of the HDF5 node of its
-                    current item.
+                    triggered. Connected to
+                    HDFTreeWidget.showAttributes function which
+                    creates a widget for displaying attributes of the
+                    HDF5 node of its current
+                    item. HDFTreeWidget.showAttributes sends a return
+                    signal `attributeWidgetCreated` with the created
+                    widget so that the DataViz widget can incorporate
+                    it as an mdi child window.
 
     showDataset: Emitted when showDatasetAction is
                  triggered. Connected to HDFTreeWidget's showDataset
                  function which creates a widget for displaying the
                  contents of the HDF5 node if it is a dataset.
+                 HDFTreeWidget.showDataset sends a return signal
+                 `datasetWidgetCreated` with the created widget so
+                 that the DataViz widget can incorporate it as an mdi
+                 child window.
+
+    
 
     """
     open = pyqtSignal(list)
