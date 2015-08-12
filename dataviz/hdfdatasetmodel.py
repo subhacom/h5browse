@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug  6 23:54:10 2015 (-0400)
+# Last-Updated: Tue Aug 11 22:13:29 2015 (-0400)
 #           By: subha
-#     Update #: 277
+#     Update #: 288
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -85,16 +85,18 @@ class HDFDatasetModel(QAbstractTableModel):
 
     def data(self, index, role):
         if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
-           or (not index.isValid()) \
-           or index.row() < 0 or index.row() > self.dataset.shape[0]:
+           or (not index.isValid())  \
+           or (len(self.dataset.shape) > 0 and index.row() >
+               self.dataset.shape[0]):
+            # When a dataset is scalar, it has shape=(), when empty,
+            # it has shape=(0,).
             return None
         colcnt = self.columnCount(QModelIndex())
         names = self.dataset.dtype.names
         if names is not None:
             _data = self.dataset[names[index.column()]][index.row()]
         elif index.column() >= colcnt or colcnt < 1:
-            return None
-            
+            return None            
         elif (colcnt == 1):
             if (len(self.dataset.shape) > 0):
                 _data = self.dataset[index.row()]            

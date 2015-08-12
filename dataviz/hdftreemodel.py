@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Aug  3 23:53:00 2015 (-0400)
+# Last-Updated: Tue Aug 11 22:18:09 2015 (-0400)
 #           By: subha
-#     Update #: 399
+#     Update #: 407
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -132,8 +132,13 @@ class HDFTreeItem(object):
         elif role == Qt.ToolTipRole:
             if isinstance(self.h5node, h5.File):
                 return self.h5node.filename
-            return '{} : {}'.format(self.h5node.name,
-                                    self.h5node.__class__.__name__)
+            shape = ''
+            if isinstance(self.h5node, h5.Dataset):
+                shape = self.h5node.shape
+                if len(shape) == 0:
+                    shape = 'scalar'
+            return '{} {}'.format(self.h5node.__class__.__name__,
+                                  shape)
 
     def setData(self, column, value):
         if column != 0:
