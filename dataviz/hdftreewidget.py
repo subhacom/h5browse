@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug  8 20:20:42 2015 (-0400)
-#           By: subha
-#     Update #: 239
+# Last-Updated: Fri Aug 21 18:31:01 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 266
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -56,6 +56,7 @@ from PyQt5.QtWidgets import (QTreeView, QWidget)
 from hdftreemodel import HDFTreeModel
 from hdfdatasetwidget import HDFDatasetWidget
 from hdfattributewidget import HDFAttributeWidget
+from datasetplot import DatasetPlot
 
 class HDFTreeWidget(QTreeView):
     """Convenience class to display HDF file trees. 
@@ -66,28 +67,37 @@ class HDFTreeWidget(QTreeView):
     Signals
     -------
 
-    datasetWidgetCreated(QWidget): emitted by createDatasetWidget slot
+    sigDatasetWidgetCreated(QWidget): emitted by createDatasetWidget slot
     after a new dataset widget is created with the created
     widget. This provides a way to send it back to the DataViz widget
     (top level widget and caller of the slot) for incorporation into
     the main window.
 
-    datasetWidgetClosed(QWidget): this is emitted for each of the
+    sigDatasetWidgetClosed(QWidget): this is emitted for each of the
     widgets showing datasets under a given file tree when the file is
     closed. This allows the toplevel widget to close the corresponding
     mdi child window.
 
-    attributeWidgetCreated(QWidget): same as datasetWidgetCreated but
+    sigAttributeWidgetCreated(QWidget): same as sigDatasetWidgetCreated but
     for the widget displaying HDF5 attributes.
 
-    attributeWidgetClosed(QWidget): same as datasetWidgetClosed but
+    sigAttributeWidgetClosed(QWidget): same as sigDatasetWidgetClosed but
     for the widget displaying HDF5 attributes.
+
+    sigPlotWidgetCreated(QWidget): same as sigDatasetWidgetCreated but
+    for the widget displaying HDF5 dataset plots.
+
+    sigPlotWidgetClosed(QWidget): same as sigDatasetWidgetClosed but
+    for the widget displaying HDF5 dataset plots.
 
     """
-    datasetWidgetCreated = pyqtSignal(QWidget)
-    datasetWidgetClosed = pyqtSignal(QWidget)
-    attributeWidgetCreated = pyqtSignal(QWidget)
-    attributeWidgetClosed = pyqtSignal(QWidget)
+    sigDatasetWidgetCreated = pyqtSignal(QWidget)
+    sigDatasetWidgetClosed = pyqtSignal(QWidget)
+    sigAttributeWidgetCreated = pyqtSignal(QWidget)
+    sigAttributeWidgetClosed = pyqtSignal(QWidget)
+    sigPlotWidgetCreated = pyqtSignal(QWidget)
+    sigPlotWidgetClosed = pyqtSignal(QWidget)
+    
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -95,6 +105,7 @@ class HDFTreeWidget(QTreeView):
         self.setModel(model)
         self.openDatasetWidgets = defaultdict(set)
         self.openAttributeWidgets = defaultdict(set)
+        self.openPlotWidgets = defaultdict(set)
         
 
     def openFiles(self, files):
@@ -111,7 +122,7 @@ class HDFTreeWidget(QTreeView):
         """Close the files selected in the model.
 
         If there are datasets in the file that are being displayed via
-        a `HDFDatasetWidget`, then it emits a datasetWidgetClosed
+        a `HDFDatasetWidget`, then it emits a sigDatasetWidgetClosed
         signal with the HDFDatasetWidget as a parameter for each of
         them. Same for `HDFAttributeWidget`s.
 
@@ -122,16 +133,19 @@ class HDFTreeWidget(QTreeView):
             filename = item.h5node.file.filename
             if self.model().closeFile(index):
                 for datasetWidget in self.openDatasetWidgets[filename]:
-                    self.datasetWidgetClosed.emit(datasetWidget)
+                    self.sigDatasetWidgetClosed.emit(datasetWidget)
                 self.openDatasetWidgets[filename].clear()
                 for attributeWidget in self.openAttributeWidgets[filename]:
-                    self.attributeWidgetClosed.emit(attributeWidget)
+                    self.sigAttributeWidgetClosed.emit(attributeWidget)
                 self.openAttributeWidgets[filename].clear()
+                for plotWidget in self.openPlotWidgets[filename]:
+                    self.sigPlotWidgetClosed.emit(plotWidget)
+                self.openPlotWidgets[filename].clear()
 
     def createDatasetWidget(self, index):
         """Returns a dataset widget for specified index.
 
-        Emits datasetWidgetCreated(newWidget).
+        Emits sigDatasetWidgetCreated(newWidget).
 
         """
         item = self.model().getItem(index)
@@ -139,12 +153,12 @@ class HDFTreeWidget(QTreeView):
             # TODO maybe avoid duplicate windows for a dataset
             widget = HDFDatasetWidget(dataset=item.h5node)            
             self.openDatasetWidgets[item.h5node.file.filename].add(widget)
-            self.datasetWidgetCreated.emit(widget)
+            self.sigDatasetWidgetCreated.emit(widget)
             
     def createAttributeWidget(self, index):
         """Creates an attribute widget for specified index.
 
-        Emits attributeWidgetCreated(newWidget)
+        Emits sigAttributeWidgetCreated(newWidget)
         """
         item = self.model().getItem(index)
         if item is not None:
@@ -152,8 +166,22 @@ class HDFTreeWidget(QTreeView):
             # single node
             widget = HDFAttributeWidget(node=item.h5node)            
             self.openAttributeWidgets[item.h5node.file.filename].add(widget)
-            self.attributeWidgetCreated.emit(widget)
+            self.sigAttributeWidgetCreated.emit(widget)
 
+    def createPlotWidget(self, index):
+        """Creates an plot widget for specified index.
+
+        Emits sigAttributeWidgetCreated(newWidget)
+        """
+        item = self.model().getItem(index)
+        if item is not None:
+            # TODO maybe avoid duplicate windows for a attributes of a
+            # single node
+            widget = DatasetPlot()
+            self.openPlotWidgets[item.h5node.file.filename].add(widget)
+            widget.plotTimeSeries(item.h5node)
+            self.sigPlotWidgetCreated.emit(widget)
+            
     def showAttributes(self):
         """Create an attribute widget for currentItem"""
         self.createAttributeWidget(self.currentIndex())
@@ -161,6 +189,10 @@ class HDFTreeWidget(QTreeView):
     def showDataset(self):
         """Create dataset widget for currentItem"""
         self.createDatasetWidget(self.currentIndex())
+
+    def plotDataset(self):
+        """Create a PlotWidget for currentItem"""
+        self.createPlotWidget(self.currentIndex())
 
 
 if __name__ == '__main__':

@@ -1,13 +1,31 @@
-What module for plotting?
+-*- mode:org -*-
 
-- Abandoning PyQwt, which seems to be an abandoned project.
+* DONE What module for plotting?				   :PLOTTING:
+  - State "DONE"       from "TODO"       [2015-08-21 Fri 19:07]
 
-- Matplotlib - does not fit very well into PyQt (the programming
-  styles conflict).
+  - Abandoning PyQwt, which seems to be an abandoned project.
 
-- PyQtGraph seems to be the only candidate.
+  - Matplotlib - does not fit very well into PyQt (the programming
+    styles conflict).
+
+  - PyQtGraph seems to be the only candidate.
  
-- VisPy is still under heavy development and as of 2015-08-08 is very
-  OpenGL focused. Hoping that it will be incorporated smoothly into
-  PyQtGraph in the future.
+  - VisPy is still under heavy development and as of 2015-08-08 is
+    very OpenGL focused. Hoping that it will be incorporated smoothly
+    into PyQtGraph in the future.
 
+  - PyQtGraph stable version does not support PyQt5 support, using
+    devel branch from github.
+
+* TODO Choice of plotting multiple datasets on same plot widget	   :PLOTTING:
+  Cannot attach to a specific dataset. Update `name` with something
+  more meaningful. Allow option of plotting on new widget or current
+  widget (Alt+p, Alt+Shift+p).
+
+  Subha [2015-08-21 Fri]
+
+* TODO Plot multidimensional dataset				   :PLOTTING:
+  Provide choice of rows/columns for multidimensional datasets when
+  plotting.
+
+  Subha [2015-08-21 Fri]

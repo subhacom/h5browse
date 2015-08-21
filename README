@@ -9,16 +9,37 @@ This is a rewrite of the old code. Replacing PyQwt with PyQtGraph.
 
 It uses  Python 3.x, numpy, PyQt5, h5py.
 
+As of Fri, Aug 21, 2015 PyQtGraph devel branch on github supports PyQt5. Install it using:
+
 Starting from scratch with new language and libraries.
 
 
+Troubleshooting
+===============
+
+* Problem with Anaconda(Python3) on Windows 7 and PyQt5:
+
+        This application failed to start because it could not find or load the
+        Qt platform plugin "windows".
+
+  Solution:
+
+  From: https://groups.google.com/a/continuum.io/forum/#!topic/anaconda/xgDvOCbOXkI
+
+  Create a PyQt5 environment:
+
+        conda create -n pyqt5 python
+
+  Then activate the PyQt5 environment (skip `source` on anaconda command
+  prompt on Windows):
+
+		source activate pyqt5
+
+
+
 TODO 
-----
+====
 Important features to port from old code:
-
-     HDF5 Attribute display
-
-     Plotting
 
      Filtering
 
@@ -35,7 +56,7 @@ arrays.
 Images? Need to have a look at existing standards.
 
 Other software
---------------
+==============
 dataviz is aimed at reading HDF5 files. 
 
 If you want fine control over plotting, a possible candidate is veusz.
