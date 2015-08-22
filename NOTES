@@ -22,13 +22,31 @@
   more meaningful. Allow option of plotting on new widget or current
   widget (Alt+p, Alt+Shift+p).
 
-  Subha [2015-08-21 Fri]
+  - Subha [2015-08-21 Fri]
 
 * TODO Plot multidimensional dataset				   :PLOTTING:
   Provide choice of rows/columns for multidimensional datasets when
   plotting.
 
-  Subha [2015-08-21 Fri]
+  - Subha [2015-08-21 Fri]
+	
+   
+** The control over data source is getting unwieldy.
+   - 1D data:
+	 - simple  x=index, y=data or the other way round
+	 - compound x=index, y=column or the other way round
+   - 2D data:
+	 - data in rows: x=column 1, y=column 2
+	 - data in cols: x=row 1, y= row 2
+   - N-D data
+	 - data in k-th dimension, x=data[d0, d1, d_{k-1}, :, d_{k+1}, ..., d_{N-1}), y=data[d'0, d'1, d'_{k-1}, :, d'_{k+1}, ..., d'_{N-1}]
+	   where d_{i} is the index on dimension i
+	   e.g., N=3, data in Z (k=2), x=data[Xx, Yx, :], y=data[Xy,Yy, :]
+	   either of these can also be the index.
+	
+* TODO Plot compound dataset 	
+  - It will be useful to plot data against column names. For example,
+    if each column corresponds to a year.
 
 * Zooming in mousemode 1 hangs in mouseMoveEvent on cygwin64
   After selecting Mouse mode 1 from context menu in a PlotWidget when
@@ -46,3 +64,4 @@
   fine with Anaconda on the same system.
  
   Subha [2015-08-21 Fri]
+

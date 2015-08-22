@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug  6 21:51:37 2015 (-0400)
+# Last-Updated: Sat Aug 22 17:47:34 2015 (-0400)
 #           By: subha
-#     Update #: 100
+#     Update #: 101
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,7 +48,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout)
 
-from hdfdatasetmodel import (HDFDatasetModel, HDFDatasetNDModel,
+from hdfdatasetmodel import (HDFDatasetModel, OneDDatasetModel, TwoDDatasetModel, NDDatasetModel, CompoundDatasetModel, ScalarDatasetModel,
                              create_default_model)
 
 class HDFDatasetWidget(QTableView):

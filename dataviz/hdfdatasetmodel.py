@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Tue Aug 11 22:13:29 2015 (-0400)
+# Last-Updated: Sat Aug 22 17:46:23 2015 (-0400)
 #           By: subha
-#     Update #: 288
+#     Update #: 434
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,28 +50,116 @@ import h5py as h5
 from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt)
 
 
+def datasetType(dataset):
+    if len(dataset.shape) == 0:
+        return 'scalar'
+    elif len(dataset.shape) == 1:
+        if dataset.dtype.names is not None:
+            return 'compound'
+        else:
+            return '1d'
+    elif len(dataset.shape) == 2:
+        return '2d'
+    else:
+        return 'nd'
+
+
 class HDFDatasetModel(QAbstractTableModel):
     def __init__(self, dataset, parent=None):
-        super().__init__(parent)
+        print('***', dataset)
+        print('*** parent=', parent)
+        super().__init__(parent=parent)
         self.dataset = dataset
-        
 
     def rowCount(self, index):
-        if len(self.dataset.shape) == 0:
-            return 1
+        raise NotImplementedError('This must be implemented in subclass')
+
+    def columnCount(self, index):
+        raise NotImplementedError('This must be implemented in subclass')
+
+    def extractDataType(self, data):
+        typename = type(data).__name__
+        if isinstance(data, h5.Reference):            
+            if data.typecode == 0:
+                data = 'ObjectRef({})'.format(self.dataset.file[data].name)
+                typename = 'ObjectReference'
+            else:
+                data = 'RegionRef({})'.format(self.dataset.file[data].name)
+                typename = 'RegionReference'
+        return data, typename
+
+ 
+class ScalarDatasetModel(HDFDatasetModel):
+    def __init__(self, dataset, parent=None):
+        super().__init__(dataset, parent)
+    
+    def rowCount(self, index):
+        return 1
+
+    def columnCount(self, index):
+        return 1
+
+    def data(self, index, role):
+        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+           or (not index.isValid()):
+            return None
+        _data = self.dataset[()] # scalar data
+        _data, typename = self.extractDataType(_data)
+        if role == Qt.ToolTipRole:
+            return typename
+        return str(_data)
+   
+    def rawData(self, index=None):
+        return self.dataset[()]
+
+    def headerData(self, section, orientation, role):
+        if role != Qt.DisplayRole:
+            return None
+        return section
+
+
+class OneDDatasetModel(HDFDatasetModel):
+    def __init__(self, dataset, parent=None):
+        super().__init__(dataset, parent)
+
+    def rowCount(self, index):
         return self.dataset.shape[0]
 
     def columnCount(self, index):
-        if len(self.dataset.shape) == 0:
-            return 1
-        # Handle compound datasets. 
-        # We are assuming only one-column compound dataset.
-        if self.dataset.dtype.names is not None:
-            return len(self.dataset.dtype.names)
-        # 1D dataset
-        if len(self.dataset.shape) == 1:
-            return 1
-        return self.dataset.shape[1]
+        return 1
+
+    def headerData(self, section, orientation, role):
+        if role != Qt.DisplayRole:
+            return None
+        return section
+
+    def data(self, index, role):
+        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+           or (not index.isValid())  \
+           or (index.row() > self.dataset.shape[0]):
+            return None
+        _data = self.dataset[index.row()]
+        _data, typename = self.extractDataType(_data)
+        if role == Qt.ToolTipRole:
+            return typename
+        return str(_data)
+
+    def rawData(self, index=None):
+        """Select raw data from dataset as numpy array"""
+        if index is None:
+            return np.asarray(self.dataset)
+        return self.dataset[index]
+
+
+class CompoundDatasetModel(HDFDatasetModel):
+    def __init__(self, dataset, parent=None):
+        super().__init__(dataset, parent)
+
+    def rowCount(self, index):
+        return self.dataset.shape[0]
+
+    def columnCount(self, index):
+        return len(self.dataset.dtype.names)
 
     def headerData(self, section, orientation, role):
         if role != Qt.DisplayRole:
@@ -85,37 +173,53 @@ class HDFDatasetModel(QAbstractTableModel):
 
     def data(self, index, role):
         if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
-           or (not index.isValid())  \
-           or (len(self.dataset.shape) > 0 and index.row() >
-               self.dataset.shape[0]):
-            # When a dataset is scalar, it has shape=(), when empty,
-            # it has shape=(0,).
+           or (not index.isValid()):
             return None
-        colcnt = self.columnCount(QModelIndex())
-        names = self.dataset.dtype.names
-        if names is not None:
-            _data = self.dataset[names[index.column()]][index.row()]
-        elif index.column() >= colcnt or colcnt < 1:
-            return None            
-        elif (colcnt == 1):
-            if (len(self.dataset.shape) > 0):
-                _data = self.dataset[index.row()]            
-            else:
-                _data = self.dataset[()] # scalar data
-        else:
-            _data = self.dataset[index.row()][index.column()]
-        typename = type(_data).__name__
-        if isinstance(_data, h5.Reference):            
-            if _data.typecode == 0:
-                _data = 'ObjectRef({})'.format(self.dataset.file[_data].name)
-                typename = 'ObjectReference'
-            else:
-                _data = 'RegionRef({})'.format(self.dataset.file[_data].name)
-                typename = 'RegionReference'
-                
+        colname = self.dataset.dtype.names[index.column()]
+        _data = self.dataset[colname][index.row()]
+        _data, typename = self.extractDataType(_data)
         if role == Qt.ToolTipRole:
             return typename
         return str(_data)
+
+    def rawData(self, index=None):
+        if index is None:
+            return np.asarray(self.dataset)
+        return self.dataset[index]
+
+
+class TwoDDatasetModel(HDFDatasetModel):
+    def __init__(self, dataset, parent=None):
+        super().__init__(dataset, parent)
+
+    def rowCount(self, index):
+        return self.dataset.shape[0]
+
+    def columnCount(self, index):
+        return self.dataset.shape[1]
+
+    def headerData(self, section, orientation, role):
+        if role != Qt.DisplayRole:
+            return None
+        return section
+
+    def data(self, index, role):
+        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+           or (not index.isValid())  \
+           or (index.row() > self.dataset.shape[0]) \
+           or (index.column() > self.dataset.shape[1]):
+            return None
+        _data = self.dataset[index.row(), index.column()]
+        _data, typename = self.extractDataType(_data)
+        if role == Qt.ToolTipRole:
+            return typename
+        return str(_data)
+
+    def rawData(self, index=None):
+        """Select raw data from dataset as numpy array"""
+        if index is None:
+            return np.asarray(self.dataset)
+        return self.dataset[index]
 
 
 # Create a subclass for 2D view of N-D datasets to separate the logic
@@ -125,7 +229,7 @@ class HDFDatasetModel(QAbstractTableModel):
 # 2015). We want to avoid that performance penalty for the common
 # case.
 
-class HDFDatasetNDModel(HDFDatasetModel):
+class NDDatasetModel(HDFDatasetModel):
     """2D projection of N-D dataset. It uses numpy advanced
     slicing/indexing via tuples.
 
@@ -138,21 +242,16 @@ class HDFDatasetNDModel(HDFDatasetModel):
     The argiments should come from user input (a popout dialog).
 
     """
-    def __init__(self, dataset, pos=(), parent=None):
-        super().__init__(dataset, parent)
+    def __init__(self, dataset, parent=None, pos=()):
+        print('#### pos=', pos)
+        print('#### parent=', parent)
+        super().__init__(dataset, parent=parent)
         self.select2D(pos)
         
     def rowCount(self, index):
-        if len(self.data2D.shape) == 0:
-            return 0
         return self.data2D.shape[0]
 
     def columnCount(self, index):
-        if len(self.data2D.shape) == 0:
-            return 0
-        # 1D dataset
-        if len(self.data2D.shape) == 1:
-            return 1
         return self.data2D.shape[1]
 
     def headerData(self, section, orientation, role):
@@ -161,10 +260,15 @@ class HDFDatasetNDModel(HDFDatasetModel):
         return section
 
     def data(self, index, role):
-        if role != Qt.DisplayRole or (not index.isValid()) \
-           or index.row() < 0 or index.row() >self.data2D.shape[0]:
+        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) or (not index.isValid()) \
+           or index.row() < 0 or index.row() > self.data2D.shape[0]:
             return None
-        return str(self.data2D[index.row(), index.column()])
+        _data = self.data2D[index.row(), index.column()]
+        _data, typename = self.extractDataType(_data)
+        if role == Qt.ToolTipRole:
+            print(typename)
+            return typename
+        return str(_data)
 
     def select2D(self, pos):
         """Select data for specified indices on each dimension except the two
@@ -181,9 +285,10 @@ class HDFDatasetNDModel(HDFDatasetModel):
 
         """
         pos = list(pos)
+        print(self.dataset, self.dataset.shape)
         if len(pos) < 2: # too few positions, include XY
             pos = [slice(0, self.dataset.shape[0]),
-                   slice(0, self.dataset.shape[1])]
+                   slice(0, self.dataset.shape[1])] #! why access shape[1] before verifying 
         indices = []        
         ndim = len(self.dataset.shape)  # h5py does not implement ndim attribute for datasets
         if ndim < len(pos):
@@ -198,18 +303,31 @@ class HDFDatasetNDModel(HDFDatasetModel):
         self.indices = tuple(indices)
         self.data2D = self.dataset[self.indices]
 
+    def rawData(self, index=None):
+        if index is None:
+            return self.data2D
+        return self.dataset[index]
 
-def create_default_model(dataset, parent=None):
+
+def create_default_model(dataset, parent=None, pos=()):
     """Create a model suitable for a given HDF5 dataset.
     
     For multidimensional homogeneous datasets it defaults to the first
     two dimensions and 0-th entry for the rest of the dimensions
 
     """
-    if len(dataset.shape) <= 2:
-        return HDFDatasetModel(dataset, parent)
+    dsetType = datasetType(dataset)
+    print(dataset, dsetType)
+    if dsetType == 'scalar':
+        return ScalarDatasetModel(dataset, parent=parent)
+    elif dsetType == 'compound':
+        return CompoundDatasetModel(dataset, parent=parent)
+    elif dsetType == '1d':
+        return OneDDatasetModel(dataset, parent=parent)
+    elif dsetType == '2d':
+        return TwoDDatasetModel(dataset, parent=parent)
     else:
-        return HDFDatasetNDModel(dataset, pos=(), parent=parent)
+        return NDDatasetModel(dataset, parent=parent, pos=())
         
     
 
@@ -220,12 +338,12 @@ if __name__ == '__main__':
     window = QMainWindow()
     tabview = QTableView(window)
     fd = h5.File('poolroom.h5')
-    model = HDFDatasetModel(fd['/map/nonuniform/tables/players'])
+    model = create_default_model(fd['/map/nonuniform/tables/players'])
     tabview.setModel(model)
-    model2 = HDFDatasetNDModel(fd['/data/uniform/ndim/data3d'], ('*', 1, '*'))
+    model2 = create_default_model(fd['/data/uniform/ndim/data3d'], pos=('*', 1, '*'))
     tabview2 = QTableView(window)
     tabview2.setModel(model2)
-    model3 = HDFDatasetModel(fd['/data/uniform/balls/x'])
+    model3 = create_default_model(fd['/data/uniform/balls/x'])
     tabview3 = QTableView(window)
     tabview3.setModel(model3)
     widget = QWidget(window)
