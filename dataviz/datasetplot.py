@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Sat Aug 22 21:24:27 2015 (-0400)
+# Last-Updated: Sun Aug 23 02:13:35 2015 (-0400)
 #           By: subha
-#     Update #: 275
+#     Update #: 277
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -169,8 +169,8 @@ class DatasetPlot(pg.PlotWidget):
     """
     # TODO: multiple dataset in same plotwidget? cannot attach to a
     # specific dataset. Update `name` with something more meaningful. Also, allow option of plo
-    def __init__(self, *args):
-        pg.PlotWidget.__init__(self, *args)
+    def __init__(self, parent=None, background='default', **kwargs):
+        pg.PlotWidget.__init__(self, parent=parent, background=background, **kwargs)
         self.name = ''
 
     def plotTimeSeries(self, dataset):

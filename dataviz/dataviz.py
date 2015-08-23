@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug 22 21:24:26 2015 (-0400)
+# Last-Updated: Sun Aug 23 02:40:08 2015 (-0400)
 #           By: subha
-#     Update #: 304
+#     Update #: 325
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -111,7 +111,6 @@ class DataViz(QMainWindow):
         super().__init__(parent=parent, flags=flags)
         self.readSettings()
         self.mdiArea = QMdiArea()
-        self.mdiArea = QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.setCentralWidget(self.mdiArea)
@@ -160,7 +159,7 @@ class DataViz(QMainWindow):
         self.quitAction = QAction(QIcon(), '&Quit', self,
                                   shortcut=QKeySequence.Quit, 
                                   statusTip='Quit dataviz', 
-                                  triggered=QApplication.instance().closeAllWindows)
+                                  triggered=self.doQuit)
         self.showAttributesAction = QAction(QIcon(), 'Show attributes', self,
                                             shortcut=QKeySequence.InsertParagraphSeparator,
                                             statusTip='Show attributes',
@@ -177,8 +176,7 @@ class DataViz(QMainWindow):
 
 
     def createMenus(self):
-        menuBar = self.menuBar()
-        menuBar.setVisible(True)
+        self.menuBar().setVisible(True)
         self.fileMenu = self.menuBar().addMenu('&File')
         self.fileMenu.addAction(self.openFileAction)
         self.fileMenu.addAction(self.closeFileAction)
@@ -221,11 +219,9 @@ class DataViz(QMainWindow):
                 if window.widget() == widget:
                     window.deleteLater()
 
-    # def showDataset(self):
-    #     self.sigShowDataset.emit()
-
-    # def plotDataset(self):
-    #     self.sigPlotDataset.emit()
+    def doQuit(self):
+        self.writeSettings()
+        QApplication.instance().closeAllWindows()
         
 
 def main():
@@ -234,8 +230,12 @@ def main():
     app = QApplication(sys.argv)
     window = DataViz()
     window.show()
-    sys.exit(app.exec_())
-    
+    app.exec_()
+    # fixed segfaults at exit:
+    # http://python.6.x6.nabble.com/Application-crash-on-exit-under-Linux-td5067510.html
+    del window
+    del app   
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Tue Aug 11 22:18:09 2015 (-0400)
+# Last-Updated: Sun Aug 23 02:33:04 2015 (-0400)
 #           By: subha
-#     Update #: 407
+#     Update #: 447
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -55,23 +55,12 @@ editabletreemodel.py
 import os
 import h5py as h5
 from PyQt5.QtCore import (QAbstractItemModel, QItemSelectionModel, QModelIndex, Qt)
+from PyQt5.QtWidgets import QTreeWidgetItem
 
-class RootItem(object):
+class RootItem(QTreeWidgetItem):
     def __init__(self, parent=None):
-        self.parentItem = parent
-        self.children = []
+        super().__init__(parent, type=QTreeWidgetItem.UserType)
         
-    def child(self, row):
-        if row < 0 or row >= len(self.children):
-            return None
-        return self.children[row]
-            
-    def childCount(self):
-        return len(self.children)
-
-    def childNumber(self):
-        return 0
-
     def columnCount(self):
         return 1
 
@@ -84,40 +73,37 @@ class RootItem(object):
     def setData(self, column, value):
         return False
 
-    def parent(self):
-        return None
+    # def parent(self):
+    #     return None
 
-    def appendChild(self, childItem):
-        self.children.append(childItem)
+    # def removeChild(self, position):
+    #     if position < 0 or position > len(self.children):
+    #         return False
+    #     child = self.children.pop(position)
+    #     return True
 
-    def removeChild(self, position):
-        if position < 0 or position > len(self.children):
-            return False
-        child = self.children.pop(position)
-        return True
-
-    def hasChildren(self):
-        return len(children) > 0
+    # def hasChildren(self):
+    #     return len(children) > 0
 
 
-class HDFTreeItem(object):
+class HDFTreeItem(QTreeWidgetItem):
     def __init__(self, data, parent=None):
+        super().__init__(parent, type=QTreeWidgetItem.UserType)
         self.h5node = data
-        self.parentItem = parent
         self.children = []
-        if isinstance(self.h5node, h5.Group):
-            self.children = [HDFTreeItem(child, self) for child in self.h5node.values()]        
         
     def child(self, row):
-        return self.children[row]
+        if isinstance(self.h5node, h5.Group):
+            if len(self.children) > 0:
+                return self.children[row]                
+            for name in self.h5node:
+                self.children = [HDFTreeItem(child, parent=self) for child in self.h5node.values()]                
+            return self.children[row]
             
     def childCount(self):
         if isinstance(self.h5node, h5.Group):
             return len(self.h5node)
         return 0
-
-    def childNumber(self):
-        return self.parentItem.children.index(self)
 
     def columnCount(self):
         return 1
@@ -144,9 +130,6 @@ class HDFTreeItem(object):
         if column != 0:
             return False
         self.h5node = value
-
-    def parent(self):
-        return self.parentItem
 
     def hasChildren(self):
         if isinstance(self.h5node, h5.Group):
@@ -216,7 +199,7 @@ class HDFTreeModel(QAbstractItemModel):
         if parentItem == self.rootItem: # is the left side childItem or parentItem?
             return QModelIndex()
 
-        return self.createIndex(parentItem.childNumber(), 0, parentItem)
+        return self.createIndex(parentItem.parent().indexOfChild(parentItem), 0, parentItem)
 
     def rowCount(self, parent=QModelIndex()):
         parentItem = self.getItem(parent)
@@ -228,7 +211,7 @@ class HDFTreeModel(QAbstractItemModel):
                              self.rootItem.childCount()+1)
         fd = h5.File(str(path), 'r')
         fileItem = HDFTreeItem(fd, parent=self.rootItem)
-        self.rootItem.appendChild(fileItem)
+        self.rootItem.addChild(fileItem)
         self.endInsertRows()
 
     def closeFile(self, index):
