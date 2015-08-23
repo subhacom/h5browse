@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Sun Aug 23 05:49:25 2015 (-0400)
+# Last-Updated: Sun Aug 23 06:07:09 2015 (-0400)
 #           By: subha
-#     Update #: 553
+#     Update #: 560
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -304,21 +304,22 @@ class DatasetPlot(pg.PlotWidget):
             params = TwoDPlotParamTree(dataset=dataset)
         else: # dtype == 'nd':
             params = NDPlotParamTree(dataset=dataset)
+        params.name = dataset.name
         #A better idea may be to keep all the params under a single tree
         # self.params[dataset].append(params)
         params.show()
         xdata, ydata = params.getXY()
-        print(xdata, ydata)
         # try: # This is my data dump sepcific ...
         #     sched = dataset.file['/runconfig/scheduling']
         #     print('sched:', sched)
         #     xdata = np.arange(len(dataset)) * float(sched['simtime']) / len(dataset)
         # except KeyError:
         #     xdata = np.arange(len(dataset))
-        self.plot(xdata, ydata)
+        plot = self.plot(xdata, ydata)
+        print('Plot=', plot)
         self.name = '{}:{}'.format(dataset.file.filename,
                                    dataset.name)
-
+        return plot, params
 
 if __name__ == '__main__':
     import h5py as h5

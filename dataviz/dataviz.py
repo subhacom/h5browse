@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sun Aug 23 02:40:08 2015 (-0400)
+# Last-Updated: Sun Aug 23 06:08:47 2015 (-0400)
 #           By: subha
-#     Update #: 325
+#     Update #: 338
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -198,6 +198,7 @@ class DataViz(QMainWindow):
         self.tree.sigAttributeWidgetClosed.connect(self.closeMdiChildWindow)
         self.tree.sigPlotWidgetCreated.connect(self.addMdiChildWindow)
         self.tree.sigPlotWidgetClosed.connect(self.closeMdiChildWindow)
+        self.tree.sigPlotParamTreeCreated.connect(self.addPanelBelow)
         # pipe signals of dataviz to those of hdftree widget
         self.sigShowAttributes.connect(self.tree.showAttributes)
         self.sigShowDataset.connect(self.tree.showDataset)
@@ -218,6 +219,13 @@ class DataViz(QMainWindow):
             for window in self.mdiArea.subWindowList():
                 if window.widget() == widget:
                     window.deleteLater()
+
+    def addPanelBelow(self, widget):
+        dockWidget = QDockWidget(widget.name)
+        dockWidget.setWidget(widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, dockWidget)
+        dockWidget.show()
+        
 
     def doQuit(self):
         self.writeSettings()

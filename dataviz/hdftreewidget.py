@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Sun Aug 23 04:51:18 2015 (-0400)
+# Last-Updated: Sun Aug 23 06:04:29 2015 (-0400)
 #           By: subha
-#     Update #: 270
+#     Update #: 276
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -97,7 +97,7 @@ class HDFTreeWidget(QTreeView):
     sigAttributeWidgetClosed = pyqtSignal(QWidget)
     sigPlotWidgetCreated = pyqtSignal(QWidget)
     sigPlotWidgetClosed = pyqtSignal(QWidget)
-    
+    sigPlotParamTreeCreated = pyqtSignal(QWidget)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -179,8 +179,9 @@ class HDFTreeWidget(QTreeView):
             # single node
             widget = DatasetPlot()
             self.openPlotWidgets[item.h5node.file.filename].add(widget)
-            widget.plotLine(item.h5node)
+            plot, params = widget.plotLine(item.h5node)
             self.sigPlotWidgetCreated.emit(widget)
+            self.sigPlotParamTreeCreated.emit(params)
             
     def showAttributes(self):
         """Create an attribute widget for currentItem"""
