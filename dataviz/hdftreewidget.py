@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Aug 21 18:31:01 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 266
+# Last-Updated: Sun Aug 23 04:51:18 2015 (-0400)
+#           By: subha
+#     Update #: 270
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -179,7 +179,7 @@ class HDFTreeWidget(QTreeView):
             # single node
             widget = DatasetPlot()
             self.openPlotWidgets[item.h5node.file.filename].add(widget)
-            widget.plotTimeSeries(item.h5node)
+            widget.plotLine(item.h5node)
             self.sigPlotWidgetCreated.emit(widget)
             
     def showAttributes(self):

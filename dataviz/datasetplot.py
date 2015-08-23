@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Sun Aug 23 02:13:35 2015 (-0400)
+# Last-Updated: Sun Aug 23 05:49:25 2015 (-0400)
 #           By: subha
-#     Update #: 277
+#     Update #: 553
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -44,36 +44,34 @@
 
 # Code:
 
+from collections import defaultdict
 from PyQt5.QtCore import Qt
 import pyqtgraph as pg
 from pyqtgraph import parametertree as ptree
 import numpy as np
-from hdfdatasetmodel import (HDFDatasetModel)
-
-
-
+from hdfdatasetmodel import datasetType
 
 class DatasetPlotParamTree(ptree.ParameterTree):
     """Base class for ParameterTree to select plotting parameters specific
     to various dataset types.
 
     """
-    def __init__(self, parent=None, showHeader=True, datasetModel=None):
+    def __init__(self, parent=None, showHeader=True, dataset=None):
         super().__init__(parent=parent,
                          showHeader=showHeader)        
-        self.datasetModel = datasetModel
+        self.dataset = dataset
 
-    def setDatasetModel(self, datasetModel):
-        self.datasetModel = datasetModel
+    def setDataset(self, dataset):
+        self.dataset = dataset
 
 
 class OneDPlotParamTree(DatasetPlotParamTree):
     """1D datasets can only be plotted as x or y, with the other axis
     being the index."""
-    def __init__(self, parent=None, showHeader=True, datasetModel=None):
+    def __init__(self, parent=None, showHeader=True, dataset=None):
         super().__init__(parent=parent,
                          showHeader=showHeader,
-                         datasetModel=datasetModel)
+                         dataset=dataset)
         dataSources = ['index', 'data']
         self.xsource = ptree.Parameter.create(name='x-data',
                                            type='list',
@@ -88,7 +86,8 @@ class OneDPlotParamTree(DatasetPlotParamTree):
                                                children=[self.xsource, self.ysource])
         self.addParameters(self.dataSources)            
 
-
+    def getXY(self):
+        return range(self.dataset.shape[0]), self.dataset
         
 class CompoundPlotParamTree(OneDPlotParamTree):
     """Compound dataset is tabulated data. One can choose row index or a
@@ -101,67 +100,185 @@ class CompoundPlotParamTree(OneDPlotParamTree):
     Keep scatter plot for the future.
 
     """
-    def __init__(self, parent=None, showHeader=True, datasetModel=None):
+    def __init__(self, parent=None, showHeader=True, dataset=None):
         super().__init__(parent=parent,
                          showHeader=showHeader,
-                         datasetModel=datasetModel)
-        self.setDatasetModel(datasetModel)
+                         dataset=dataset)
+        self.setDataset(dataset)
 
-    def setDatasetModel(self, datasetModel):
-        if self.datasetModel is None:
-            return
-        self.datasetModel = datasetModel
-        dataSources = ['index'] + \
-                      [datasetModel.headerData(ii, Qt.Horizontal, Qt.DisplayRole) \
-                       for ii in range(datasetModel.columnCount(datasetModel.createIndex(0,0)))]
+    def setDataset(self, dataset):
+        self.dataset = dataset
+        dataSources = ['index'] + list(dataset.dtype.names)
         self.xsource.setLimits(dataSources)
         self.ysource.setLimits(dataSources)
         self.ysource.setValue(dataSources[1])
+
+    def getXY(self):
+        if self.xsource.value() == 'index':
+            xdata = range(self.dataset.shape[0])
+        else:
+            xdata = self.dataset[self.xsource.value()]
+        if self.ysource.value() == 'index':
+            ydata = range(self.dataset.shape[0])
+        else:
+            ydata = self.dataset[self.ysource.value()]
+        return xdata, ydata
     
 
-# class DatasetPlotParams(ptree.ParameterTree):
-#     """Class to allow the user to choose parameters for plotting."""
+class TwoDPlotParamTree(DatasetPlotParamTree):
+    """For 2D dataset one can choose data from rows or from columns.
+    """
+    def __init__(self, parent=None, showHeader=True, dataset=None):
+        super().__init__(parent=parent,
+                         showHeader=showHeader,
+                         dataset=dataset)
+        self.dataDim = ptree.Parameter.create(name='datadim',
+                                              title='Data along dimension:',
+                                              type='list',
+                                              values=['rows', 'columns'],
+                                              value='columns')
+        dataSources = ['index', '0']
+        self.xsource = ptree.Parameter.create(name='x-data',
+                                           type='list',
+                                           values=dataSources,
+                                           value=dataSources[0])
+        self.ysource = ptree.Parameter.create(name='y-data',
+                                           type='list',
+                                           values=dataSources,
+                                           value=dataSources[1])
+        self.dataSources = ptree.Parameter.create(name='Data sources',
+                                                  type='group',
+                                                  children=[self.dataDim,
+                                                            self.xsource,
+                                                            self.ysource])
+        self.dataDim.sigValueChanged.connect(self.dataDimChanged)
+        self.addParameters(self.dataSources)            
+        self.setDatasetModel(dataset)
 
-#         params = {}
-#         ndim = len(dataset.shape)
-#         if ndim < 1:
-#             return
-#         if ndim == 1:
-#             if dataset.dtype.names is not None:
-#                 dataSources = dataset.dtype.names + ['index']
-#             else:
-#                 dataSources = ['row', 'index']
-#             self.xchoice = ptree.Parameter.create(name='x-data', 
-#                                                type='list',
-#                                                values=dataSources,
-#                                                value='index')
-#             self.ychoice = ptrr.Parameter.create(name='y-data', 
-#                                               type='list',
-#                                               values=dataSources,
-#                                               value=dataSources[0])
-#             self.addParameters(self.xchoice)
-#             self.addParameters(self.ychoice)
-#             # TODO connect change in param to appropriate action
-#         else:
-#             # N-dim dataset. First choose which dimension to do select data from. Then 
-#             self.dataDim = ptree.Parameter.create(name='Data dimension',
-#                                                type='list',
-#                                                values=range(ndim),
-#                                                value=0)
-#             dimChoices = [{'name': 'Dim {}'.format(ii),
-#                            'type': 'list',
-#                            'values': range(dataset.shape[ii]),
-#                            'value': 0} for ii in range(ndim).pop(0)]
-#             self.xchoice = ptree.Parameter.create(name='x-data',
-#                                                type='group',
-#                                                children=dimChoices)
-#             self.ychoice = ptree.Parameter.create(name='y-data',
-#                                                type='group',
-#                                                children=dimChoices)
-            
-#             self.addParameters(self.xchoice)
-#             self.addParameters(self.ychoice)
-    
+    def setDatasetModel(self, dataset):
+        self.dataset = dataset
+        if self.dataDim.value() == 'columns':
+            dataSources = ['index'] + list(range(dataset.shape[1]))
+        else:
+            dataSources = ['index'] + list(range(dataset.shape[0]))
+        self.xsource.setLimits(dataSources)
+        self.ysource.setLimits(dataSources)
+        self.ysource.setValue(dataSources[1])
+
+    def dataDimChanged(self):
+        if self.dataDim.value() == 'columns':
+            headerData = [str(ii) for ii in range(self.dataset.shape[1])]
+        else:
+            headerData = [str(ii) for ii in range(self.dataset.shape[0])]
+        dataSources = ['index'] + headerData
+
+    def getXY(self):
+        ds = self.dataset
+        xdim = self.xsource.value()
+        ydim = self.ysource.value()
+        print(ydim, type(ydim))
+        if self.dataDim.value() == 'row':
+            if xdim == 'index':
+                xdata = range(ds.shape[0])
+            else:
+                xdata = ds[:, xdim]
+            if ydim == 'index':
+                ydata = range(ds.shape[0])
+            else:
+                ydata = ds[:, ydim]
+        if self.dataDim.value() == 'columns':
+            if xdim == 'index':
+                xdata = range(ds.shape[1])
+            else:
+                xdata = ds[xdim, :]
+            if ydim == 'index':
+                ydata = range(ds.shape[0])
+            else:
+                ydata = ds[ydim, :]
+        
+        return xdata, ydata
+
+class NDPlotParamTree(DatasetPlotParamTree):
+    """Class to allow the user to choose parameters for plotting."""
+    def __init__(self, parent=None, showHeader=True, dataset=None):
+        super().__init__(parent=parent,
+                         showHeader=showHeader,
+                         dataset=dataset)
+        self.dataDim = ptree.Parameter.create(name='datadim',
+                                              title='Data along dimension:',
+                                              type='list',
+                                              values=[0],
+                                              value=0)
+        self.dataDim.sigValueChanged.connect(self.dataDimChanged)
+        dataSources = ['index', '0']
+        self.xsource = ptree.Parameter.create(name='x-data',
+                                           type='group')
+        self.ysource = ptree.Parameter.create(name='y-data',
+                                           type='group')
+        self.dataSources = ptree.Parameter.create(name='Data sources',
+                                                  type='group',
+                                                  children=[self.dataDim,
+                                                            self.xsource,
+                                                            self.ysource])
+        self.addParameters(self.dataSources)            
+        self.setDatasetModel(dataset)
+
+    def setDatasetModel(self, dataset):
+        self.dataset = dataset
+        ndim = len(dataset.shape)
+        self.dataDim.setLimits(range(len(dataset.shape)))
+        dimChoices = [{'name': 'Dim{}'.format(ii),
+                       'type': 'list',
+                       'values': ['index']+list(range(dataset.shape[ii])),
+                       'value': 0} for ii in range(1, ndim)]
+        self.xsource.clearChildren()
+        self.xsource.addChildren(dimChoices)
+        self.ysource.clearChildren()
+        self.ysource.addChildren(dimChoices)    
+
+    def dataDimChanged(self):
+        dims = list(range(len(self.dataset.shape)))
+        dims.pop(self.dataDim.value())
+        dimChoices = [{'name': 'Dim{}'.format(ii),
+                       'type': 'list',
+                       'values': ['index']+list(range(self.dataset.shape[ii])),
+                       'value': 'index'} for ii in dims]
+        self.xsource.clearChildren()
+        self.xsource.addChildren(dimChoices)        
+        for choice in dimChoices:
+            choice['value'] = 0
+        self.ysource.clearChildren()
+        self.ysource.addChildren(dimChoices)
+
+    def getXY(self):
+        dims = range(len(self.dataset.shape))
+        xindex = []
+        yindex = []
+        dataDim = self.dataDim.value()
+        for dim in dims:
+            if dim == dataDim:
+                xindex.append(slice(self.dataset.shape[dim]))
+                yindex.append(slice(self.dataset.shape[dim]))
+                continue
+            xparam = self.xsource.param('Dim{}'.format(dim))
+            xindex.append(xparam.value())
+            yparam = self.ysource.param('Dim{}'.format(dim))
+            yindex.append(yparam.value())
+        print('xindex', xindex, 'yindex', yindex)
+        if 'index' in  xindex:
+            xdata = range(self.dataset.shape[dataDim])
+        else:
+            # This fancy indexing does not work with h5py dataset
+            # xdata = self.dataset[xindex] 
+            # Therefore using hack
+            xdata = eval('self.dataset{}'.format(xindex))
+        if 'index' in  yindex:
+            ydata = range(self.dataset.shape[dataDim])
+        else:
+            ydata = eval('self.dataset{}'.format(yindex))
+        return (xdata, ydata)
+        
+        
             
 class DatasetPlot(pg.PlotWidget):
     """PlotWidget with some minor modifications for dataviz.
@@ -171,18 +288,34 @@ class DatasetPlot(pg.PlotWidget):
     # specific dataset. Update `name` with something more meaningful. Also, allow option of plo
     def __init__(self, parent=None, background='default', **kwargs):
         pg.PlotWidget.__init__(self, parent=parent, background=background, **kwargs)
-        self.name = ''
+        self.name = ''        
+        self.params = defaultdict(list)
 
-    def plotTimeSeries(self, dataset):
-        print(dataset, dataset.shape)
-        time = np.arange(len(dataset))
+    def plotLine(self, dataset):
+        dtype = datasetType(dataset)
+        if dtype == 'scalar':
+            print('{} is a scalar - nothing to plot'.format(dataset))
+            return
+        if dtype == 'compound':
+            params = CompoundPlotParamTree(dataset=dataset)
+        elif dtype == '1d':
+            params = OneDPlotParamTree(dataset=dataset)
+        elif dtype == '2d':
+            params = TwoDPlotParamTree(dataset=dataset)
+        else: # dtype == 'nd':
+            params = NDPlotParamTree(dataset=dataset)
+        #A better idea may be to keep all the params under a single tree
+        # self.params[dataset].append(params)
+        params.show()
+        xdata, ydata = params.getXY()
+        print(xdata, ydata)
         # try: # This is my data dump sepcific ...
         #     sched = dataset.file['/runconfig/scheduling']
         #     print('sched:', sched)
-        #     time = np.arange(len(dataset)) * float(sched['simtime']) / len(dataset)
+        #     xdata = np.arange(len(dataset)) * float(sched['simtime']) / len(dataset)
         # except KeyError:
-        #     time = np.arange(len(dataset))
-        self.plot(time, dataset)
+        #     xdata = np.arange(len(dataset))
+        self.plot(xdata, ydata)
         self.name = '{}:{}'.format(dataset.file.filename,
                                    dataset.name)
 
@@ -198,12 +331,14 @@ if __name__ == '__main__':
     ndModel = create_default_model(fd['/data/uniform/ndim/data3d'], pos=('*', 1, '*'))
     widget = QWidget()
     widget.setLayout(QHBoxLayout())
-    onedModel = create_default_model(fd['/data/event/balls/hit/ball_0_9ba91cb6163611e5899524fd526610e7'])    
-    onedParams = OneDPlotParamTree(datasetModel=onedModel)
+    onedParams = OneDPlotParamTree(dataset=fd['/data/event/balls/hit/ball_0_9ba91cb6163611e5899524fd526610e7'])
     widget.layout().addWidget(onedParams)
-    compoundModel = create_default_model(fd['/data/static/tables/dimensions'])
-    compoundParams = CompoundPlotParamTree(datasetModel=compoundModel)
+    compoundParams = CompoundPlotParamTree(dataset=fd['/data/static/tables/dimensions'])
     widget.layout().addWidget(compoundParams)
+    twodParams = TwoDPlotParamTree(dataset=fd['/data/uniform/balls/x'])
+    widget.layout().addWidget(twodParams)
+    ndParams = NDPlotParamTree(dataset=fd['/data/uniform/ndim/data3d'])
+    widget.layout().addWidget(ndParams)
     widget.show()
     sys.exit(app.exec_())
 
