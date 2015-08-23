@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Sat Aug 22 19:54:47 2015 (-0400)
+# Last-Updated: Sat Aug 22 21:24:27 2015 (-0400)
 #           By: subha
-#     Update #: 268
+#     Update #: 275
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -187,10 +187,9 @@ class DatasetPlot(pg.PlotWidget):
                                    dataset.name)
 
 
-import h5py as h5
-from hdfdatasetmodel import (CompoundDatasetModel, NDDatasetModel, TwoDDatasetModel, OneDDatasetModel, create_default_model)
-
 if __name__ == '__main__':
+    import h5py as h5
+    from hdfdatasetmodel import (CompoundDatasetModel, NDDatasetModel, TwoDDatasetModel, OneDDatasetModel, create_default_model)
     import sys
     from PyQt5.QtWidgets import (QApplication, QMainWindow, QHBoxLayout, QTreeView, QWidget, QTableView)
     app = QApplication(sys.argv)

@@ -5,13 +5,44 @@ custom format. But the interface is generic enough to display simple
 HDF5 files. The tools are totally for neuronal data analysis. But the
 plan is to make it a more general tool.
 
-This is a rewrite of the old code. Replacing PyQwt with PyQtGraph.
+This is a rewrite of the old code. Replacing PyQwt with
+PyQtGraph. Written from scratch with new language and libraries.
 
-It uses  Python 3.x, numpy, PyQt5, h5py.
 
-As of Fri, Aug 21, 2015 PyQtGraph devel branch on github supports PyQt5. Install it using:
+Installation
+============
 
-Starting from scratch with new language and libraries.
+Requirements
+------------
+
+Python 3.x, numpy, PyQt5, h5py, PyQtGraph.
+
+As of Fri, Aug 21, 2015 only PyQtGraph devel branch on github supports
+PyQt5. Install it using:
+
+    git clone -b develop https://github.com/pyqtgraph/pyqtgraph.git 
+    cd pyqtgraph
+    python setup.py install 
+
+You also need setuptools to use setup.py for standard installation.
+
+
+Install
+-------
+
+You just download the sourcecode and run the dataviz.py
+file using python3. The setup.py is not functional.
+
+    git clone https://github.com/subhacom/dataviz.git
+    python dataviz/dataviz/dataviz.py
+
+or 
+
+    python3 dataviz/dataviz/dataviz.py
+
+if your default python is python2
+
+
 
 
 Troubleshooting
@@ -50,10 +81,12 @@ Important features to port from old code:
 
 Not handling in near future
 ---------------------------
+
 Nested datasets. Datasets with entries that are variable length
 arrays.
 
 Images? Need to have a look at existing standards.
+
 
 Other software
 ==============

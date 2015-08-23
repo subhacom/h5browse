@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug 22 17:46:23 2015 (-0400)
+# Last-Updated: Sat Aug 22 21:14:08 2015 (-0400)
 #           By: subha
-#     Update #: 434
+#     Update #: 438
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -66,8 +66,6 @@ def datasetType(dataset):
 
 class HDFDatasetModel(QAbstractTableModel):
     def __init__(self, dataset, parent=None):
-        print('***', dataset)
-        print('*** parent=', parent)
         super().__init__(parent=parent)
         self.dataset = dataset
 
@@ -243,8 +241,6 @@ class NDDatasetModel(HDFDatasetModel):
 
     """
     def __init__(self, dataset, parent=None, pos=()):
-        print('#### pos=', pos)
-        print('#### parent=', parent)
         super().__init__(dataset, parent=parent)
         self.select2D(pos)
         
@@ -266,7 +262,6 @@ class NDDatasetModel(HDFDatasetModel):
         _data = self.data2D[index.row(), index.column()]
         _data, typename = self.extractDataType(_data)
         if role == Qt.ToolTipRole:
-            print(typename)
             return typename
         return str(_data)
 
@@ -285,7 +280,6 @@ class NDDatasetModel(HDFDatasetModel):
 
         """
         pos = list(pos)
-        print(self.dataset, self.dataset.shape)
         if len(pos) < 2: # too few positions, include XY
             pos = [slice(0, self.dataset.shape[0]),
                    slice(0, self.dataset.shape[1])] #! why access shape[1] before verifying 
@@ -317,7 +311,6 @@ def create_default_model(dataset, parent=None, pos=()):
 
     """
     dsetType = datasetType(dataset)
-    print(dataset, dsetType)
     if dsetType == 'scalar':
         return ScalarDatasetModel(dataset, parent=parent)
     elif dsetType == 'compound':

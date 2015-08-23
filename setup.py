@@ -44,10 +44,11 @@ Written from scratch in Python 3.
           # -*- Extra requirements: -*-
           'numpy',
           'h5py',
-          'PyQt5',
-          'PyQtGraph',
+          'pyqtgraph',
       ],
-      entry_points="""
-      # -*- Entry points: -*-
-      """,
+      entry_points={
+          'gui_scripts': [
+              'dataviz=dataviz.dataviz:main',
+          ]
+      },
       )

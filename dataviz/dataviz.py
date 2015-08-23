@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Aug 21 18:29:49 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 298
+# Last-Updated: Sat Aug 22 21:24:26 2015 (-0400)
+#           By: subha
+#     Update #: 304
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -50,7 +50,7 @@
 import os
 from PyQt5.QtCore import (Qt, pyqtSignal, QSettings, QPoint, QSize,
                           QFileInfo)
-from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout,
+from PyQt5.QtWidgets import (QApplication, QTableView, QWidget, QVBoxLayout,
                              QMainWindow, QDockWidget, QFileDialog,
                              QAction, QLabel, QMdiArea)
 from PyQt5.QtGui import (QIcon, QKeySequence)
@@ -227,8 +227,8 @@ class DataViz(QMainWindow):
     # def plotDataset(self):
     #     self.sigPlotDataset.emit()
         
-    
-if __name__ == '__main__':
+
+def main():
     import sys
     from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QWidget)
     app = QApplication(sys.argv)
@@ -236,6 +236,9 @@ if __name__ == '__main__':
     window.show()
     sys.exit(app.exec_())
     
+
+if __name__ == '__main__':
+    main()
 
 # 
 # dataviz.py ends here
