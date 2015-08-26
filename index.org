@@ -17,7 +17,8 @@
   It is written in python3 and uses ~h5py~ for accessing HDF5 data,
   ~PyQt5~ for GUI and ~pyqtgraph~ for plotting.
 
-  ~dataviz~ is a work in progress.
+  ~dataviz~ is a work in progress. You can get the source code here:
+  https://github.com/subhacom/dataviz.
 
 
 [[file:dataviz_screenshot.png]]
