@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Sun Aug 23 06:04:29 2015 (-0400)
+# Last-Updated: Thu Aug 27 01:16:04 2015 (-0400)
 #           By: subha
-#     Update #: 276
+#     Update #: 279
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,6 +49,8 @@
 """
 
 from collections import defaultdict
+
+import h5py as h5
 
 from PyQt5.QtCore import (Qt, pyqtSignal)
 from PyQt5.QtWidgets import (QTreeView, QWidget)
@@ -174,9 +176,7 @@ class HDFTreeWidget(QTreeView):
         Emits sigAttributeWidgetCreated(newWidget)
         """
         item = self.model().getItem(index)
-        if item is not None:
-            # TODO maybe avoid duplicate windows for a attributes of a
-            # single node
+        if item is not None and isinstance(item.h5node, h5.Dataset):
             widget = DatasetPlot()
             self.openPlotWidgets[item.h5node.file.filename].add(widget)
             plot, params = widget.plotLine(item.h5node)
