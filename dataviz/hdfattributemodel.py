@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Aug  7 00:18:22 2015 (-0400)
+# Last-Updated: Wed Aug 26 23:42:28 2015 (-0400)
 #           By: subha
-#     Update #: 105
+#     Update #: 119
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -51,6 +51,7 @@ from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex,
 
 class HDFAttributeModel(QAbstractTableModel):
     """Model class to handle HDF5 attributes of an HDF5 object"""
+    columns = ['Attribute name', 'Value', 'Type']
     def __init__(self, node, parent=None):
         """`node` is an HDF5 object"""
         super().__init__(parent=parent)
@@ -60,16 +61,12 @@ class HDFAttributeModel(QAbstractTableModel):
         return len(self.node.attrs)
 
     def columnCount(self, index):
-        return 2
+        return len(HDFAttributeModel.columns)
 
     def headerData(self, section, orientation, role):        
         if role != Qt.DisplayRole or orientation == Qt.Vertical:
             return None
-        if section == 0:
-            return 'Name'
-        elif section == 1:
-            return 'Value'
-        return section
+        return HDFAttributeModel.columns[section]
 
     def data(self, index, role):
         """For tooltips return the data type of the attribute value.  For
@@ -98,8 +95,8 @@ class HDFAttributeModel(QAbstractTableModel):
         elif role == Qt.DisplayRole:
             if index.column() == 0:
                 return name
-            elif index.column() == 1:                
-                value = self.node.attrs[name]
+            value = self.node.attrs[name]
+            if index.column() == 1:                
                 # in Python 3 we have to decode the bytes to get
                 # string representation without leading 'b'. However,
                 # on second thought, it is not worth converting the
@@ -113,6 +110,8 @@ class HDFAttributeModel(QAbstractTableModel):
                 # elif isinstance(value, np.ndarray) and value.dtype.type == np.string_:
                 #     return str([entry.decode('utf-8') for entry in value])                    
                 # return str(value)                
+            elif index.column() == 2:
+                return type(value).__name__                
         return None
 
 

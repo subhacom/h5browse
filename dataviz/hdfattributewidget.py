@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Aug  6 21:46:01 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug  6 21:52:27 2015 (-0400)
+# Last-Updated: Thu Aug 27 00:18:20 2015 (-0400)
 #           By: subha
-#     Update #: 14
+#     Update #: 79
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -46,11 +46,11 @@
 # Code:
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QTableView, QWidget)
+from PyQt5.QtWidgets import (QTableView, QWidget, QLabel, QVBoxLayout)
 
 from hdfattributemodel import HDFAttributeModel
 
-class HDFAttributeWidget(QTableView):
+class HDFAttributeWidget(QWidget):
     """Convenience widget to display HDF attributes.
 
     It creates a model when dataset is assigned. Like HDFDatasetWidget
@@ -61,16 +61,28 @@ class HDFAttributeWidget(QTableView):
     def __init__(self, parent=None, node=None):
         super().__init__(parent)        
         self.name = ''
+        self.nameLabel = QLabel('', self)
+        self.nameLabel.setWordWrap(True)
+        self.nameLabel.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
+        self.fileLabel = QLabel('', self)
+        self.fileLabel.setWordWrap(True)
+        self.fileLabel.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
+        self.attributeView = QTableView(self)
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.nameLabel)
+        self.layout().addWidget(self.fileLabel)
+        self.layout().addWidget(self.attributeView)
         if node is not None:
             self.setNode(node)
 
     def setNode(self, node):
+        self.name = 'Attributes: {}'.format(node.name)
         model = HDFAttributeModel(node)
-        self.setModel(model)
-        self.name = '{}:{}.attributes'.format(node.file.filename,
-                                       node.name)
-        self.setToolTip(self.name)
-    
+        self.attributeView.setModel(model)
+        self.nameLabel.setText('Path: {}'.format(node.name))
+        self.fileLabel.setText('File: {}'.format(node.file.filename))
+        self.setToolTip('Attributes of <b>{}</b> [file: {}]'.format(node.name, node.file.filename))
+
 
 
 # 
