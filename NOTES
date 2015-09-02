@@ -67,3 +67,6 @@
  
   Subha [2015-08-21 Fri]
 
+* TODO keep just one parameter tree visible 
+  and update it depending on which plotwidget is selected. Also use
+  tabs in stead of horizontal display.
