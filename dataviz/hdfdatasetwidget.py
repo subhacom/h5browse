@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug 22 17:47:34 2015 (-0400)
+# Last-Updated: Thu Aug 27 00:16:56 2015 (-0400)
 #           By: subha
-#     Update #: 101
+#     Update #: 109
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,7 +48,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout)
 
-from hdfdatasetmodel import (HDFDatasetModel, OneDDatasetModel, TwoDDatasetModel, NDDatasetModel, CompoundDatasetModel, ScalarDatasetModel,
+from hdfdatasetmodel import (HDFDatasetModel, OneDDatasetModel,
+                             TwoDDatasetModel, NDDatasetModel,
+                             CompoundDatasetModel, ScalarDatasetModel,
                              create_default_model)
 
 class HDFDatasetWidget(QTableView):
@@ -70,7 +72,8 @@ class HDFDatasetWidget(QTableView):
         self.setModel(model)
         self.name = '{}:{}'.format(dataset.file.filename,
                                    dataset.name)
-        self.setToolTip(self.name)
+        self.setToolTip('Dataset <b>{}</b> [file: {}]'.format(
+            dataset.name, dataset.file.filename))
 
 
 if __name__ == '__main__':

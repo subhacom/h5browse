@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sun Aug 23 06:08:47 2015 (-0400)
+# Last-Updated: Thu Aug 27 01:11:45 2015 (-0400)
 #           By: subha
-#     Update #: 338
+#     Update #: 384
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -58,6 +58,7 @@ from PyQt5.QtGui import (QIcon, QKeySequence)
 
 from hdftreewidget import HDFTreeWidget
 from hdfdatasetwidget import HDFDatasetWidget
+from datasetplot import (DatasetPlot, DatasetPlotParamTree)
 
 
 class DataViz(QMainWindow):
@@ -113,6 +114,7 @@ class DataViz(QMainWindow):
         self.mdiArea = QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.mdiArea.subWindowActivated.connect(self.switchPlotParamPanel)
         self.setCentralWidget(self.mdiArea)
         self.createActions()
         self.createMenus()
@@ -213,6 +215,7 @@ class DataViz(QMainWindow):
             subwin = self.mdiArea.addSubWindow(widget)
             subwin.setWindowTitle(widget.name)
             widget.show()
+        return subwin
 
     def closeMdiChildWindow(self, widget):
         if widget is not None:
@@ -225,8 +228,28 @@ class DataViz(QMainWindow):
         dockWidget.setWidget(widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, dockWidget)
         dockWidget.show()
-        
 
+    
+    def switchPlotParamPanel(self, subwin):
+        """Make plot param tree panel visible if active subwindow has a
+        plotwidget. All other plot param trees will be invisible. Qt
+        does not provide out-of-focus signal for mdi subwindows. So
+        there is no counterpart of subWindowActivated that can allow
+        us to hide paramtrees for inactive plot widgets. Hence this
+        approach.
+
+        """
+        if subwin is None:
+            return
+        for dockWidget in self.findChildren(QDockWidget):
+            # All dockwidgets that contain paramtrees must be checked
+            if isinstance(dockWidget.widget(), DatasetPlotParamTree):
+                if isinstance(subwin.widget(), DatasetPlot) and \
+                   dockWidget.widget() in subwin.widget().paramsToPlots:
+                    dockWidget.setVisible(True)
+                else:
+                    dockWidget.setVisible(False)
+        
     def doQuit(self):
         self.writeSettings()
         QApplication.instance().closeAllWindows()

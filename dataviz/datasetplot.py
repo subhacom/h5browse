@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Mon Aug 24 12:09:53 2015 (-0400)
+# Last-Updated: Thu Aug 27 00:55:11 2015 (-0400)
 #           By: subha
-#     Update #: 813
+#     Update #: 817
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -324,6 +324,7 @@ class DatasetPlot(pg.PlotWidget):
         self.paramsToPlots = {}
 
     def plotLine(self, dataset):
+        self.setToolTip(dataset.name)
         dtype = datasetType(dataset)
         if dtype == 'scalar':
             return
@@ -341,7 +342,7 @@ class DatasetPlot(pg.PlotWidget):
         # self.params[dataset].append(params)
         params.show()
         xdata, ydata = params.getXY()
-        # try: # This is my data dump sepcific ...
+        # try: # This is my data dump sepcific ... crashes in h5py on python3/cygwin?
         #     sched = dataset.file['/runconfig/scheduling']
         #     print('sched:', sched)
         #     xdata = np.arange(len(dataset)) * float(sched['simtime']) / len(dataset)
