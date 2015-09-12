@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Sun Aug 23 02:33:04 2015 (-0400)
+# Last-Updated: Sat Sep 12 14:08:43 2015 (-0400)
 #           By: subha
-#     Update #: 447
+#     Update #: 548
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -146,6 +146,68 @@ class HDFTreeItem(QTreeWidgetItem):
         return isinstance(self.h5node, h5.Group)
 
 
+class EditableItem(HDFTreeItem):    
+    def __init__(self, data, parent=None):
+        super().__init__(data, parent)
+        
+    def setData(self, column, data):
+        """When assigned a dict, we look for 'name' key storing name, 'attr'
+        key storing attributes of node to be created and 'type' for
+        group/dataset. If type is dataset, we further look for any existing
+        data in 'data'."""
+        if not isinstance(data, dict):
+            super().setData(self, column, data)
+            return
+        typ = data.get('type', 'group')
+        merge = data.get('merge', False)
+        attrs = data.get('attrs', {})
+        if not merge:
+            if typ == 'group':
+                self.createGroup(data)
+            else:
+                self.createDataset(data)            
+        for key, value in attrs:
+            self.h5node.attrs[key] = value        
+
+    def createGroup(self, data):
+        name = data.get('name', 'new')
+        parent = self.parent()
+        if isinstance(parent, RootItem):
+            raise TypeError('Cannot create a group outside file')
+        else:
+            self.h5node = parent.h5node.create_group(name)
+        
+    def createDataset(self, data):
+        name = data.get('name', 'new')
+        parent = self.parent()
+        if isinstance(parent, RootItem):
+            raise TypeError('Dataset can be created only inside a file')
+        self.h5node = parent.h5node.create_dataset(name, data=data.get('data', None),
+                                                   shape=data.get('shape', None),
+                                                   dtype=data.get('dtype', None),
+                                                   chunks=data.get('chunks', True),
+                                                   maxshape=data.get('maxshape', (None,)),
+                                                   compression=data.get('compression', 'gzip'))
+
+    def insertChildren(self, position, count, columns=1):
+        for ii in range(count):
+            self.h5node.create_group('node{}'.format(ii))
+        return True
+
+    def removeChildren(self, position, count):
+        index = 0
+        for key in self.h5node:
+            if index >= position:
+                del self.h5node[key]
+            index += 1
+            if index >= position + count:
+                break
+
+    def rename(self, newName):
+        pnode = self.parent().h5node
+        pnode.move(self.h5node.name, newName)
+
+        
 class HDFTreeModel(QAbstractItemModel):
     def __init__(self, headers, parent=None):
         super(HDFTreeModel, self).__init__(parent)
@@ -181,7 +243,6 @@ class HDFTreeModel(QAbstractItemModel):
     def index(self, row, column, parent=QModelIndex()):
         if parent.isValid() and parent.column()!= 0:
             return QModelIndex()
-
         parentItem = self.getItem(parent)
         childItem = parentItem.child(row)
         if childItem:
@@ -191,26 +252,26 @@ class HDFTreeModel(QAbstractItemModel):
 
     def parent(self, index):
         if not index.isValid():
-            return QModelIndex()
-        
+            return QModelIndex()        
         childItem = self.getItem(index)
         parentItem = childItem.parent()
-
         if parentItem == self.rootItem: # is the left side childItem or parentItem?
             return QModelIndex()
-
         return self.createIndex(parentItem.parent().indexOfChild(parentItem), 0, parentItem)
 
     def rowCount(self, parent=QModelIndex()):
         parentItem = self.getItem(parent)
         return parentItem.childCount()
 
-    def openFile(self, path):
+    def openFile(self, path, mode='r'):
         self.beginInsertRows(QModelIndex(),
                              self.rootItem.childCount(),
                              self.rootItem.childCount()+1)
-        fd = h5.File(str(path), 'r')
-        fileItem = HDFTreeItem(fd, parent=self.rootItem)
+        fd = h5.File(str(path), mode=mode)
+        if mode == 'r':
+            fileItem = HDFTreeItem(fd, parent=self.rootItem)
+        else:
+            fileItem = EditableItem(fd, parent=self.rootItem)
         self.rootItem.addChild(fileItem)
         self.endInsertRows()
 
@@ -228,6 +289,20 @@ class HDFTreeModel(QAbstractItemModel):
         except ValueError:
             return False
 
+    def insertRows(self, position, rows, parent=QModelIndex()):
+        parentItem = self.getItem(parent)
+        self.beginInsertRows(parent, position, position+rows-1)
+        parentItem.insertChildren(position, rows, self.rootItem.columnCount())
+        self.endInsertRows()
+        return True
+
+    def removeRows(self, position, rows, parent=QModelIndex()):
+        parentItem = self.getItem(parent)
+        self.beginRemoveRows(parent, position, position+rows-1)
+        parentItem.removeChildren(position, rows, self.rootItem.columnCount())
+        self.endRemoveRows()
+        return True
+        
 
 if __name__ == '__main__':
     import sys
@@ -240,7 +315,7 @@ if __name__ == '__main__':
     layout.addWidget(view)
     window.setCentralWidget(widget)
     model = HDFTreeModel([])
-    model.openFile('poolroom.h5')
+    model.openFile('test.h5', 'r+')
     view.setModel(model)
     window.show()
     sys.exit(app.exec_())
