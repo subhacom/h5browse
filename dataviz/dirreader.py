@@ -7,9 +7,9 @@
 # Created: Fri Aug 28 16:43:08 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Wed Sep  2 19:35:00 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 50
+# Last-Updated: Fri Sep 11 23:39:25 2015 (-0400)
+#           By: subha
+#     Update #: 154
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -49,48 +49,73 @@
 
 import os
 from PyQt5.QtCore import (Qt, pyqtSignal, QSettings)
-from PyQt5.QtWidgets import (QApplication, QWidget)
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog)
+from PyQt5.QtGui import (QBrush, QColor)
 from pyqtgraph import parametertree as ptree
 
-class DirReader(ptree.ParameterTree):
-    def __init__(self, parent=None, showHeader=True):
-        super().__init__(parent=parent,
-                         showHeader=showHeader)        
+bgBrush = QBrush(QColor('lightsteelblue'))
+
+class PathParams(ptree.parameterTypes.GroupParameter):
+    def __init__(self, **opts):
+        opts['type'] = 'group'
+        opts['addText'] = "Add rule"
+        opts['addList'] = ['timestamp', 'regex', 'string']
+        super().__init__(**opts)
+
+    def addNew(self, typ):
+        val = {'timestamp': 'YYYY-mm-dd HH:MM:SS',
+               'regex': '.*',
+               'string': '_'}[typ]
+        child = self.addChild({
+            'name': typ,
+            'type': 'str',
+            'value': val,
+            'removable': True,
+            'renamable': True,
+        }, autoIncrementName=True)
+        for item in child.items:
+            item.setBackground(0, bgBrush)
+        
+
+class DirReader(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)        
         self.settings = QSettings('dataviz', 'dirreader')        
-        self.levelRules = []
-        self.levelNames = []
-        for rule in self.settings.value('levelRules', type=str):
-            self.levelRules.append(rule)
-        for rule in self.settings.value('levelNames', type=str):
-            self.levelNames.append(rule)
-        self.dirPath = ptree.Parameter.create(name='Directory',
-                                              type='group')
-        for ii, (levelName, levelRule) in enumerate(zip(self.levelNames, self.levelRules)):
-            self.dirPath.addChild({'name': 'level {}'.format(ii),
-                                   'type': 'group',
-                                   'children': [
-                                       {'name': 'dir',
-                                        'type': 'str',
-                                        'value': levelName},
-                                       {'name': 'rule',
-                                        'type': 'str',
-                                        'value': levelRule}]})
-        self.setParameters(self.dirPath, showTop=True)
+        self.baseDirLabel = QLabel('Base directory')
+        self.baseDirEdit = QLineEdit('.')
+        self.baseDirButton = QPushButton('Open')
+        self.baseDirButton.clicked.connect(self.selectBaseDir)
+        self.baseDirWidget = QWidget()
+        layout = QHBoxLayout()
+        self.baseDirWidget.setLayout(layout)
+        layout.addWidget(self.baseDirLabel)
+        layout.addWidget(self.baseDirEdit)
+        layout.addWidget(self.baseDirButton)
+        self.pathTree = ptree.ParameterTree(showHeader=False)
+        self.pathRules = PathParams(name='Path rules')
+        self.pathTree.setParameters(self.pathRules, showTop=True)
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.baseDirWidget)
+        self.layout().addWidget(self.pathTree)
             
-    def __del__(self):
-        self.settings.setValue('levelRules', self.levelRules)
-        self.settings.setValue('levelNames', self.levelNames)
-        
-        
+    def save(self, key='dirPathState'):
+        state = self.pathRules.saveState(filter='user')
+        self.settings.setValue(key, state)
+
+    def restore(self, key='dirPathState'):
+        state = settings.value(key, [])
+        if state != []:
+            self.pathRules.restoreState(state)
+
+    def selectBaseDir(self):
+        baseDir = QFileDialog.getExistingDirectory()
+        self.baseDirEdit.setText(baseDir)
         
 import sys
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     widget = DirReader()
-    print(widget.levelRules)
-    widget.levelNames = ['data root', 'date', 'cell']
-    widget.levelRules = ['%Y-%m-%d', '*', '*']
     widget.show()
     app.exec()
     sys.exit(0)
