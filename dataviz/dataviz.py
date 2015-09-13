@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug 27 01:11:45 2015 (-0400)
+# Last-Updated: Sat Sep 12 14:31:04 2015 (-0400)
 #           By: subha
-#     Update #: 384
+#     Update #: 455
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -71,7 +71,8 @@ class DataViz(QMainWindow):
     -------
 
     sigOpen: Emitted when a set of files have been selected in the open
-          files dialog. Sends out the list of file paths selected.
+          files dialog. Sends out the list of file paths selected and the 
+          mode string.
     
     sigCloseFiles: Emitted when the user triggers closeFilesAction. This
                 is passed on to the HDFTreeWidget which decides which
@@ -102,7 +103,7 @@ class DataViz(QMainWindow):
                   contents of the HDF5 node if it is a datset.
 
     """
-    sigOpen = pyqtSignal(list)
+    sigOpen = pyqtSignal(list, str)
     sigCloseFiles = pyqtSignal()
     sigShowAttributes = pyqtSignal()
     sigShowDataset = pyqtSignal()
@@ -138,7 +139,7 @@ class DataViz(QMainWindow):
         settings.setValue('pos', self.pos())
         settings.setValue('size', self.size())
 
-    def openFiles(self):
+    def openFilesReadOnly(self):
         filePaths, _ = QFileDialog.getOpenFileNames(self, 
                                                  'Open file(s)', self.lastDir,
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
@@ -146,13 +147,56 @@ class DataViz(QMainWindow):
             return
         self.lastDir = QFileInfo(filePaths[-1]).dir().absolutePath()
         # TODO handle recent files
-        self.sigOpen.emit(filePaths)
+        self.sigOpen.emit(filePaths, 'r')
+
+    def openFilesReadWrite(self):
+        filePaths, _ = QFileDialog.getOpenFileNames(self, 
+                                                 'Open file(s)', self.lastDir,
+                                                 'HDF5 file (*.h5 *.hdf);;All files (*)')
+        if len(filePaths) == 0:
+            return
+        self.lastDir = QFileInfo(filePaths[-1]).dir().absolutePath()
+        # TODO handle recent files
+        self.sigOpen.emit(filePaths, 'r+')
+
+    def openFileOverwrite(self):
+        filePath, _ = QFileDialog.getOpenFileName(self, 
+                                                 'Overwrite file', self.lastDir,
+                                                 'HDF5 file (*.h5 *.hdf);;All files (*)')
+        if len(filePath) == 0:
+            return
+        self.lastDir = QFileInfo(filePath).dir().absolutePath()
+        # TODO handle recent files
+        self.sigOpen.emit([filePath], 'w')
+
+    def createFile(self):
+        filePath, _ = QFileDialog.getOpenFileName(self, 
+                                                  'Overwrite file', self.lastDir,
+                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
+        if len(filePath) == 0:
+            return
+        print('%%%%%', filePath, _)
+        self.lastDir = filePath.rpartition('/')[0]
+        # TODO handle recent files
+        self.sigOpen.emit([filePath], 'w-')
         
     def createActions(self):
-        self.openFileAction = QAction(QIcon(), '&Open file(s)', self,
+        self.openFileReadOnlyAction = QAction(QIcon(), 'Open file(s) readonly', self,
+                                   # shortcut=QKeySequence.Open,
+                                   statusTip='Open an HDF5 file for reading',
+                                      triggered=self.openFilesReadOnly)
+        self.openFileReadWriteAction = QAction(QIcon(), '&Open file(s) read/write', self,
                                    shortcut=QKeySequence.Open,
-                                   statusTip='Open an HDF5 file',
-                                   triggered=self.openFiles)
+                                   statusTip='Open an HDF5 file for editing',
+                                               triggered=self.openFilesReadWrite)
+        self.openFileOverwriteAction = QAction(QIcon(), 'Overwrite file', self,
+                                               # shortcut=QKeySequence.Open,
+                                               statusTip='Open an HDF5 file for writing (overwrite existing)',
+                                               triggered=self.openFileOverwrite)
+        self.createFileAction = QAction(QIcon(), '&New file', self,
+                                               shortcut=QKeySequence.New,
+                                               statusTip='Create a new HDF5 file',
+                                               triggered=self.createFile)
         self.closeFileAction = QAction(QIcon(), '&Close file(s)',
                                        self,
                                        shortcut=QKeySequence(Qt.CTRL+Qt.Key_K),
@@ -180,7 +224,10 @@ class DataViz(QMainWindow):
     def createMenus(self):
         self.menuBar().setVisible(True)
         self.fileMenu = self.menuBar().addMenu('&File')
-        self.fileMenu.addAction(self.openFileAction)
+        self.fileMenu.addAction(self.openFileReadWriteAction)
+        self.fileMenu.addAction(self.openFileReadOnlyAction)
+        self.fileMenu.addAction(self.openFileOverwriteAction)
+        self.fileMenu.addAction(self.createFileAction)
         self.fileMenu.addAction(self.closeFileAction)
         self.fileMenu.addAction(self.quitAction)
         self.viewMenu = self.menuBar().addMenu('&View')        

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug 27 01:16:04 2015 (-0400)
+# Last-Updated: Sat Sep 12 23:34:32 2015 (-0400)
 #           By: subha
-#     Update #: 279
+#     Update #: 520
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,13 +49,18 @@
 """
 
 from collections import defaultdict
-
+import numpy as np
 import h5py as h5
 
 from PyQt5.QtCore import (Qt, pyqtSignal)
-from PyQt5.QtWidgets import (QTreeView, QWidget)
+from PyQt5.QtWidgets import (QTreeView, QWidget, QTabWidget, QDialog,
+                             QDialogButtonBox, QMessageBox, QMenu,
+                             QVBoxLayout, QAction)
+from PyQt5.QtGui import (QIcon, QBrush, QColor)
 
-from hdftreemodel import HDFTreeModel
+from pyqtgraph import parametertree as ptree
+
+from hdftreemodel import (HDFTreeModel, EditableItem)
 from hdfdatasetwidget import HDFDatasetWidget
 from hdfattributewidget import HDFAttributeWidget
 from datasetplot import DatasetPlot
@@ -108,17 +113,32 @@ class HDFTreeWidget(QTreeView):
         self.openDatasetWidgets = defaultdict(set)
         self.openAttributeWidgets = defaultdict(set)
         self.openPlotWidgets = defaultdict(set)
-        
+        self.createActions()
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.showContextMenu)        
 
-    def openFiles(self, files):
+    def createActions(self):
+        self.insertDatasetAction = QAction(QIcon(), 'Insert dataset', self,
+                                           statusTip='Create and insert a dataset under currently selected group',
+                                           triggered=self.insertDataset)
+        self.insertGroupAction  = QAction(QIcon(), 'Insert group', self,
+                                           statusTip='Create and insert a group under currently selected group',
+                                           triggered=self.insertGroup)
+        self.deleteNodeAction = QAction(QIcon(), 'Delete node', self,
+                                        statusTip='Delete the currently selected node.',
+                                        triggered=self.deleteNode)        
+
+    def openFiles(self, files, mode='r+'):
         """Open the files listed in argument.
 
         files: list of file paths. For example, output of
                QFileDialog::getOpenFileNames
 
+        mode: string specifying open mode for h5py
+
         """
         for fname in files:
-            self.model().openFile(fname)
+            self.model().openFile(fname, mode)
         
     def closeFiles(self):
         """Close the files selected in the model.
@@ -195,6 +215,143 @@ class HDFTreeWidget(QTreeView):
         """Create a PlotWidget for currentItem"""
         self.createPlotWidget(self.currentIndex())
 
+    def insertDataset(self):        
+        index = self.currentIndex()
+        datasetDialog = DatasetDialog()
+        ret = datasetDialog.exec_()
+        if ret != QDialog.Accepted:
+            return
+        params = datasetDialog.getDatasetParams()
+        item = self.model().getItem(index)
+        if item.isDataset():
+            index = self.model().parent(index)
+        self.model().insertDataset(parent=index, data=params)
+
+    def insertGroup(self):        
+        index = self.currentIndex()
+        groupDialog = GroupDialog()
+        ret = groupDialog.exec_()
+        if ret != QDialog.Accepted:
+            return
+        params = groupDialog.getParams()
+        item = self.model().getItem(index)
+        if item.isDataset():
+            index = self.model().parent(index)
+        self.model().insertGroup(parent=index, data=params)
+
+    def deleteNode(self):
+        index = self.currentIndex()
+        choice = QMessageBox.question(self, title='Confirm delete',
+                                      text='Really delete this node and all its children?')
+        if choice == QMessageBox.Yes:
+            self.model().deleteNode(index)
+
+    def showContextMenu(self, point):
+        menu = QMenu()
+        if isinstance(self.model().getItem(self.currentIndex()), EditableItem):
+            menu.addAction(self.insertDatasetAction)
+            menu.addAction(self.insertGroupAction)
+            menu.addAction(self.deleteNodeAction)
+        menu.exec_(self.mapToGlobal(point))
+
+class DatasetDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.params = ptree.Parameter.create(name='datasetParameters',
+                                             title='Dataset parameters',
+                                             type='group',
+                                             children=[{'name': 'name',
+                                                        'type': 'str',
+                                                        'value': 'dataset'},
+                                                       {'name': 'dtype',
+                                                        'title': 'datatype',
+                                                        'type': 'str',
+                                                        'value': 'float'},
+                                                       {'name': 'shape',
+                                                        'type': 'str',
+                                                        'value': '(0),'},
+                                                       {'name': 'maxshape',
+                                                        'type': 'str',
+                                                        'value': '(None,)'},
+                                                       {'name': 'chunks',
+                                                        'type': 'str',
+                                                        'value': 'True'}])
+        layout = QVBoxLayout()
+        paramTree = ptree.ParameterTree(showHeader=False)
+        paramTree.setParameters(self.params)
+        self.tabWidget = QTabWidget()
+        self.tabWidget.addTab(paramTree, 'Structure')
+        attrTree = ptree.ParameterTree(showHeader=False)
+        self.attrs = XtensibleParam(name='attrs', title='Attributes')
+        attrTree.setParameters(self.attrs)
+        self.tabWidget.addTab(attrTree, 'Attributes')
+        layout.addWidget(self.tabWidget)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+                                                        
+    def getDatasetParams(self):
+        values = {child.name(): child.value() for child in self.params.children()}
+        values['maxshape'] = eval(values['maxshape'])
+        values['chunks'] = eval(values['chunks'])
+        values['shape'] = eval(values['shape'])
+        values['dtype'] = eval('np.dtype({})'.format(values['dtype']))
+        values['attrs'] = {ch.name(): ch.value() for ch in self.attrs.children()}
+        return values
+
+
+        
+class GroupDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.params = ptree.Parameter.create(name='groupParameters',
+                                             title='Group attributes',
+                                             type='group',
+                                             children=[{'name': 'name', 'title': 'Name', 'type': 'str',
+                                                        'value': 'group'},
+                                                       XtensibleParam(name='attrs', title='Attributes')])
+        
+        layout = QVBoxLayout()
+        paramTree = ptree.ParameterTree(showHeader=False)
+        paramTree.setParameters(self.params)
+        layout.addWidget(paramTree)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        layout.addWidget(buttonBox)
+        self.setLayout(layout)
+                                                        
+    def getParams(self):
+        values = self.params.getValues()
+        opts = {'name': self.params.child('name').value(),
+                'attrs': {ch.name(): ch.value() for ch in self.params.child('attrs').children()}}
+        return opts
+
+
+bgBrush = QBrush(QColor('lightsteelblue'))
+class XtensibleParam(ptree.parameterTypes.GroupParameter):
+    def __init__(self, **opts):
+        opts['type'] = 'group'
+        opts['addText'] = "Add"
+        opts['addList'] = ['int', 'float', 'str']
+        super().__init__(**opts)
+
+    def addNew(self, typ):
+        val = {'int': '0',
+               'float': '0.0',
+               'str': ''}[typ]
+        child = self.addChild({
+            'name': 'attribute',
+            'type': typ,
+            'value': val,
+            'removable': True,
+            'renamable': True,
+        }, autoIncrementName=True)
+        for item in child.items:
+            item.setBackground(0, bgBrush)
+
 
 if __name__ == '__main__':
     import sys
@@ -203,7 +360,7 @@ if __name__ == '__main__':
     window = QMainWindow()
     widget = HDFTreeWidget()
     window.setCentralWidget(widget)
-    widget.openFiles(['poolroom.h5'])
+    widget.openFiles(['test.h5'], 'r+')
     window.show()
     sys.exit(app.exec_())
 

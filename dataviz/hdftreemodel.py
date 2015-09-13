@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Sep 12 14:08:43 2015 (-0400)
+# Last-Updated: Sat Sep 12 23:32:49 2015 (-0400)
 #           By: subha
-#     Update #: 548
+#     Update #: 622
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -150,6 +150,14 @@ class EditableItem(HDFTreeItem):
     def __init__(self, data, parent=None):
         super().__init__(data, parent)
         
+    def child(self, row):
+        if isinstance(self.h5node, h5.Group):
+            if len(self.children) > 0:
+                return self.children[row]                
+            for name in self.h5node:
+                self.children = [EditableItem(child, parent=self) for child in self.h5node.values()]                
+            return self.children[row]
+
     def setData(self, column, data):
         """When assigned a dict, we look for 'name' key storing name, 'attr'
         key storing attributes of node to be created and 'type' for
@@ -170,28 +178,33 @@ class EditableItem(HDFTreeItem):
             self.h5node.attrs[key] = value        
 
     def createGroup(self, data):
-        name = data.get('name', 'new')
-        parent = self.parent()
-        if isinstance(parent, RootItem):
-            raise TypeError('Cannot create a group outside file')
-        else:
-            self.h5node = parent.h5node.create_group(name)
+        name = data.get('name', 'NewGroup')
+        group = self.h5node.create_group(name)
+        for key, value in data.get('attrs', {}).items():
+            group.attrs[key] = value
+        self.children.append(EditableItem(group, self))
         
     def createDataset(self, data):
-        name = data.get('name', 'new')
-        parent = self.parent()
-        if isinstance(parent, RootItem):
-            raise TypeError('Dataset can be created only inside a file')
-        self.h5node = parent.h5node.create_dataset(name, data=data.get('data', None),
-                                                   shape=data.get('shape', None),
-                                                   dtype=data.get('dtype', None),
-                                                   chunks=data.get('chunks', True),
-                                                   maxshape=data.get('maxshape', (None,)),
-                                                   compression=data.get('compression', 'gzip'))
+        name = data.get('name', 'NewDataset')
+        if self.isDataset():
+            parent = self.parent()
+        else:
+            parent = self
+        dset = parent.h5node.create_dataset(name, data=data.get('data', None),
+                                            shape=data.get('shape', None),
+                                            dtype=data.get('dtype', None),
+                                            chunks=data.get('chunks', True),
+                                            maxshape=data.get('maxshape', (None,)),
+                                            compression=data.get('compression', 'gzip'))
+        for key, value in data.get('attrs', {}).items():
+            dset.attrs[key] = value
+        self.children.append(EditableItem(dset, self))
 
     def insertChildren(self, position, count, columns=1):
         for ii in range(count):
-            self.h5node.create_group('node{}'.format(ii))
+            name = 'node{}'.format(ii)
+            group = self.h5node.create_group(name)
+            self.children.append(EditableItem(group, self))
         return True
 
     def removeChildren(self, position, count):
@@ -302,7 +315,29 @@ class HDFTreeModel(QAbstractItemModel):
         parentItem.removeChildren(position, rows, self.rootItem.columnCount())
         self.endRemoveRows()
         return True
-        
+
+    def insertDataset(self, parent=QModelIndex(), data={}):
+        parentItem = self.getItem(parent)
+        self.beginInsertRows(parent, parentItem.childCount(), 1)
+        parentItem.createDataset(data)
+        self.endInsertRows()
+        return True
+
+    def insertGroup(self, parent=QModelIndex(), data={}):
+        parentItem = self.getItem(parent)
+        self.beginInsertRows(parent, parentItem.childCount(), 1)
+        parentItem.createGroup(data)
+        self.endInsertRows()
+        return True
+
+    def deleteNode(self, index):
+        item = self.getItem(index)
+        parent = item.parent()
+        self.beginRemoveRows(item.parent(), index.row(), 1)
+        del item.h5node
+        self.getItem(parent).removeChild(index)
+        self.endRemoveRows()
+
 
 if __name__ == '__main__':
     import sys
