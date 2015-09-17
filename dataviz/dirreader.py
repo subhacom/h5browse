@@ -7,9 +7,9 @@
 # Created: Fri Aug 28 16:43:08 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Fri Sep 11 23:39:25 2015 (-0400)
-#           By: subha
-#     Update #: 154
+# Last-Updated: Thu Sep 17 13:13:09 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 155
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -48,12 +48,10 @@
 """Read data distributed in a directory structure"""
 
 import os
-from PyQt5.QtCore import (Qt, pyqtSignal, QSettings)
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog)
-from PyQt5.QtGui import (QBrush, QColor)
+from pyqtgraph import (QtCore, QtGui)
 from pyqtgraph import parametertree as ptree
 
-bgBrush = QBrush(QColor('lightsteelblue'))
+bgBrush = QtGui.QBrush(QtGui.QColor('lightsteelblue'))
 
 class PathParams(ptree.parameterTypes.GroupParameter):
     def __init__(self, **opts):
@@ -77,15 +75,15 @@ class PathParams(ptree.parameterTypes.GroupParameter):
             item.setBackground(0, bgBrush)
         
 
-class DirReader(QWidget):
+class DirReader(QtGui.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)        
-        self.settings = QSettings('dataviz', 'dirreader')        
-        self.baseDirLabel = QLabel('Base directory')
-        self.baseDirEdit = QLineEdit('.')
-        self.baseDirButton = QPushButton('Open')
+        self.settings = QtCore.QSettings('dataviz', 'dirreader')        
+        self.baseDirLabel = QtGui.QLabel('Base directory')
+        self.baseDirEdit = QtGui.QLineEdit('.')
+        self.baseDirButton = QtGui.QPushButton('Open')
         self.baseDirButton.clicked.connect(self.selectBaseDir)
-        self.baseDirWidget = QWidget()
+        self.baseDirWidget = QtGui.QWidget()
         layout = QHBoxLayout()
         self.baseDirWidget.setLayout(layout)
         layout.addWidget(self.baseDirLabel)
@@ -94,7 +92,7 @@ class DirReader(QWidget):
         self.pathTree = ptree.ParameterTree(showHeader=False)
         self.pathRules = PathParams(name='Path rules')
         self.pathTree.setParameters(self.pathRules, showTop=True)
-        self.setLayout(QVBoxLayout())
+        self.setLayout(QtGui.QVBoxLayout())
         self.layout().addWidget(self.baseDirWidget)
         self.layout().addWidget(self.pathTree)
             
@@ -108,13 +106,13 @@ class DirReader(QWidget):
             self.pathRules.restoreState(state)
 
     def selectBaseDir(self):
-        baseDir = QFileDialog.getExistingDirectory()
+        baseDir = QtGui.QFileDialog.getExistingDirectory()
         self.baseDirEdit.setText(baseDir)
         
 import sys
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     widget = DirReader()
     widget.show()
     app.exec()

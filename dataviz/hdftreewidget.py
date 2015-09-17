@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Sep 12 23:34:32 2015 (-0400)
-#           By: subha
-#     Update #: 520
+# Last-Updated: Thu Sep 17 13:15:20 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 521
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,11 +52,7 @@ from collections import defaultdict
 import numpy as np
 import h5py as h5
 
-from PyQt5.QtCore import (Qt, pyqtSignal)
-from PyQt5.QtWidgets import (QTreeView, QWidget, QTabWidget, QDialog,
-                             QDialogButtonBox, QMessageBox, QMenu,
-                             QVBoxLayout, QAction)
-from PyQt5.QtGui import (QIcon, QBrush, QColor)
+from pyqtgraph import (QtCore, QtGui)
 
 from pyqtgraph import parametertree as ptree
 
@@ -65,7 +61,7 @@ from hdfdatasetwidget import HDFDatasetWidget
 from hdfattributewidget import HDFAttributeWidget
 from datasetplot import DatasetPlot
 
-class HDFTreeWidget(QTreeView):
+class HDFTreeWidget(QtGui.QTreeView):
     """Convenience class to display HDF file trees. 
 
     HDFTreeWidget wraps an HDFTreeModel and displays it.
@@ -98,13 +94,13 @@ class HDFTreeWidget(QTreeView):
     for the widget displaying HDF5 dataset plots.
 
     """
-    sigDatasetWidgetCreated = pyqtSignal(QWidget)
-    sigDatasetWidgetClosed = pyqtSignal(QWidget)
-    sigAttributeWidgetCreated = pyqtSignal(QWidget)
-    sigAttributeWidgetClosed = pyqtSignal(QWidget)
-    sigPlotWidgetCreated = pyqtSignal(QWidget)
-    sigPlotWidgetClosed = pyqtSignal(QWidget)
-    sigPlotParamTreeCreated = pyqtSignal(QWidget)
+    sigDatasetWidgetCreated = QtCore.pyqtSignal(QtGui.QWidget)
+    sigDatasetWidgetClosed = QtCore.pyqtSignal(QtGui.QWidget)
+    sigAttributeWidgetCreated = QtCore.pyqtSignal(QtGui.QWidget)
+    sigAttributeWidgetClosed = QtCore.pyqtSignal(QtGui.QWidget)
+    sigPlotWidgetCreated = QtCore.pyqtSignal(QtGui.QWidget)
+    sigPlotWidgetClosed = QtCore.pyqtSignal(QtGui.QWidget)
+    sigPlotParamTreeCreated = QtCore.pyqtSignal(QtGui.QWidget)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -114,17 +110,17 @@ class HDFTreeWidget(QTreeView):
         self.openAttributeWidgets = defaultdict(set)
         self.openPlotWidgets = defaultdict(set)
         self.createActions()
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showContextMenu)        
 
     def createActions(self):
-        self.insertDatasetAction = QAction(QIcon(), 'Insert dataset', self,
+        self.insertDatasetAction = QtGui.QAction(QtGui.QIcon(), 'Insert dataset', self,
                                            statusTip='Create and insert a dataset under currently selected group',
                                            triggered=self.insertDataset)
-        self.insertGroupAction  = QAction(QIcon(), 'Insert group', self,
+        self.insertGroupAction  = QtGui.QAction(QtGui.QIcon(), 'Insert group', self,
                                            statusTip='Create and insert a group under currently selected group',
                                            triggered=self.insertGroup)
-        self.deleteNodeAction = QAction(QIcon(), 'Delete node', self,
+        self.deleteNodeAction = QtGui.QAction(QtGui.QIcon(), 'Delete node', self,
                                         statusTip='Delete the currently selected node.',
                                         triggered=self.deleteNode)        
 
@@ -219,7 +215,7 @@ class HDFTreeWidget(QTreeView):
         index = self.currentIndex()
         datasetDialog = DatasetDialog()
         ret = datasetDialog.exec_()
-        if ret != QDialog.Accepted:
+        if ret != QtGui.QDialog.Accepted:
             return
         params = datasetDialog.getDatasetParams()
         item = self.model().getItem(index)
@@ -231,7 +227,7 @@ class HDFTreeWidget(QTreeView):
         index = self.currentIndex()
         groupDialog = GroupDialog()
         ret = groupDialog.exec_()
-        if ret != QDialog.Accepted:
+        if ret != QtGui.QDialog.Accepted:
             return
         params = groupDialog.getParams()
         item = self.model().getItem(index)
@@ -254,7 +250,7 @@ class HDFTreeWidget(QTreeView):
             menu.addAction(self.deleteNodeAction)
         menu.exec_(self.mapToGlobal(point))
 
-class DatasetDialog(QDialog):
+class DatasetDialog(QtGui.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.params = ptree.Parameter.create(name='datasetParameters',
@@ -276,7 +272,7 @@ class DatasetDialog(QDialog):
                                                        {'name': 'chunks',
                                                         'type': 'str',
                                                         'value': 'True'}])
-        layout = QVBoxLayout()
+        layout = QtGui.QVBoxLayout()
         paramTree = ptree.ParameterTree(showHeader=False)
         paramTree.setParameters(self.params)
         self.tabWidget = QTabWidget()
@@ -286,7 +282,7 @@ class DatasetDialog(QDialog):
         attrTree.setParameters(self.attrs)
         self.tabWidget.addTab(attrTree, 'Attributes')
         layout.addWidget(self.tabWidget)
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
+        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         layout.addWidget(buttonBox)
@@ -303,7 +299,7 @@ class DatasetDialog(QDialog):
 
 
         
-class GroupDialog(QDialog):
+class GroupDialog(QtGui.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.params = ptree.Parameter.create(name='groupParameters',
@@ -313,11 +309,11 @@ class GroupDialog(QDialog):
                                                         'value': 'group'},
                                                        XtensibleParam(name='attrs', title='Attributes')])
         
-        layout = QVBoxLayout()
+        layout = QtGui.QVBoxLayout()
         paramTree = ptree.ParameterTree(showHeader=False)
         paramTree.setParameters(self.params)
         layout.addWidget(paramTree)
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal)
+        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         layout.addWidget(buttonBox)
@@ -330,7 +326,7 @@ class GroupDialog(QDialog):
         return opts
 
 
-bgBrush = QBrush(QColor('lightsteelblue'))
+bgBrush = QtGui.QBrush(QtGui.QColor('lightsteelblue'))
 class XtensibleParam(ptree.parameterTypes.GroupParameter):
     def __init__(self, **opts):
         opts['type'] = 'group'
@@ -356,7 +352,7 @@ class XtensibleParam(ptree.parameterTypes.GroupParameter):
 if __name__ == '__main__':
     import sys
     from PyQt5.QtWidgets import (QApplication, QMainWindow)
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     window = QMainWindow()
     widget = HDFTreeWidget()
     window.setCentralWidget(widget)

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Aug 22 21:14:08 2015 (-0400)
-#           By: subha
-#     Update #: 438
+# Last-Updated: Thu Sep 17 13:14:15 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 439
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,7 +47,7 @@
 """Models for HDF5 datasets"""
 
 import h5py as h5
-from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt)
+from pyqtgraph import QtCore
 
 
 def datasetType(dataset):
@@ -64,7 +64,7 @@ def datasetType(dataset):
         return 'nd'
 
 
-class HDFDatasetModel(QAbstractTableModel):
+class HDFDatasetModel(QtCore.QAbstractTableModel):
     def __init__(self, dataset, parent=None):
         super().__init__(parent=parent)
         self.dataset = dataset
@@ -98,12 +98,12 @@ class ScalarDatasetModel(HDFDatasetModel):
         return 1
 
     def data(self, index, role):
-        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+        if (role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole) \
            or (not index.isValid()):
             return None
         _data = self.dataset[()] # scalar data
         _data, typename = self.extractDataType(_data)
-        if role == Qt.ToolTipRole:
+        if role == QtCore.Qt.ToolTipRole:
             return typename
         return str(_data)
    
@@ -111,7 +111,7 @@ class ScalarDatasetModel(HDFDatasetModel):
         return self.dataset[()]
 
     def headerData(self, section, orientation, role):
-        if role != Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole:
             return None
         return section
 
@@ -127,18 +127,18 @@ class OneDDatasetModel(HDFDatasetModel):
         return 1
 
     def headerData(self, section, orientation, role):
-        if role != Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole:
             return None
         return section
 
     def data(self, index, role):
-        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+        if (role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole) \
            or (not index.isValid())  \
            or (index.row() > self.dataset.shape[0]):
             return None
         _data = self.dataset[index.row()]
         _data, typename = self.extractDataType(_data)
-        if role == Qt.ToolTipRole:
+        if role == QtCore.Qt.ToolTipRole:
             return typename
         return str(_data)
 
@@ -160,9 +160,9 @@ class CompoundDatasetModel(HDFDatasetModel):
         return len(self.dataset.dtype.names)
 
     def headerData(self, section, orientation, role):
-        if role != Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole:
             return None
-        if orientation == Qt.Vertical:
+        if orientation == QtCore.Qt.Vertical:
             return section
         names = self.dataset.dtype.names
         if names != None and section < len(names):
@@ -170,13 +170,13 @@ class CompoundDatasetModel(HDFDatasetModel):
         return section
 
     def data(self, index, role):
-        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+        if (role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole) \
            or (not index.isValid()):
             return None
         colname = self.dataset.dtype.names[index.column()]
         _data = self.dataset[colname][index.row()]
         _data, typename = self.extractDataType(_data)
-        if role == Qt.ToolTipRole:
+        if role == QtCore.Qt.ToolTipRole:
             return typename
         return str(_data)
 
@@ -197,19 +197,19 @@ class TwoDDatasetModel(HDFDatasetModel):
         return self.dataset.shape[1]
 
     def headerData(self, section, orientation, role):
-        if role != Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole:
             return None
         return section
 
     def data(self, index, role):
-        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) \
+        if (role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole) \
            or (not index.isValid())  \
            or (index.row() > self.dataset.shape[0]) \
            or (index.column() > self.dataset.shape[1]):
             return None
         _data = self.dataset[index.row(), index.column()]
         _data, typename = self.extractDataType(_data)
-        if role == Qt.ToolTipRole:
+        if role == QtCore.Qt.ToolTipRole:
             return typename
         return str(_data)
 
@@ -251,17 +251,17 @@ class NDDatasetModel(HDFDatasetModel):
         return self.data2D.shape[1]
 
     def headerData(self, section, orientation, role):
-        if role != Qt.DisplayRole:
+        if role != QtCore.Qt.DisplayRole:
             return None
         return section
 
     def data(self, index, role):
-        if (role != Qt.DisplayRole and role != Qt.ToolTipRole) or (not index.isValid()) \
+        if (role != QtCore.Qt.DisplayRole and role != QtCore.Qt.ToolTipRole) or (not index.isValid()) \
            or index.row() < 0 or index.row() > self.data2D.shape[0]:
             return None
         _data = self.data2D[index.row(), index.column()]
         _data, typename = self.extractDataType(_data)
-        if role == Qt.ToolTipRole:
+        if role == QtCore.Qt.ToolTipRole:
             return typename
         return str(_data)
 
@@ -322,30 +322,30 @@ def create_default_model(dataset, parent=None, pos=()):
     else:
         return NDDatasetModel(dataset, parent=parent, pos=())
         
-    
+
+from pyqtgraph import QtGui    
 
 if __name__ == '__main__':
     import sys
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QHBoxLayout, QTreeView, QWidget, QTableView)
-    app = QApplication(sys.argv)
-    window = QMainWindow()
-    tabview = QTableView(window)
-    fd = h5.File('poolroom.h5')
+    app = QtGui.QApplication(sys.argv)
+    window = QtGui.QMainWindow()
+    tabview = QtGui.QTableView(window)
+    fd = h5.File('poolroom.h5', 'r')
     model = create_default_model(fd['/map/nonuniform/tables/players'])
-    tabview.setModel(model)
-    model2 = create_default_model(fd['/data/uniform/ndim/data3d'], pos=('*', 1, '*'))
-    tabview2 = QTableView(window)
-    tabview2.setModel(model2)
-    model3 = create_default_model(fd['/data/uniform/balls/x'])
-    tabview3 = QTableView(window)
-    tabview3.setModel(model3)
-    widget = QWidget(window)
-    widget.setLayout(QHBoxLayout())
-    widget.layout().addWidget(tabview)
-    widget.layout().addWidget(tabview2)
-    widget.layout().addWidget(tabview3)
-    window.setCentralWidget(widget)
-    window.show()
+    # tabview.setModel(model)
+    # model2 = create_default_model(fd['/data/uniform/ndim/data3d'], pos=('*', 1, '*'))
+    # tabview2 = QtGui.QTableView(window)
+    # tabview2.setModel(model2)
+    # model3 = create_default_model(fd['/data/uniform/balls/x'])
+    # tabview3 = QtGui.QTableView(window)
+    # tabview3.setModel(model3)
+    # widget = QtGui.QWidget(window)
+    # widget.setLayout(QtGui.QHBoxLayout())
+    # widget.layout().addWidget(tabview)
+    # widget.layout().addWidget(tabview2)
+    # widget.layout().addWidget(tabview3)
+    # window.setCentralWidget(widget)
+    # window.show()
     sys.exit(app.exec_())
 
 

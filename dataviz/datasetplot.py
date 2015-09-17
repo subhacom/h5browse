@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Thu Aug 27 00:55:11 2015 (-0400)
-#           By: subha
-#     Update #: 817
+# Last-Updated: Thu Sep 17 13:11:04 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 818
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -46,7 +46,7 @@
 
 import numpy as np
 from collections import defaultdict
-from PyQt5.QtCore import (Qt, pyqtSignal)
+from pyqtgraph import QtCore
 import pyqtgraph as pg
 from pyqtgraph import parametertree as ptree
 import numpy as np
@@ -57,7 +57,7 @@ class DatasetPlotParamTree(ptree.ParameterTree):
     to various dataset types.
 
     """
-    sigUpdateData = pyqtSignal() 
+    sigUpdateData = QtCore.pyqtSignal() 
     
     def __init__(self, parent=None, showHeader=True, dataset=None):
         super().__init__(parent=parent,
@@ -365,12 +365,12 @@ class DatasetPlot(pg.PlotWidget):
 
 import h5py as h5
 from hdfdatasetmodel import (CompoundDatasetModel, NDDatasetModel, TwoDDatasetModel, OneDDatasetModel, create_default_model)
+from pyqtgraph import QtGui
 import sys
-from PyQt5.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QWidget)
 
 def testDatasetPlotParams(fd):
-    widget = QWidget()
-    widget.setLayout(QHBoxLayout())
+    widget = QtGui.QWidget()
+    widget.setLayout(QtGui.QHBoxLayout())
     onedParams = OneDPlotParamTree(dataset=fd['/data/event/balls/hit/ball_0_9ba91cb6163611e5899524fd526610e7'])
     widget.layout().addWidget(onedParams)
     compoundParams = CompoundPlotParamTree(dataset=fd['/data/static/tables/dimensions'])
@@ -384,7 +384,7 @@ def testDatasetPlotParams(fd):
 
 
 def testDatasetPlot(fd):
-    widget = QWidget()
+    widget = QtGui.QWidget()
     widget.setLayout(QGridLayout())
     oneDimPlot = DatasetPlot()
     plot, params = oneDimPlot.plotLine(fd['/data/event/balls/hit/ball_0_9ba91cb6163611e5899524fd526610e7'])
@@ -406,7 +406,7 @@ def testDatasetPlot(fd):
     return widget
     
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     with h5.File('poolroom.h5', 'r') as fd:
         dparamw = testDatasetPlotParams(fd)
         dplotw = testDatasetPlot(fd)

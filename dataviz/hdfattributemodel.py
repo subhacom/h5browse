@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Wed Aug 26 23:42:28 2015 (-0400)
-#           By: subha
-#     Update #: 119
+# Last-Updated: Thu Sep 17 13:13:27 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 120
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,9 +47,9 @@
 
 import numpy as np
 import h5py as h5
-from PyQt5.QtCore import (QAbstractTableModel, QItemSelectionModel, QModelIndex, Qt)
+from pyqtgraph import QtCore
 
-class HDFAttributeModel(QAbstractTableModel):
+class HDFAttributeModel(QtCore.QAbstractTableModel):
     """Model class to handle HDF5 attributes of an HDF5 object"""
     columns = ['Attribute name', 'Value', 'Type']
     def __init__(self, node, parent=None):
@@ -64,7 +64,7 @@ class HDFAttributeModel(QAbstractTableModel):
         return len(HDFAttributeModel.columns)
 
     def headerData(self, section, orientation, role):        
-        if role != Qt.DisplayRole or orientation == Qt.Vertical:
+        if role != QtCore.Qt.DisplayRole or orientation == QtCore.Qt.Vertical:
             return None
         return HDFAttributeModel.columns[section]
 
@@ -75,12 +75,12 @@ class HDFAttributeModel(QAbstractTableModel):
 
         """
         if (not index.isValid()) or \
-           (role not in (Qt.ToolTipRole, Qt.DisplayRole)):
+           (role not in (QtCore.Qt.ToolTipRole, QtCore.Qt.DisplayRole)):
             return None              
         for ii, name in enumerate(self.node.attrs):
             if ii == index.row():
                 break
-        if role == Qt.ToolTipRole:
+        if role == QtCore.Qt.ToolTipRole:
             value = self.node.attrs[name]
             # if isinstance(value, bytes) or isinstance(value, str):
             #     return 'string: scalar'
@@ -92,7 +92,7 @@ class HDFAttributeModel(QAbstractTableModel):
                 else:
                     return 'RegionRef: scalar'
             return '{}: scalar'.format(type(value).__name__)
-        elif role == Qt.DisplayRole:
+        elif role == QtCore.Qt.DisplayRole:
             if index.column() == 0:
                 return name
             value = self.node.attrs[name]
@@ -118,14 +118,13 @@ class HDFAttributeModel(QAbstractTableModel):
 if __name__ == '__main__':
     import sys
     import h5py as h5
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QHBoxLayout, QTreeView, QWidget, QTableView)
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     window = QMainWindow()
-    tabview = QTableView(window)
+    tabview = QtGui.QTableView(window)
     fd = h5.File('poolroom.h5')
     model = HDFAttributeModel(fd)
     tabview.setModel(model)
-    widget = QWidget(window)
+    widget = QtGui.QWidget(window)
     widget.setLayout(QHBoxLayout())
     widget.layout().addWidget(tabview)
     window.setCentralWidget(widget)
