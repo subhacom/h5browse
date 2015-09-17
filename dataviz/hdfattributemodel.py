@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:13:27 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:16:32 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 120
+#     Update #: 121
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,7 +54,7 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
     columns = ['Attribute name', 'Value', 'Type']
     def __init__(self, node, parent=None):
         """`node` is an HDF5 object"""
-        super().__init__(parent=parent)
+        super(HDFAttributeModel, self).__init__(parent=parent)
         self.node = node
         
     def rowCount(self, index):

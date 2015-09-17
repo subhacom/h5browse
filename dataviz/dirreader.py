@@ -7,9 +7,9 @@
 # Created: Fri Aug 28 16:43:08 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Thu Sep 17 13:13:09 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:16:21 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 155
+#     Update #: 157
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -58,7 +58,7 @@ class PathParams(ptree.parameterTypes.GroupParameter):
         opts['type'] = 'group'
         opts['addText'] = "Add rule"
         opts['addList'] = ['timestamp', 'regex', 'string']
-        super().__init__(**opts)
+        super(PathParams, self).__init__(**opts)
 
     def addNew(self, typ):
         val = {'timestamp': 'YYYY-mm-dd HH:MM:SS',
@@ -77,7 +77,7 @@ class PathParams(ptree.parameterTypes.GroupParameter):
 
 class DirReader(QtGui.QWidget):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)        
+        super(DirReader, self).__init__(parent=parent)        
         self.settings = QtCore.QSettings('dataviz', 'dirreader')        
         self.baseDirLabel = QtGui.QLabel('Base directory')
         self.baseDirEdit = QtGui.QLineEdit('.')

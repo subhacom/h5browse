@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Thu Aug  6 21:46:01 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:13:43 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:16:45 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 80
+#     Update #: 81
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -59,7 +59,7 @@ class HDFAttributeWidget(QtGui.QWidget):
 
     """
     def __init__(self, parent=None, node=None):
-        super().__init__(parent)        
+        super(HDFAttributeWidget, self).__init__(parent)        
         self.name = ''
         self.nameLabel = QtGui.QLabel('', self)
         self.nameLabel.setWordWrap(True)

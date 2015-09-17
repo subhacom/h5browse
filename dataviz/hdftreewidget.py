@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:15:20 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:33:26 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 521
+#     Update #: 526
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -103,7 +103,7 @@ class HDFTreeWidget(QtGui.QTreeView):
     sigPlotParamTreeCreated = QtCore.pyqtSignal(QtGui.QWidget)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(HDFTreeWidget, self).__init__(parent)
         model = HDFTreeModel([])
         self.setModel(model)
         self.openDatasetWidgets = defaultdict(set)
@@ -243,7 +243,7 @@ class HDFTreeWidget(QtGui.QTreeView):
             self.model().deleteNode(index)
 
     def showContextMenu(self, point):
-        menu = QMenu()
+        menu = QtGui.QMenu()
         if isinstance(self.model().getItem(self.currentIndex()), EditableItem):
             menu.addAction(self.insertDatasetAction)
             menu.addAction(self.insertGroupAction)
@@ -252,7 +252,7 @@ class HDFTreeWidget(QtGui.QTreeView):
 
 class DatasetDialog(QtGui.QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(DatasetDialog, self).__init__(parent)
         self.params = ptree.Parameter.create(name='datasetParameters',
                                              title='Dataset parameters',
                                              type='group',
@@ -301,7 +301,7 @@ class DatasetDialog(QtGui.QDialog):
         
 class GroupDialog(QtGui.QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super(GroupDialog, self).__init__(parent)
         self.params = ptree.Parameter.create(name='groupParameters',
                                              title='Group attributes',
                                              type='group',
@@ -332,7 +332,7 @@ class XtensibleParam(ptree.parameterTypes.GroupParameter):
         opts['type'] = 'group'
         opts['addText'] = "Add"
         opts['addList'] = ['int', 'float', 'str']
-        super().__init__(**opts)
+        super(XtensibleParam, self).__init__(**opts)
 
     def addNew(self, typ):
         val = {'int': '0',

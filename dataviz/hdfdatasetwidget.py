@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:14:26 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:34:27 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 110
+#     Update #: 111
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -61,7 +61,7 @@ class HDFDatasetWidget(QtGui.QTableView):
 
     """
     def __init__(self, parent=None, dataset=None):
-        super().__init__(parent)        
+        super(HDFDatasetWidget, self).__init__(parent)        
         self.name = ''
         if dataset is not None:
             self.setDataset(dataset)

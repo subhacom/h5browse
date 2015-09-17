@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:14:59 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:18:03 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 623
+#     Update #: 626
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -60,7 +60,7 @@ from pyqtgraph import Qt
 
 class RootItem(QtGui.QTreeWidgetItem):
     def __init__(self, parent=None):
-        super().__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
+        super(RootItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
         
     def columnCount(self):
         return 1
@@ -89,7 +89,7 @@ class RootItem(QtGui.QTreeWidgetItem):
 
 class HDFTreeItem(QtGui.QTreeWidgetItem):
     def __init__(self, data, parent=None):
-        super().__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
+        super(HDFTreeItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
         self.h5node = data
         self.children = []
         
@@ -149,7 +149,7 @@ class HDFTreeItem(QtGui.QTreeWidgetItem):
 
 class EditableItem(HDFTreeItem):    
     def __init__(self, data, parent=None):
-        super().__init__(data, parent)
+        super(EditableItem, self).__init__(data, parent)
         
     def child(self, row):
         if isinstance(self.h5node, h5.Group):

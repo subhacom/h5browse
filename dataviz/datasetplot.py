@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Thu Sep 17 13:11:04 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:35:27 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 818
+#     Update #: 827
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -60,7 +60,7 @@ class DatasetPlotParamTree(ptree.ParameterTree):
     sigUpdateData = QtCore.pyqtSignal() 
     
     def __init__(self, parent=None, showHeader=True, dataset=None):
-        super().__init__(parent=parent,
+        super(DatasetPlotParamTree, self).__init__(parent=parent,
                          showHeader=showHeader)        
         self.dataset = dataset
         self.updatePlotData = ptree.Parameter.create(name='updatePlotData',
@@ -77,7 +77,7 @@ class OneDPlotParamTree(DatasetPlotParamTree):
     """1D datasets can only be plotted as x or y, with the other axis
     being the index."""
     def __init__(self, parent=None, showHeader=True, dataset=None):
-        super().__init__(parent=parent,
+        super(OneDPlotParamTree, self).__init__(parent=parent,
                          showHeader=showHeader,
                          dataset=dataset)
         dataSources = ['index', 'data']
@@ -117,7 +117,7 @@ class CompoundPlotParamTree(OneDPlotParamTree):
 
     """
     def __init__(self, parent=None, showHeader=True, dataset=None):
-        super().__init__(parent=parent,
+        super(CompoundPlotParamTree, self).__init__(parent=parent,
                          showHeader=showHeader,
                          dataset=dataset)
         self.setDataset(dataset)
@@ -146,7 +146,7 @@ class TwoDPlotParamTree(DatasetPlotParamTree):
     """For 2D dataset one can choose data from rows or from columns.
     """
     def __init__(self, parent=None, showHeader=True, dataset=None):
-        super().__init__(parent=parent,
+        super(TwoDPlotParamTree, self).__init__(parent=parent,
                          showHeader=showHeader,
                          dataset=dataset)
         self.dataDim = ptree.Parameter.create(name='datadim',
@@ -201,7 +201,6 @@ class TwoDPlotParamTree(DatasetPlotParamTree):
         ds = self.dataset
         xdim = self.xsource.value()
         ydim = self.ysource.value()
-        print('####', xdim, ydim, self.dataDim.value())
         if self.dataDim.value() == 'rows':
             if xdim == 'index':
                 xdata = range(ds.shape[1])
@@ -226,7 +225,7 @@ class TwoDPlotParamTree(DatasetPlotParamTree):
 class NDPlotParamTree(DatasetPlotParamTree):
     """Class to allow the user to choose parameters for plotting."""
     def __init__(self, parent=None, showHeader=True, dataset=None):
-        super().__init__(parent=parent,
+        super(NDPlotParamTree, self).__init__(parent=parent,
                          showHeader=showHeader,
                          dataset=dataset)
         self.dataDim = ptree.Parameter.create(name='datadim',
@@ -318,7 +317,7 @@ class DatasetPlot(pg.PlotWidget):
     # TODO: multiple dataset in same plotwidget? cannot attach to a
     # specific dataset. Update `name` with something more meaningful. Also, allow option of plo
     def __init__(self, parent=None, background='default', **kwargs):
-        pg.PlotWidget.__init__(self, parent=parent, background=background, **kwargs)
+        super(DatasetPlot, self).__init__(parent=parent, background=background, **kwargs)
         self.name = ''        
         self.plotToParams = {}
         self.paramsToPlots = {}

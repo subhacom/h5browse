@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 01:52:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:14:15 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:17:37 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 439
+#     Update #: 445
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -66,7 +66,7 @@ def datasetType(dataset):
 
 class HDFDatasetModel(QtCore.QAbstractTableModel):
     def __init__(self, dataset, parent=None):
-        super().__init__(parent=parent)
+        super(HDFDatasetModel, self).__init__(parent=parent)
         self.dataset = dataset
 
     def rowCount(self, index):
@@ -89,7 +89,7 @@ class HDFDatasetModel(QtCore.QAbstractTableModel):
  
 class ScalarDatasetModel(HDFDatasetModel):
     def __init__(self, dataset, parent=None):
-        super().__init__(dataset, parent)
+        super(ScalarDatasetModel, self).__init__(dataset, parent)
     
     def rowCount(self, index):
         return 1
@@ -118,7 +118,7 @@ class ScalarDatasetModel(HDFDatasetModel):
 
 class OneDDatasetModel(HDFDatasetModel):
     def __init__(self, dataset, parent=None):
-        super().__init__(dataset, parent)
+        super(OneDDatasetModel, self).__init__(dataset, parent)
 
     def rowCount(self, index):
         return self.dataset.shape[0]
@@ -151,7 +151,7 @@ class OneDDatasetModel(HDFDatasetModel):
 
 class CompoundDatasetModel(HDFDatasetModel):
     def __init__(self, dataset, parent=None):
-        super().__init__(dataset, parent)
+        super(CompoundDatasetModel, self).__init__(dataset, parent)
 
     def rowCount(self, index):
         return self.dataset.shape[0]
@@ -188,7 +188,7 @@ class CompoundDatasetModel(HDFDatasetModel):
 
 class TwoDDatasetModel(HDFDatasetModel):
     def __init__(self, dataset, parent=None):
-        super().__init__(dataset, parent)
+        super(TwoDDatasetModel, self).__init__(dataset, parent)
 
     def rowCount(self, index):
         return self.dataset.shape[0]
@@ -241,7 +241,7 @@ class NDDatasetModel(HDFDatasetModel):
 
     """
     def __init__(self, dataset, parent=None, pos=()):
-        super().__init__(dataset, parent=parent)
+        super(NDDatasetModel, self).__init__(dataset, parent=parent)
         self.select2D(pos)
         
     def rowCount(self, index):

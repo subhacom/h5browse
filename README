@@ -26,6 +26,15 @@ PyQt5. Install it using:
 
 You also need setuptools to use setup.py for standard installation.
 
+Simpler if you have pip:
+
+    pip install git+https://github.com/pyqtgraph/pyqtgraph.git@develop
+
+or faster:
+
+    pip install https://github.com/pyqtgraph/pyqtgraph/archive/develop.zip
+    
+    
 
 Install
 -------

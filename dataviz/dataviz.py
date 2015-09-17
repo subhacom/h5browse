@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 13:12:48 2015 (-0400)
+# Last-Updated: Thu Sep 17 15:35:35 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 456
+#     Update #: 468
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -105,7 +105,7 @@ class DataViz(QtGui.QMainWindow):
     sigPlotDataset = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, flags=QtCore.Qt.WindowFlags(0)):
-        super().__init__(parent=parent, flags=flags)
+        super(DataViz, self).__init__(parent=parent, flags=flags)
         self.readSettings()
         self.mdiArea = QtGui.QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
@@ -124,8 +124,12 @@ class DataViz(QtGui.QMainWindow):
         settings = QtCore.QSettings('dataviz', 'dataviz')
         self.lastDir = settings.value('lastDir', '.', str)
         pos = settings.value('pos', QtCore.QPoint(200, 200))
-        size = settings.value('size', QtCore.QSize(400, 400))
+        if isinstance(pos, QtCore.QVariant):
+            pos = pos.toPyObject()
         self.move(pos)
+        size = settings.value('size', QtCore.QSize(400, 400))
+        if isinstance(size, QtCore.QVariant):
+            size = size.toPyObject()
         self.resize(size)
 
     def writeSettings(self):
@@ -144,6 +148,8 @@ class DataViz(QtGui.QMainWindow):
         # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
         #                                          'Open file(s)', self.lastDir,
         #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
+        if isinstance(filePaths, QtCore.QStringList): # python2/qt4 compatibility
+            filePaths = [str(path) for path in filePaths]
         if len(filePaths) == 0:
             return
         self.lastDir = QtCore.QFileInfo(filePaths[-1]).dir().absolutePath()
@@ -161,7 +167,8 @@ class DataViz(QtGui.QMainWindow):
         # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
         #                                          'Open file(s)', self.lastDir,
         #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
-        print('##', filePaths)
+        if isinstance(filePaths, QtCore.QStringList): # python2/qt4 compatibility
+            filePaths = [str(path) for path in filePaths]
         if len(filePaths) == 0:
             return
         self.lastDir = QtCore.QFileInfo(filePaths[-1]).dir().absolutePath()
