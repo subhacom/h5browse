@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 13:27:52 2015 (-0400)
+# Last-Updated: Fri Sep 18 15:33:21 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 628
+#     Update #: 648
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -58,9 +58,20 @@ from  pyqtgraph import QtCore
 from pyqtgraph import QtGui
 from pyqtgraph import Qt
 
-class RootItem(QtGui.QTreeWidgetItem):
+class RootItem(QtCore.QObject):
     def __init__(self, parent=None):
-        super(RootItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
+        super(RootItem, self).__init__(parent)
+
+  def child(self, row):
+        if row < 0 or row >= len(self.children):
+            return None
+        return self.children[row]
+            
+    def childCount(self):
+        return len(self.children)
+
+    def childNumber(self):
+        return 0
         
     def columnCount(self):
         return 1
@@ -74,22 +85,26 @@ class RootItem(QtGui.QTreeWidgetItem):
     def setData(self, column, value):
         return False
 
-    # def parent(self):
-    #     return None
-
-    # def removeChild(self, position):
-    #     if position < 0 or position > len(self.children):
-    #         return False
-    #     child = self.children.pop(position)
-    #     return True
-
-    # def hasChildren(self):
-    #     return len(children) > 0
+    def parent(self):
+        return None
 
 
-class HDFTreeItem(QtGui.QTreeWidgetItem):
+    def addChild(self, childItem):
+        self.children.append(childItem)    
+
+    def removeChild(self, position):
+        if position < 0 or position > len(self.children):
+            return False
+        child = self.children.pop(position)
+        return True
+
+    def hasChildren(self):
+        return len(children) > 0
+
+
+class HDFTreeItem(QtCore.QObject):
     def __init__(self, data, parent=None):
-        super(HDFTreeItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
+        super(HDFTreeItem, self).__init__(parent)
         self.h5node = data
         self.children = []
         
@@ -100,7 +115,10 @@ class HDFTreeItem(QtGui.QTreeWidgetItem):
             for name in self.h5node:
                 self.children = [HDFTreeItem(child, parent=self) for child in self.h5node.values()]                
             return self.children[row]
-            
+
+    def childNumber(self):
+        return self.parentItem.children.index(self)
+        
     def childCount(self):
         if isinstance(self.h5node, h5.Group):
             return len(self.h5node)
@@ -136,6 +154,9 @@ class HDFTreeItem(QtGui.QTreeWidgetItem):
         if isinstance(self.h5node, h5.Group):
             return len(self.h5node) > 0
         return False
+
+    def parent(self):
+        return self.parentItem
 
     def isDataset(self):
         return isinstance(self.h5node, h5.Dataset)
@@ -216,6 +237,12 @@ class EditableItem(HDFTreeItem):
             index += 1
             if index >= position + count:
                 break
+
+    def removeChild(self, position):
+        if position < 0 or position > len(self.children):
+            return False
+        child = self.children.pop(position)
+        return True
 
     def rename(self, newName):
         pnode = self.parent().h5node
@@ -335,9 +362,9 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
         item = self.getItem(index)
         parent = item.parent()
         print('####', parent)
-        self.beginRemoveRows(item.parent(), index.row(), 1)
+        self.beginRemoveRows(index.parent(), index.row(), 1)
         del item.h5node
-        self.getItem(parent).removeChild(index)
+        parent.removeChild(item)
         self.endRemoveRows()
 
 

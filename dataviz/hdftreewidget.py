@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 13:28:14 2015 (-0400)
+# Last-Updated: Fri Sep 18 15:18:50 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 533
+#     Update #: 534
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -238,7 +238,8 @@ class HDFTreeWidget(QtGui.QTreeView):
     def deleteNode(self):
         index = self.currentIndex()
         choice = QtGui.QMessageBox.question(self, 'Confirm delete',
-                                      'Really delete this node and all its children?')
+                                            'Really delete this node and all its children?',
+                                            buttons=QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if choice == QtGui.QMessageBox.Yes:
             print('****', index)
             self.model().deleteNode(index)
