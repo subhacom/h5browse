@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Sep 12 23:32:49 2015 (-0400)
-#           By: subha
-#     Update #: 622
+# Last-Updated: Thu Sep 17 15:18:03 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 626
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -54,20 +54,21 @@ editabletreemodel.py
 
 import os
 import h5py as h5
-from PyQt5.QtCore import (QAbstractItemModel, QItemSelectionModel, QModelIndex, Qt)
-from PyQt5.QtWidgets import QTreeWidgetItem
+from  pyqtgraph import QtCore
+from pyqtgraph import QtGui
+from pyqtgraph import Qt
 
-class RootItem(QTreeWidgetItem):
+class RootItem(QtGui.QTreeWidgetItem):
     def __init__(self, parent=None):
-        super().__init__(parent, type=QTreeWidgetItem.UserType)
+        super(RootItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
         
     def columnCount(self):
         return 1
 
-    def data(self, column, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
+    def data(self, column, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
             return 'Files'
-        elif role == Qt.ToolTipRole:
+        elif role == QtCore.Qt.ToolTipRole:
             return 'List of open files'
 
     def setData(self, column, value):
@@ -86,9 +87,9 @@ class RootItem(QTreeWidgetItem):
     #     return len(children) > 0
 
 
-class HDFTreeItem(QTreeWidgetItem):
+class HDFTreeItem(QtGui.QTreeWidgetItem):
     def __init__(self, data, parent=None):
-        super().__init__(parent, type=QTreeWidgetItem.UserType)
+        super(HDFTreeItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
         self.h5node = data
         self.children = []
         
@@ -108,14 +109,14 @@ class HDFTreeItem(QTreeWidgetItem):
     def columnCount(self):
         return 1
 
-    def data(self, column, role=Qt.DisplayRole):
+    def data(self, column, role=QtCore.Qt.DisplayRole):
         if self.h5node == None:
             return ''
-        if role == Qt.DisplayRole:
+        if role == QtCore.Qt.DisplayRole:
             if isinstance(self.h5node, h5.File):
                 return os.path.basename(self.h5node.filename)
             return self.h5node.name.rsplit('/')[-1]
-        elif role == Qt.ToolTipRole:
+        elif role == QtCore.Qt.ToolTipRole:
             if isinstance(self.h5node, h5.File):
                 return self.h5node.filename
             shape = ''
@@ -148,7 +149,7 @@ class HDFTreeItem(QTreeWidgetItem):
 
 class EditableItem(HDFTreeItem):    
     def __init__(self, data, parent=None):
-        super().__init__(data, parent)
+        super(EditableItem, self).__init__(data, parent)
         
     def child(self, row):
         if isinstance(self.h5node, h5.Group):
@@ -221,13 +222,13 @@ class EditableItem(HDFTreeItem):
         pnode.move(self.h5node.name, newName)
 
         
-class HDFTreeModel(QAbstractItemModel):
+class HDFTreeModel(QtCore.QAbstractItemModel):
     def __init__(self, headers, parent=None):
         super(HDFTreeModel, self).__init__(parent)
         rootData = [header for header in headers]
         self.rootItem = RootItem() 
         
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent=QtCore.QModelIndex()):
         return self.rootItem.columnCount()
 
     def data(self, index, role):
@@ -246,38 +247,38 @@ class HDFTreeModel(QAbstractItemModel):
     def flags(self, index):
         if not index.isValid():
             return 0
-        return Qt.ItemIsEnabled |Qt.ItemIsSelectable
+        return QtCore.Qt.ItemIsEnabled |QtCore.Qt.ItemIsSelectable
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if orientation == Qt.Horizontal:
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+        if orientation == QtCore.Qt.Horizontal:
             return self.rootItem.data(section, role)
         return None
 
-    def index(self, row, column, parent=QModelIndex()):
+    def index(self, row, column, parent=QtCore.QModelIndex()):
         if parent.isValid() and parent.column()!= 0:
-            return QModelIndex()
+            return QtCore.QModelIndex()
         parentItem = self.getItem(parent)
         childItem = parentItem.child(row)
         if childItem:
             return self.createIndex(row, column, childItem)
         else:
-            return QModelIndex()
+            return QtCore.QModelIndex()
 
     def parent(self, index):
         if not index.isValid():
-            return QModelIndex()        
+            return QtCore.QModelIndex()        
         childItem = self.getItem(index)
         parentItem = childItem.parent()
         if parentItem == self.rootItem: # is the left side childItem or parentItem?
-            return QModelIndex()
+            return QtCore.QModelIndex()
         return self.createIndex(parentItem.parent().indexOfChild(parentItem), 0, parentItem)
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent=QtCore.QModelIndex()):
         parentItem = self.getItem(parent)
         return parentItem.childCount()
 
     def openFile(self, path, mode='r'):
-        self.beginInsertRows(QModelIndex(),
+        self.beginInsertRows(QtCore.QModelIndex(),
                              self.rootItem.childCount(),
                              self.rootItem.childCount()+1)
         fd = h5.File(str(path), mode=mode)
@@ -294,7 +295,7 @@ class HDFTreeModel(QAbstractItemModel):
         item = self.getItem(index)
         try:
             position = self.rootItem.children.index(item)
-            self.beginRemoveRows(QModelIndex(), position, position+1)
+            self.beginRemoveRows(QtCore.QModelIndex(), position, position+1)
             item.h5node.close()
             self.rootItem.removeChild(position)
             self.endRemoveRows()
@@ -302,28 +303,28 @@ class HDFTreeModel(QAbstractItemModel):
         except ValueError:
             return False
 
-    def insertRows(self, position, rows, parent=QModelIndex()):
+    def insertRows(self, position, rows, parent=QtCore.QModelIndex()):
         parentItem = self.getItem(parent)
         self.beginInsertRows(parent, position, position+rows-1)
         parentItem.insertChildren(position, rows, self.rootItem.columnCount())
         self.endInsertRows()
         return True
 
-    def removeRows(self, position, rows, parent=QModelIndex()):
+    def removeRows(self, position, rows, parent=QtCore.QModelIndex()):
         parentItem = self.getItem(parent)
         self.beginRemoveRows(parent, position, position+rows-1)
         parentItem.removeChildren(position, rows, self.rootItem.columnCount())
         self.endRemoveRows()
         return True
 
-    def insertDataset(self, parent=QModelIndex(), data={}):
+    def insertDataset(self, parent=QtCore.QModelIndex(), data={}):
         parentItem = self.getItem(parent)
         self.beginInsertRows(parent, parentItem.childCount(), 1)
         parentItem.createDataset(data)
         self.endInsertRows()
         return True
 
-    def insertGroup(self, parent=QModelIndex(), data={}):
+    def insertGroup(self, parent=QtCore.QModelIndex(), data={}):
         parentItem = self.getItem(parent)
         self.beginInsertRows(parent, parentItem.childCount(), 1)
         parentItem.createGroup(data)
@@ -341,16 +342,15 @@ class HDFTreeModel(QAbstractItemModel):
 
 if __name__ == '__main__':
     import sys
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QWidget)
-    app = QApplication(sys.argv)
-    window = QMainWindow()
-    widget = QWidget()
-    layout = QVBoxLayout(widget)
-    view = QTreeView(widget)
+    app = QtGui.QApplication(sys.argv)
+    window = QtGui.QMainWindow()
+    widget = QtGui.QWidget()
+    layout = QtGui.QVBoxLayout(widget)
+    view = QtGui.QTreeView(widget)
     layout.addWidget(view)
     window.setCentralWidget(widget)
     model = HDFTreeModel([])
-    model.openFile('test.h5', 'r+')
+    model.openFile('poolroom.h5', 'r+')
     view.setModel(model)
     window.show()
     sys.exit(app.exec_())

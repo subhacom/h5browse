@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug 27 00:16:56 2015 (-0400)
-#           By: subha
-#     Update #: 109
+# Last-Updated: Thu Sep 17 15:34:27 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 111
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,15 +45,14 @@
 
 # Code:
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QTableView, QWidget, QVBoxLayout)
+from pyqtgraph import (QtCore, QtGui)
 
 from hdfdatasetmodel import (HDFDatasetModel, OneDDatasetModel,
                              TwoDDatasetModel, NDDatasetModel,
                              CompoundDatasetModel, ScalarDatasetModel,
                              create_default_model)
 
-class HDFDatasetWidget(QTableView):
+class HDFDatasetWidget(QtGui.QTableView):
     """Convenience widget to display HDF datasets.
 
     It will create a model when the dataset is assigned. Also, it
@@ -62,7 +61,7 @@ class HDFDatasetWidget(QTableView):
 
     """
     def __init__(self, parent=None, dataset=None):
-        super().__init__(parent)        
+        super(HDFDatasetWidget, self).__init__(parent)        
         self.name = ''
         if dataset is not None:
             self.setDataset(dataset)
@@ -79,16 +78,15 @@ class HDFDatasetWidget(QTableView):
 if __name__ == '__main__':
     import sys
     import h5py as h5
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QHBoxLayout, QWidget)
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     window = QMainWindow()
     fd = h5.File('poolroom.h5', 'r')
     widget1 = HDFDatasetWidget(dataset=fd['/map/nonuniform/tables/players'])
     widget2 = HDFDatasetWidget(dataset=fd['/data/uniform/ndim/data3d'])
     widget3 = HDFDatasetWidget()
     widget3.setDataset(fd['/data/uniform/balls/x'])
-    widget = QWidget(window)
-    layout = QHBoxLayout(widget)
+    widget = QtGui.QWidget(window)
+    layout = QtGui.QHBoxLayout(widget)
     layout.addWidget(widget1)
     layout.addWidget(widget2)
     layout.addWidget(widget3)

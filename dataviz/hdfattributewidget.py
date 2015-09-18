@@ -1,3 +1,4 @@
+
 # hdfattributewidget.py --- 
 # 
 # Filename: hdfattributewidget.py
@@ -6,9 +7,9 @@
 # Maintainer: 
 # Created: Thu Aug  6 21:46:01 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Aug 27 00:18:20 2015 (-0400)
-#           By: subha
-#     Update #: 79
+# Last-Updated: Thu Sep 17 15:16:45 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 81
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -45,12 +46,11 @@
 
 # Code:
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QTableView, QWidget, QLabel, QVBoxLayout)
+from pyqtgraph import (QtCore, QtGui)
 
 from hdfattributemodel import HDFAttributeModel
 
-class HDFAttributeWidget(QWidget):
+class HDFAttributeWidget(QtGui.QWidget):
     """Convenience widget to display HDF attributes.
 
     It creates a model when dataset is assigned. Like HDFDatasetWidget
@@ -59,16 +59,16 @@ class HDFAttributeWidget(QWidget):
 
     """
     def __init__(self, parent=None, node=None):
-        super().__init__(parent)        
+        super(HDFAttributeWidget, self).__init__(parent)        
         self.name = ''
-        self.nameLabel = QLabel('', self)
+        self.nameLabel = QtGui.QLabel('', self)
         self.nameLabel.setWordWrap(True)
-        self.nameLabel.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
-        self.fileLabel = QLabel('', self)
+        self.nameLabel.setTextInteractionFlags(QtCore.Qt.TextSelectableByKeyboard | QtCore.Qt.TextSelectableByMouse)
+        self.fileLabel = QtGui.QLabel('', self)
         self.fileLabel.setWordWrap(True)
-        self.fileLabel.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
-        self.attributeView = QTableView(self)
-        self.setLayout(QVBoxLayout())
+        self.fileLabel.setTextInteractionFlags(QtCore.Qt.TextSelectableByKeyboard | QtCore.Qt.TextSelectableByMouse)
+        self.attributeView = QtGui.QTableView(self)
+        self.setLayout(QtGui.QVBoxLayout())
         self.layout().addWidget(self.nameLabel)
         self.layout().addWidget(self.fileLabel)
         self.layout().addWidget(self.attributeView)
