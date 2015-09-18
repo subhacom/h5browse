@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 15:18:50 2015 (-0400)
+# Last-Updated: Fri Sep 18 16:51:20 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 534
+#     Update #: 538
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -221,7 +221,7 @@ class HDFTreeWidget(QtGui.QTreeView):
         item = self.model().getItem(index)
         if item.isDataset():
             index = self.model().parent(index)
-        self.model().insertDataset(parent=index, data=params)
+        self.model().insertNode(parent=index, data=params, nodeType=h5.Dataset)
 
     def insertGroup(self):        
         index = self.currentIndex()
@@ -233,7 +233,7 @@ class HDFTreeWidget(QtGui.QTreeView):
         item = self.model().getItem(index)
         if item.isDataset():
             index = self.model().parent(index)
-        self.model().insertGroup(parent=index, data=params)
+        self.model().insertNode(parent=index, data=params, nodeType=h5.Group)
 
     def deleteNode(self):
         index = self.currentIndex()
@@ -241,7 +241,7 @@ class HDFTreeWidget(QtGui.QTreeView):
                                             'Really delete this node and all its children?',
                                             buttons=QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         if choice == QtGui.QMessageBox.Yes:
-            print('****', index)
+            # print('****', index)
             self.model().deleteNode(index)
 
     def showContextMenu(self, point):

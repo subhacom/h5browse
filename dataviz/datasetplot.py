@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Fri Sep 18 13:21:43 2015 (-0400)
+# Last-Updated: Fri Sep 18 16:50:45 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 828
+#     Update #: 833
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -125,7 +125,7 @@ class CompoundPlotParamTree(OneDPlotParamTree):
     def setDataset(self, dataset):
         self.dataset = dataset
         dataSources = ['index'] + list(dataset.dtype.names)
-        print('compund data sources', dataSources)
+        # print('compund data sources', dataSources)
         self.xsource.setLimits(dataSources)
         self.ysource.setLimits(dataSources)
         self.ysource.setValue(dataSources[1])
@@ -188,16 +188,16 @@ class TwoDPlotParamTree(DatasetPlotParamTree):
             headerData = list(range(self.dataset.shape[1]))
         else:
             headerData = list(range(self.dataset.shape[0]))
-        print('TwoDPlotParamTree: dataset', self.dataset)
+        # print('TwoDPlotParamTree: dataset', self.dataset)
         dataSources = ['index'] + headerData
-        print('headerData', dataSources)
+        # print('headerData', dataSources)
         self.xsource.setLimits(dataSources)
         self.xsource.setValue(dataSources[0])
         self.ysource.setLimits(dataSources)
         self.ysource.setValue(dataSources[1])
 
     def getXY(self):
-        print('2D', self, self.dataset)
+        # print('2D', self, self.dataset)
         ds = self.dataset
         xdim = self.xsource.value()
         ydim = self.ysource.value()
@@ -277,8 +277,8 @@ class NDPlotParamTree(DatasetPlotParamTree):
         self.ysource.addChildren(dimChoices)
 
     def getXY(self):
-        print('NDPlotParamTree: xsource: {}, ysource: {}'.format(
-            self.xsource.value(), self.ysource.value()))
+        # print('NDPlotParamTree: xsource: {}, ysource: {}'.format(
+        #     self.xsource.value(), self.ysource.value()))
         dims = range(len(self.dataset.shape))
         xindex = []
         yindex = []

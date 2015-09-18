@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 15:14:29 2015 (-0400)
+# Last-Updated: Fri Sep 18 16:50:57 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 470
+#     Update #: 472
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -157,7 +157,7 @@ class DataViz(QtGui.QMainWindow):
         self.sigOpen.emit(filePaths, 'r')
 
     def openFilesReadWrite(self, filePaths=None):
-        print(filePaths)
+        # print(filePaths)
         if filePaths is None or filePaths is False:
             self.fileDialog = FileDialog(None, 'Open file(s) read/write', self.lastDir, 
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
@@ -202,7 +202,7 @@ class DataViz(QtGui.QMainWindow):
         #                                           'HDF5 file (*.h5 *.hdf);;All files (*)')
         if len(filePath) == 0:
             return
-        print('%%%%%', filePath, _)
+        # print('%%%%%', filePath, _)
         self.lastDir = filePath.rpartition('/')[0]
         # TODO handle recent files
         self.sigOpen.emit([filePath], 'w-')
