@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 15:35:35 2015 (-0400)
+# Last-Updated: Fri Sep 18 15:14:29 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 468
+#     Update #: 470
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -148,8 +148,8 @@ class DataViz(QtGui.QMainWindow):
         # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
         #                                          'Open file(s)', self.lastDir,
         #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
-        if isinstance(filePaths, QtCore.QStringList): # python2/qt4 compatibility
-            filePaths = [str(path) for path in filePaths]
+
+        filePaths = [str(path) for path in filePaths]   # python2/qt4 compatibility
         if len(filePaths) == 0:
             return
         self.lastDir = QtCore.QFileInfo(filePaths[-1]).dir().absolutePath()
@@ -167,8 +167,7 @@ class DataViz(QtGui.QMainWindow):
         # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
         #                                          'Open file(s)', self.lastDir,
         #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
-        if isinstance(filePaths, QtCore.QStringList): # python2/qt4 compatibility
-            filePaths = [str(path) for path in filePaths]
+        filePaths = [str(path) for path in filePaths]
         if len(filePaths) == 0:
             return
         self.lastDir = QtCore.QFileInfo(filePaths[-1]).dir().absolutePath()
