@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 15:18:03 2015 (-0400)
+# Last-Updated: Fri Sep 18 13:27:52 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 626
+#     Update #: 628
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -334,6 +334,7 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
     def deleteNode(self, index):
         item = self.getItem(index)
         parent = item.parent()
+        print('####', parent)
         self.beginRemoveRows(item.parent(), index.row(), 1)
         del item.h5node
         self.getItem(parent).removeChild(index)

@@ -7,9 +7,9 @@
 # Created: Fri Aug 28 16:43:08 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Thu Sep 17 15:16:21 2015 (-0400)
+# Last-Updated: Fri Sep 18 13:21:59 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 157
+#     Update #: 158
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -84,7 +84,7 @@ class DirReader(QtGui.QWidget):
         self.baseDirButton = QtGui.QPushButton('Open')
         self.baseDirButton.clicked.connect(self.selectBaseDir)
         self.baseDirWidget = QtGui.QWidget()
-        layout = QHBoxLayout()
+        layout = QtGui.QHBoxLayout()
         self.baseDirWidget.setLayout(layout)
         layout.addWidget(self.baseDirLabel)
         layout.addWidget(self.baseDirEdit)

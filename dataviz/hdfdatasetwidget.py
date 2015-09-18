@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 23:00:06 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 15:34:27 2015 (-0400)
+# Last-Updated: Fri Sep 18 13:22:14 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 111
+#     Update #: 112
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     import sys
     import h5py as h5
     app = QtGui.QApplication(sys.argv)
-    window = QMainWindow()
+    window = QtGui.QMainWindow()
     fd = h5.File('poolroom.h5', 'r')
     widget1 = HDFDatasetWidget(dataset=fd['/map/nonuniform/tables/players'])
     widget2 = HDFDatasetWidget(dataset=fd['/data/uniform/ndim/data3d'])
