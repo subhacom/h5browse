@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Wed Aug 26 23:42:28 2015 (-0400)
+# Last-Updated: Sun Sep 13 18:57:17 2015 (-0400)
 #           By: subha
-#     Update #: 119
+#     Update #: 121
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -95,7 +95,11 @@ class HDFAttributeModel(QAbstractTableModel):
         elif role == Qt.DisplayRole:
             if index.column() == 0:
                 return name
-            value = self.node.attrs[name]
+            try:
+                value = self.node.attrs[name]
+            except OSError:
+                print('Failed to read attribute', name, 'of', self.node)
+                return
             if index.column() == 1:                
                 # in Python 3 we have to decode the bytes to get
                 # string representation without leading 'b'. However,
