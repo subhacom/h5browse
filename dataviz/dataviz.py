@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Sat Sep 12 14:31:04 2015 (-0400)
-#           By: subha
-#     Update #: 455
+# Last-Updated: Thu Sep 17 15:35:35 2015 (-0400)
+#           By: Subhasis Ray
+#     Update #: 468
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -48,20 +48,15 @@
 # Code:
 
 import os
-from PyQt5.QtCore import (Qt, pyqtSignal, QSettings, QPoint, QSize,
-                          QFileInfo)
-from PyQt5.QtWidgets import (QApplication, QTableView, QWidget, QVBoxLayout,
-                             QMainWindow, QDockWidget, QFileDialog,
-                             QAction, QLabel, QMdiArea)
-from PyQt5.QtGui import (QIcon, QKeySequence)
-
-
+from pyqtgraph import QtCore
+from pyqtgraph import QtGui
 from hdftreewidget import HDFTreeWidget
 from hdfdatasetwidget import HDFDatasetWidget
 from datasetplot import (DatasetPlot, DatasetPlotParamTree)
+from pyqtgraph import FileDialog
 
 
-class DataViz(QMainWindow):
+class DataViz(QtGui.QMainWindow):
     """The main application window for dataviz.
 
     This is an MDI application with dock displaying open HDF5 files on
@@ -103,18 +98,18 @@ class DataViz(QMainWindow):
                   contents of the HDF5 node if it is a datset.
 
     """
-    sigOpen = pyqtSignal(list, str)
-    sigCloseFiles = pyqtSignal()
-    sigShowAttributes = pyqtSignal()
-    sigShowDataset = pyqtSignal()
-    sigPlotDataset = pyqtSignal()
+    sigOpen = QtCore.pyqtSignal(list, str)
+    sigCloseFiles = QtCore.pyqtSignal()
+    sigShowAttributes = QtCore.pyqtSignal()
+    sigShowDataset = QtCore.pyqtSignal()
+    sigPlotDataset = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None, flags=Qt.WindowFlags(0)):
-        super().__init__(parent=parent, flags=flags)
+    def __init__(self, parent=None, flags=QtCore.Qt.WindowFlags(0)):
+        super(DataViz, self).__init__(parent=parent, flags=flags)
         self.readSettings()
-        self.mdiArea = QMdiArea()
-        self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.mdiArea = QtGui.QMdiArea()
+        self.mdiArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.mdiArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.mdiArea.subWindowActivated.connect(self.switchPlotParamPanel)
         self.setCentralWidget(self.mdiArea)
         self.createActions()
@@ -126,53 +121,86 @@ class DataViz(QMainWindow):
         event.accept()
 
     def readSettings(self):
-        settings = QSettings('dataviz', 'dataviz')
+        settings = QtCore.QSettings('dataviz', 'dataviz')
         self.lastDir = settings.value('lastDir', '.', str)
-        pos = settings.value('pos', QPoint(200, 200))
-        size = settings.value('size', QSize(400, 400))
+        pos = settings.value('pos', QtCore.QPoint(200, 200))
+        if isinstance(pos, QtCore.QVariant):
+            pos = pos.toPyObject()
         self.move(pos)
+        size = settings.value('size', QtCore.QSize(400, 400))
+        if isinstance(size, QtCore.QVariant):
+            size = size.toPyObject()
         self.resize(size)
 
     def writeSettings(self):
-        settings = QSettings('dataviz', 'dataviz')
+        settings = QtCore.QSettings('dataviz', 'dataviz')
         settings.setValue('lastDir', self.lastDir)
         settings.setValue('pos', self.pos())
         settings.setValue('size', self.size())
 
-    def openFilesReadOnly(self):
-        filePaths, _ = QFileDialog.getOpenFileNames(self, 
-                                                 'Open file(s)', self.lastDir,
+    def openFilesReadOnly(self, filePaths=None):
+        if filePaths is None or filePaths is False:
+            self.fileDialog = FileDialog(None, 'Open file(s) read-only', self.lastDir, 
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
+            self.fileDialog.show()
+            self.fileDialog.filesSelected.connect(self.openFilesReadOnly)
+            return
+        # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
+        #                                          'Open file(s)', self.lastDir,
+        #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
+        if isinstance(filePaths, QtCore.QStringList): # python2/qt4 compatibility
+            filePaths = [str(path) for path in filePaths]
         if len(filePaths) == 0:
             return
-        self.lastDir = QFileInfo(filePaths[-1]).dir().absolutePath()
+        self.lastDir = QtCore.QFileInfo(filePaths[-1]).dir().absolutePath()
         # TODO handle recent files
         self.sigOpen.emit(filePaths, 'r')
 
-    def openFilesReadWrite(self):
-        filePaths, _ = QFileDialog.getOpenFileNames(self, 
-                                                 'Open file(s)', self.lastDir,
+    def openFilesReadWrite(self, filePaths=None):
+        print(filePaths)
+        if filePaths is None or filePaths is False:
+            self.fileDialog = FileDialog(None, 'Open file(s) read/write', self.lastDir, 
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
+            self.fileDialog.filesSelected.connect(self.openFilesReadWrite)
+            self.fileDialog.show()
+            return
+        # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
+        #                                          'Open file(s)', self.lastDir,
+        #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
+        if isinstance(filePaths, QtCore.QStringList): # python2/qt4 compatibility
+            filePaths = [str(path) for path in filePaths]
         if len(filePaths) == 0:
             return
-        self.lastDir = QFileInfo(filePaths[-1]).dir().absolutePath()
+        self.lastDir = QtCore.QFileInfo(filePaths[-1]).dir().absolutePath()
         # TODO handle recent files
         self.sigOpen.emit(filePaths, 'r+')
 
-    def openFileOverwrite(self):
-        filePath, _ = QFileDialog.getOpenFileName(self, 
-                                                 'Overwrite file', self.lastDir,
+    def openFileOverwrite(self, filePath=None, startDir=None):
+        if filePath is None or filePaths is False:
+            self.fileDialog = FileDialog(None, 'Open file(s) read/write', self.lastDir, 
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
+            self.fileDialog.show()
+            self.fileDialog.fileSelected.connect(self.openFileOverwrite)
+            return
+        # filePath = QtGui.QFileDialog.getOpenFileName(self, 
+        #                                          'Overwrite file', self.lastDir,
+        #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
         if len(filePath) == 0:
             return
-        self.lastDir = QFileInfo(filePath).dir().absolutePath()
+        self.lastDir = QtCore.QFileInfo(filePath).dir().absolutePath()
         # TODO handle recent files
         self.sigOpen.emit([filePath], 'w')
 
-    def createFile(self):
-        filePath, _ = QFileDialog.getOpenFileName(self, 
-                                                  'Overwrite file', self.lastDir,
-                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
+    def createFile(self, filePath=None, startDir=None):
+        if filePath is None or filePaths is False:
+            self.fileDialog = FileDialog(None, 'Open file(s) read/write', self.lastDir, 
+                                                 'HDF5 file (*.h5 *.hdf);;All files (*)')
+            self.fileDialog.show()
+            self.fileDialog.fileSelected.connect(self.createFile)
+            return
+        # filePath = QtGui.QFileDialog.getOpenFileName(self, 
+        #                                           'Overwrite file', self.lastDir,
+        #                                           'HDF5 file (*.h5 *.hdf);;All files (*)')
         if len(filePath) == 0:
             return
         print('%%%%%', filePath, _)
@@ -181,41 +209,41 @@ class DataViz(QMainWindow):
         self.sigOpen.emit([filePath], 'w-')
         
     def createActions(self):
-        self.openFileReadOnlyAction = QAction(QIcon(), 'Open file(s) readonly', self,
-                                   # shortcut=QKeySequence.Open,
+        self.openFileReadOnlyAction = QtGui.QAction(QtGui.QIcon(), 'Open file(s) readonly', self,
+                                   # shortcut=QtGui.QKeySequence.Open,
                                    statusTip='Open an HDF5 file for reading',
                                       triggered=self.openFilesReadOnly)
-        self.openFileReadWriteAction = QAction(QIcon(), '&Open file(s) read/write', self,
-                                   shortcut=QKeySequence.Open,
+        self.openFileReadWriteAction = QtGui.QAction(QtGui.QIcon(), '&Open file(s) read/write', self,
+                                   shortcut=QtGui.QKeySequence.Open,
                                    statusTip='Open an HDF5 file for editing',
                                                triggered=self.openFilesReadWrite)
-        self.openFileOverwriteAction = QAction(QIcon(), 'Overwrite file', self,
-                                               # shortcut=QKeySequence.Open,
+        self.openFileOverwriteAction = QtGui.QAction(QtGui.QIcon(), 'Overwrite file', self,
+                                               # shortcut=QtGui.QKeySequence.Open,
                                                statusTip='Open an HDF5 file for writing (overwrite existing)',
                                                triggered=self.openFileOverwrite)
-        self.createFileAction = QAction(QIcon(), '&New file', self,
-                                               shortcut=QKeySequence.New,
+        self.createFileAction = QtGui.QAction(QtGui.QIcon(), '&New file', self,
+                                               shortcut=QtGui.QKeySequence.New,
                                                statusTip='Create a new HDF5 file',
                                                triggered=self.createFile)
-        self.closeFileAction = QAction(QIcon(), '&Close file(s)',
+        self.closeFileAction = QtGui.QAction(QtGui.QIcon(), '&Close file(s)',
                                        self,
-                                       shortcut=QKeySequence(Qt.CTRL+Qt.Key_K),
+                                       shortcut=QtGui.QKeySequence(QtCore.Qt.CTRL+QtCore.Qt.Key_K),
                                        statusTip='Close selected files',
                                        triggered=self.sigCloseFiles)
-        self.quitAction = QAction(QIcon(), '&Quit', self,
-                                  shortcut=QKeySequence.Quit, 
+        self.quitAction = QtGui.QAction(QtGui.QIcon(), '&Quit', self,
+                                  shortcut=QtGui.QKeySequence.Quit, 
                                   statusTip='Quit dataviz', 
                                   triggered=self.doQuit)
-        self.showAttributesAction = QAction(QIcon(), 'Show attributes', self,
-                                            shortcut=QKeySequence.InsertParagraphSeparator,
+        self.showAttributesAction = QtGui.QAction(QtGui.QIcon(), 'Show attributes', self,
+                                            shortcut=QtGui.QKeySequence.InsertParagraphSeparator,
                                             statusTip='Show attributes',
                                             triggered=self.sigShowAttributes)
-        self.showDatasetAction = QAction(QIcon(), 'Show dataset', self,
-                                            shortcut=QKeySequence(Qt.CTRL+Qt.Key_Return),
+        self.showDatasetAction = QtGui.QAction(QtGui.QIcon(), 'Show dataset', self,
+                                            shortcut=QtGui.QKeySequence(QtCore.Qt.CTRL+QtCore.Qt.Key_Return),
                                             statusTip='Show dataset',
                                             triggered=self.sigShowDataset)
-        self.plotDatasetAction = QAction(QIcon(), 'Plot dataset', self,
-                                         shortcut=QKeySequence(Qt.ALT + Qt.Key_P),
+        self.plotDatasetAction = QtGui.QAction(QtGui.QIcon(), 'Plot dataset', self,
+                                         shortcut=QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_P),
                                          statusTip='Plot dataset',
                                          triggered=self.sigPlotDataset)
         
@@ -237,7 +265,7 @@ class DataViz(QMainWindow):
         self.dataMenu.addAction(self.plotDatasetAction)
 
     def createTreeDock(self):
-        self.treeDock = QDockWidget('File tree', self)
+        self.treeDock = QtGui.QDockWidget('File tree', self)
         self.tree = HDFTreeWidget(parent=self.treeDock)
         self.sigOpen.connect(self.tree.openFiles)
         self.tree.doubleClicked.connect(self.tree.createDatasetWidget)
@@ -254,7 +282,7 @@ class DataViz(QMainWindow):
         self.sigPlotDataset.connect(self.tree.plotDataset)
         self.sigCloseFiles.connect(self.tree.closeFiles)
         self.treeDock.setWidget(self.tree)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.treeDock)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.treeDock)
         self.viewMenu.addAction(self.treeDock.toggleViewAction())
 
     def addMdiChildWindow(self, widget):
@@ -271,9 +299,9 @@ class DataViz(QMainWindow):
                     window.deleteLater()
 
     def addPanelBelow(self, widget):
-        dockWidget = QDockWidget(widget.name)
+        dockWidget = QtGui.QDockWidget(widget.name)
         dockWidget.setWidget(widget)
-        self.addDockWidget(Qt.BottomDockWidgetArea, dockWidget)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dockWidget)
         dockWidget.show()
 
     
@@ -288,7 +316,7 @@ class DataViz(QMainWindow):
         """
         if subwin is None:
             return
-        for dockWidget in self.findChildren(QDockWidget):
+        for dockWidget in self.findChildren(QtGui.QDockWidget):
             # All dockwidgets that contain paramtrees must be checked
             if isinstance(dockWidget.widget(), DatasetPlotParamTree):
                 if isinstance(subwin.widget(), DatasetPlot) and \
@@ -299,13 +327,12 @@ class DataViz(QMainWindow):
         
     def doQuit(self):
         self.writeSettings()
-        QApplication.instance().closeAllWindows()
+        QtGui.QApplication.instance().closeAllWindows()
         
 
 def main():
     import sys
-    from PyQt5.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QWidget)
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
     window = DataViz()
     window.show()
     app.exec_()
