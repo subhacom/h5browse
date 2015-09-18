@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 16:51:16 2015 (-0400)
+# Last-Updated: Fri Sep 18 16:57:43 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 708
+#     Update #: 710
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -117,7 +117,7 @@ class HDFTreeItem(object):
             if len(self.children) > 0:
                 return self.children[row]                
             for name in self.h5node:
-                self.children = [HDFTreeItem(child, parent=self) for child in self.h5node.values()]                
+                self.children = [self.__class__(child, parent=self) for child in self.h5node.values()]                  # __class__ allows this function to work for EditableItem as well
             return self.children[row]
 
     def childNumber(self):
