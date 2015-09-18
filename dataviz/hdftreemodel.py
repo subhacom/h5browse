@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 15:33:21 2015 (-0400)
+# Last-Updated: Fri Sep 18 15:35:10 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 648
+#     Update #: 650
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -61,8 +61,9 @@ from pyqtgraph import Qt
 class RootItem(QtCore.QObject):
     def __init__(self, parent=None):
         super(RootItem, self).__init__(parent)
+        self.children = []
 
-  def child(self, row):
+    def child(self, row):
         if row < 0 or row >= len(self.children):
             return None
         return self.children[row]
