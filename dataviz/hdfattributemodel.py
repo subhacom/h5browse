@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 15:16:32 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 121
+# Last-Updated: Fri Sep 18 01:30:42 2015 (-0400)
+#           By: subha
+#     Update #: 183
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,7 +47,7 @@
 
 import numpy as np
 import h5py as h5
-from pyqtgraph import QtCore
+from pyqtgraph import (QtCore, QtGui)
 
 class HDFAttributeModel(QtCore.QAbstractTableModel):
     """Model class to handle HDF5 attributes of an HDF5 object"""
@@ -80,26 +80,23 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
         for ii, name in enumerate(self.node.attrs):
             if ii == index.row():
                 break
-        if role == QtCore.Qt.ToolTipRole:
+        if role == QtCore.Qt.DisplayRole and index.column() == 0:
+            return name
+        value = None
+        ainfo = h5.h5a.get_info(self.node.id, name)
+        aid = h5.h5a.open(self.node.id, name)
+        try:
             value = self.node.attrs[name]
-            # if isinstance(value, bytes) or isinstance(value, str):
-            #     return 'string: scalar'
-            if isinstance(value, np.ndarray):
-                return '{}: {}'.format(value.dtype, value.shape)
-            elif isinstance(value, h5.Reference):
-                if value.typecode == 0:
-                    return 'ObjectRef: scalar'
-                else:
-                    return 'RegionRef: scalar'
-            return '{}: scalar'.format(type(value).__name__)
-        elif role == QtCore.Qt.DisplayRole:
-            if index.column() == 0:
-                return name
-            try:
-                value = self.node.attrs[name]
-            except OSError:
-                print('Failed to read attribute', name, 'of', self.node)
-                return
+        except (OSError, IOError) as e:
+            if ainfo.data_size == 0:  # empty attribute - not supported by h5py
+                value = '<empty>'
+            ## This does not work - unfortunately
+            # else:  # a hack to get around unicode issue in h5py
+            #     attr = h5.h5a.open(self.node.id, name)
+            #     buf = np.ndarray(attr.shape, dtype=attr.dtype)
+            #     attr.read(buf)
+            #     return buf
+        if role == QtCore.Qt.DisplayRole:
             if index.column() == 1:                
                 # in Python 3 we have to decode the bytes to get
                 # string representation without leading 'b'. However,
@@ -107,6 +104,8 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
                 # strings - for large datasets it will be slow, and if
                 # we do the conversion for attributes but not for
                 # datasets it gets confusing for the user.
+                if value == None:
+                    value = '<Could not read>'
                 return str(value)
                 
                 # if isinstance(value, bytes):
@@ -115,7 +114,22 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
                 #     return str([entry.decode('utf-8') for entry in value])                    
                 # return str(value)                
             elif index.column() == 2:
-                return type(value).__name__                
+                if value is not None:
+                    return type(value).__name__
+                return aid.dtype.name
+        elif role == QtCore.Qt.ToolTipRole:
+            # if isinstance(value, bytes) or isinstance(value, str):
+            #     return 'string: scalar'            
+            if isinstance(value, np.ndarray):
+                return '{}: {}'.format(value.dtype, value.shape)
+            elif isinstance(value, h5.Reference):
+                if value.typecode == 0:
+                    return 'ObjectRef: {}'.format(aid.shape)
+                else:
+                    return 'RegionRef: {}'.format(aid.shape)
+            if value is not None:
+                return '{}: {}'.format(type(value).__name__, value.shape)                
+            return '{}: {}'.format(aid.dtype.name, aid.shape)
         return None
 
 
@@ -123,13 +137,13 @@ if __name__ == '__main__':
     import sys
     import h5py as h5
     app = QtGui.QApplication(sys.argv)
-    window = QMainWindow()
+    window = QtGui.QMainWindow()
     tabview = QtGui.QTableView(window)
     fd = h5.File('poolroom.h5')
     model = HDFAttributeModel(fd)
     tabview.setModel(model)
     widget = QtGui.QWidget(window)
-    widget.setLayout(QHBoxLayout())
+    widget.setLayout(QtGui.QHBoxLayout())
     widget.layout().addWidget(tabview)
     window.setCentralWidget(widget)
     window.show()
