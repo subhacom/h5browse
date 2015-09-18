@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 15:35:10 2015 (-0400)
+# Last-Updated: Fri Sep 18 15:50:01 2015 (-0400)
 #           By: Subhasis Ray
-#     Update #: 650
+#     Update #: 667
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -106,6 +106,7 @@ class RootItem(QtCore.QObject):
 class HDFTreeItem(QtCore.QObject):
     def __init__(self, data, parent=None):
         super(HDFTreeItem, self).__init__(parent)
+        self.parentItem = parent
         self.h5node = data
         self.children = []
         
@@ -174,8 +175,8 @@ class EditableItem(HDFTreeItem):
         super(EditableItem, self).__init__(data, parent)
         
     def child(self, row):
-        if isinstance(self.h5node, h5.Group):
-            if len(self.children) > 0:
+        if isinstance(self.h5node, h5.Group):            
+            if (row >= 0) and (row < len(self.children)):
                 return self.children[row]                
             for name in self.h5node:
                 self.children = [EditableItem(child, parent=self) for child in self.h5node.values()]                
@@ -234,6 +235,7 @@ class EditableItem(HDFTreeItem):
         index = 0
         for key in self.h5node:
             if index >= position:
+                child = self.children.pop(index)
                 del self.h5node[key]
             index += 1
             if index >= position + count:
@@ -242,7 +244,7 @@ class EditableItem(HDFTreeItem):
     def removeChild(self, position):
         if position < 0 or position > len(self.children):
             return False
-        child = self.children.pop(position)
+        child = self.removeChildren(position, 1)
         return True
 
     def rename(self, newName):
@@ -299,7 +301,7 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
         parentItem = childItem.parent()
         if parentItem == self.rootItem: # is the left side childItem or parentItem?
             return QtCore.QModelIndex()
-        return self.createIndex(parentItem.parent().indexOfChild(parentItem), 0, parentItem)
+        return self.createIndex(parentItem.parent().childNumber(), 0, parentItem)
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         parentItem = self.getItem(parent)
@@ -364,8 +366,7 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
         parent = item.parent()
         print('####', parent)
         self.beginRemoveRows(index.parent(), index.row(), 1)
-        del item.h5node
-        parent.removeChild(item)
+        parent.removeChild(index.row())
         self.endRemoveRows()
 
 
