@@ -7,9 +7,9 @@
 # Created: Fri Aug 21 17:21:21 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Thu Sep 17 15:35:27 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 827
+# Last-Updated: Fri Sep 18 02:09:20 2015 (-0400)
+#           By: subha
+#     Update #: 828
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -384,7 +384,7 @@ def testDatasetPlotParams(fd):
 
 def testDatasetPlot(fd):
     widget = QtGui.QWidget()
-    widget.setLayout(QGridLayout())
+    widget.setLayout(QtGui.QGridLayout())
     oneDimPlot = DatasetPlot()
     plot, params = oneDimPlot.plotLine(fd['/data/event/balls/hit/ball_0_9ba91cb6163611e5899524fd526610e7'])
     widget.layout().addWidget(params, 0, 0)

@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 15:18:03 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 626
+# Last-Updated: Fri Sep 18 02:54:19 2015 (-0400)
+#           By: subha
+#     Update #: 651
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -61,6 +61,7 @@ from pyqtgraph import Qt
 class RootItem(QtGui.QTreeWidgetItem):
     def __init__(self, parent=None):
         super(RootItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
+        self.children = []
         
     def columnCount(self):
         return 1
@@ -74,17 +75,25 @@ class RootItem(QtGui.QTreeWidgetItem):
     def setData(self, column, value):
         return False
 
+    def addChild(self, child):
+        self.children.append(child)
+
     # def parent(self):
     #     return None
 
-    # def removeChild(self, position):
-    #     if position < 0 or position > len(self.children):
-    #         return False
-    #     child = self.children.pop(position)
-    #     return True
+    def removeChild(self, position):
+        if position < 0 or position > len(self.children):
+            return False
+        child = self.children.pop(position)
+        return True
 
-    # def hasChildren(self):
-    #     return len(children) > 0
+    def hasChildren(self):
+        return len(children) > 0
+
+    def child(self, row):
+        if len(self.children) > 0:
+            return self.children[row]                
+        
 
 
 class HDFTreeItem(QtGui.QTreeWidgetItem):
@@ -92,6 +101,7 @@ class HDFTreeItem(QtGui.QTreeWidgetItem):
         super(HDFTreeItem, self).__init__(parent, type=QtGui.QTreeWidgetItem.UserType)
         self.h5node = data
         self.children = []
+        print('Here')
         
     def child(self, row):
         if isinstance(self.h5node, h5.Group):
@@ -102,6 +112,8 @@ class HDFTreeItem(QtGui.QTreeWidgetItem):
             return self.children[row]
             
     def childCount(self):
+        print(self)
+        print(dir(self))
         if isinstance(self.h5node, h5.Group):
             return len(self.h5node)
         return 0
@@ -258,6 +270,8 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
         if parent.isValid() and parent.column()!= 0:
             return QtCore.QModelIndex()
         parentItem = self.getItem(parent)
+        if parentItem is None:
+            return QtCore.QModelIndex()
         childItem = parentItem.child(row)
         if childItem:
             return self.createIndex(row, column, childItem)
@@ -269,9 +283,9 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()        
         childItem = self.getItem(index)
         parentItem = childItem.parent()
-        if parentItem == self.rootItem: # is the left side childItem or parentItem?
-            return QtCore.QModelIndex()
-        return self.createIndex(parentItem.parent().indexOfChild(parentItem), 0, parentItem)
+        if parentItem is not None and parentItem != self.rootItem: # is the left side childItem or parentItem?
+            return self.createIndex(parentItem.parent().indexOfChild(parentItem), 0, parentItem)
+        return QtCore.QModelIndex()
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         parentItem = self.getItem(parent)
@@ -334,9 +348,9 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
     def deleteNode(self, index):
         item = self.getItem(index)
         parent = item.parent()
-        self.beginRemoveRows(item.parent(), index.row(), 1)
+        self.beginRemoveRows(index.parent(), index.row(), 1)
         del item.h5node
-        self.getItem(parent).removeChild(index)
+        parent.removeChild(item)
         self.endRemoveRows()
 
 

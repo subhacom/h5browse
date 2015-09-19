@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Thu Sep 17 15:33:26 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 526
+# Last-Updated: Fri Sep 18 02:31:41 2015 (-0400)
+#           By: subha
+#     Update #: 531
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -237,9 +237,9 @@ class HDFTreeWidget(QtGui.QTreeView):
 
     def deleteNode(self):
         index = self.currentIndex()
-        choice = QMessageBox.question(self, title='Confirm delete',
-                                      text='Really delete this node and all its children?')
-        if choice == QMessageBox.Yes:
+        choice = QtGui.QMessageBox.question(self, 'Confirm delete',
+                                            'Really delete this node and all its children?')
+        if choice == QtGui.QMessageBox.Yes:
             self.model().deleteNode(index)
 
     def showContextMenu(self, point):
@@ -275,7 +275,7 @@ class DatasetDialog(QtGui.QDialog):
         layout = QtGui.QVBoxLayout()
         paramTree = ptree.ParameterTree(showHeader=False)
         paramTree.setParameters(self.params)
-        self.tabWidget = QTabWidget()
+        self.tabWidget = QtGui.QTabWidget()
         self.tabWidget.addTab(paramTree, 'Structure')
         attrTree = ptree.ParameterTree(showHeader=False)
         self.attrs = XtensibleParam(name='attrs', title='Attributes')
@@ -351,9 +351,8 @@ class XtensibleParam(ptree.parameterTypes.GroupParameter):
 
 if __name__ == '__main__':
     import sys
-    from PyQt5.QtWidgets import (QApplication, QMainWindow)
     app = QtGui.QApplication(sys.argv)
-    window = QMainWindow()
+    window = QtGui.QMainWindow()
     widget = HDFTreeWidget()
     window.setCentralWidget(widget)
     widget.openFiles(['test.h5'], 'r+')
