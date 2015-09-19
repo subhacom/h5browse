@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 02:16:42 2015 (-0400)
+# Last-Updated: Fri Sep 18 21:09:45 2015 (-0400)
 #           By: subha
-#     Update #: 472
+#     Update #: 474
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -148,7 +148,6 @@ class DataViz(QtGui.QMainWindow):
         # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
         #                                          'Open file(s)', self.lastDir,
         #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
-        
         filePaths = [str(path) for path in filePaths]   # python2/qt4 compatibility
         if len(filePaths) == 0:
             return
@@ -157,7 +156,7 @@ class DataViz(QtGui.QMainWindow):
         self.sigOpen.emit(filePaths, 'r')
 
     def openFilesReadWrite(self, filePaths=None):
-        print(filePaths)
+        # print(filePaths)
         if filePaths is None or filePaths is False:
             self.fileDialog = FileDialog(None, 'Open file(s) read/write', self.lastDir, 
                                                  'HDF5 file (*.h5 *.hdf);;All files (*)')
@@ -167,7 +166,6 @@ class DataViz(QtGui.QMainWindow):
         # filePaths = QtGui.QFileDialog.getOpenFileNames(self, 
         #                                          'Open file(s)', self.lastDir,
         #                                          'HDF5 file (*.h5 *.hdf);;All files (*)')
-
         filePaths = [str(path) for path in filePaths]        # python2/qt4 compatibility
         if len(filePaths) == 0:
             return
@@ -203,7 +201,7 @@ class DataViz(QtGui.QMainWindow):
         #                                           'HDF5 file (*.h5 *.hdf);;All files (*)')
         if len(filePath) == 0:
             return
-        print('%%%%%', filePath, _)
+        # print('%%%%%', filePath, _)
         self.lastDir = filePath.rpartition('/')[0]
         # TODO handle recent files
         self.sigOpen.emit([filePath], 'w-')
