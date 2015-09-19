@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 21:09:45 2015 (-0400)
+# Last-Updated: Fri Sep 18 21:21:13 2015 (-0400)
 #           By: subha
-#     Update #: 474
+#     Update #: 486
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -112,9 +112,9 @@ class DataViz(QtGui.QMainWindow):
         self.mdiArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.mdiArea.subWindowActivated.connect(self.switchPlotParamPanel)
         self.setCentralWidget(self.mdiArea)
+        self.createTreeDock()
         self.createActions()
         self.createMenus()
-        self.createTreeDock()
 
     def closeEvent(self, event):
         self.writeSettings()
@@ -256,7 +256,12 @@ class DataViz(QtGui.QMainWindow):
         self.fileMenu.addAction(self.createFileAction)
         self.fileMenu.addAction(self.closeFileAction)
         self.fileMenu.addAction(self.quitAction)
+        self.editMenu = self.menuBar().addMenu('&Edit')
+        self.editMenu.addAction(self.tree.insertDatasetAction)
+        self.editMenu.addAction(self.tree.insertGroupAction)
+        self.editMenu.addAction(self.tree.deleteNodeAction)
         self.viewMenu = self.menuBar().addMenu('&View')        
+        self.viewMenu.addAction(self.treeDock.toggleViewAction())
         self.dataMenu = self.menuBar().addMenu('&Data')
         self.dataMenu.addAction(self.showAttributesAction)
         self.dataMenu.addAction(self.showDatasetAction)
@@ -281,7 +286,6 @@ class DataViz(QtGui.QMainWindow):
         self.sigCloseFiles.connect(self.tree.closeFiles)
         self.treeDock.setWidget(self.tree)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.treeDock)
-        self.viewMenu.addAction(self.treeDock.toggleViewAction())
 
     def addMdiChildWindow(self, widget):
         if widget is not None:
