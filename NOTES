@@ -45,7 +45,7 @@
 	   e.g., N=3, data in Z (k=2), x=data[Xx, Yx, :], y=data[Xy,Yy, :]
 	   either of these can also be the index.
 	
-* TODO Plot compound dataset 	
+* DONE Plot compound dataset 	
   - It will be useful to plot data against column names. For example,
     if each column corresponds to a year.
 
@@ -125,3 +125,11 @@ Reinstalling the application may fix this problem.
 Finally this worked:
 
 conda install -c https://conda.anaconda.org/inso pyqt5 qt5
+
+* TODO Import data from binary files
+  - When creating a new dataset, provide option for selecting a file
+  - Also allow more complex data type specification ...
+	- regular dataset - number of dimensions, length of each dimension
+	- compound dataset - data type of each column
+	- data type of each field (include length and encoding for string)
+	- endianness for binary data

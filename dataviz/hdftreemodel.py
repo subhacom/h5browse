@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 21:12:07 2015 (-0400)
+# Last-Updated: Sun Sep 20 11:48:00 2015 (-0400)
 #           By: subha
-#     Update #: 714
+#     Update #: 716
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -115,7 +115,8 @@ class HDFTreeItem(object):
             if len(self.children) > 0:
                 return self.children[row]                
             for name in self.h5node:
-                self.children = [self.__class__(child, parent=self) for child in self.h5node.values()]                  # __class__ allows this function to work for EditableItem as well
+                # __class__ allows this function to work for subclasses as well
+                self.children = [self.__class__(child, parent=self) for child in self.h5node.values()]                  
             return self.children[row]
 
     def childNumber(self):
@@ -144,8 +145,7 @@ class HDFTreeItem(object):
                 shape = self.h5node.shape
                 if len(shape) == 0:
                     shape = 'scalar'
-            return '{} {}'.format(self.h5node.__class__.__name__,
-                                  shape)
+            return '{} {}'.format(self.h5node.__class__.__name__, shape)
 
     def setData(self, column, value):
         if column != 0:
