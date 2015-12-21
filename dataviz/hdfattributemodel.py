@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 01:30:42 2015 (-0400)
+# Last-Updated: Mon Dec 21 00:48:12 2015 (-0500)
 #           By: subha
-#     Update #: 183
+#     Update #: 191
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -83,13 +83,15 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.DisplayRole and index.column() == 0:
             return name
         value = None
-        ainfo = h5.h5a.get_info(self.node.id, name)
-        aid = h5.h5a.open(self.node.id, name)
         try:
             value = self.node.attrs[name]
         except (OSError, IOError) as e:
-            if ainfo.data_size == 0:  # empty attribute - not supported by h5py
-                value = '<empty>'
+            value = '<ERROR>'
+            print(e)
+            # try:
+            #     ainfo = h5.h5a.get_info(self.node.id, name)
+            # if ainfo.data_size == 0:  # empty attribute - not supported by h5py
+                # value = '<empty>'
             ## This does not work - unfortunately
             # else:  # a hack to get around unicode issue in h5py
             #     attr = h5.h5a.open(self.node.id, name)
@@ -116,6 +118,7 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
             elif index.column() == 2:
                 if value is not None:
                     return type(value).__name__
+                aid = h5.h5a.open(self.node.id, name)
                 return aid.dtype.name
         elif role == QtCore.Qt.ToolTipRole:
             # if isinstance(value, bytes) or isinstance(value, str):

@@ -5,6 +5,15 @@ custom format. But the interface is generic enough to display simple
 HDF5 files. The tools are totally for neuronal data analysis. But the
 plan is to make it a more general tool.
 
+As of 2015-12-21, it supports displaying the tree structure of an HDF5
+file, node attributes and dataset contents. You can select arbitrary
+fields in a dataset for displaying X-Y plots.
+
+Implementation of editing HDF5 is incomplete.
+
+Note that being based on h5py library it inherits the limitations of
+the same.
+
 This is a rewrite of the old code. Replacing PyQwt with
 PyQtGraph. Written from scratch with new language and libraries.
 
@@ -15,7 +24,7 @@ Installation
 Requirements
 ------------
 
-Python 3.x, numpy, PyQt5, h5py, PyQtGraph.
+numpy, h5py, PyQtGraph.
 
 As of Fri, Aug 21, 2015 only PyQtGraph devel branch on github supports
 PyQt5. Install it using:
