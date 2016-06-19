@@ -14,8 +14,8 @@ Implementation of editing HDF5 is incomplete.
 Note that being based on h5py library it inherits the limitations of
 the same.
 
-This is a rewrite of the old code. Replacing PyQwt with
-PyQtGraph. Written from scratch with new language and libraries.
+This is a rewrite of the old code. Replaced PyQwt with
+PyQtGraph. Written from scratch in Python 3. Compatible with Python2.7.
 
 
 Installation
@@ -47,18 +47,16 @@ or faster:
 
 Install
 -------
+Install from PyPI:
 
-You just download the sourcecode and run the h5browse.py
-file using python3. The setup.py is not functional.
+pip install h5browse
+
+You can also download the sourcecode and run the h5browse.py file
+using python.
 
     git clone https://github.com/subhacom/h5browse.git
     python h5browse/h5browse/h5browse.py
 
-or 
-
-    python3 h5browse/h5browse/h5browse.py
-
-if your default python is python2
 
 
 
