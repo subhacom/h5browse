@@ -25,7 +25,7 @@ Written from scratch in Python 3.
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=['Development Status :: 1 - Planning', 
                    'Environment :: X11 Applications :: Qt',
-                   'Programming Language :: Python :: 3 :: Only',
+                   'Programming Language :: Python',
                    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                    'Intended Audience :: Science/Research',
                    'Natural Language :: English',
