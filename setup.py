@@ -1,7 +1,10 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1'
+try:
+    version = open('VERSION').read().strip()
+except IOError:
+    version = '0.2'
 
 setup(name='h5browse',
       version=version,
