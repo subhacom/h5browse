@@ -3,11 +3,11 @@ import sys, os
 
 version = '0.1'
 
-setup(name='dataviz',
+setup(name='h5browse',
       version=version,
-      description="dataviz is a utility for viewing HDF5 datasets.",
+      description="h5browse is a utility for viewing HDF5 datasets.",
       long_description="""\ 
-dataviz is a utility for viewing HDF5 datasets.
+h5browse is a utility for viewing HDF5 datasets.
 
 It was developed for analyzing neuronal simulation data saved in a
 custom format. But the interface is generic enough to display simple
@@ -48,7 +48,7 @@ Written from scratch in Python 3.
       ],
       entry_points={
           'gui_scripts': [
-              'dataviz=dataviz.dataviz:main',
+              'h5browse=h5browse.h5browse:main',
           ]
       },
       )

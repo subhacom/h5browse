@@ -1,4 +1,4 @@
-dataviz is a utility for viewing HDF5 datasets.
+h5browse (formerly dataviz) is a utility for browsing HDF5 files.
 
 It was developed for analyzing neuronal simulation data saved in a
 custom format. But the interface is generic enough to display simple
@@ -48,15 +48,15 @@ or faster:
 Install
 -------
 
-You just download the sourcecode and run the dataviz.py
+You just download the sourcecode and run the h5browse.py
 file using python3. The setup.py is not functional.
 
-    git clone https://github.com/subhacom/dataviz.git
-    python dataviz/dataviz/dataviz.py
+    git clone https://github.com/subhacom/h5browse.git
+    python h5browse/h5browse/h5browse.py
 
 or 
 
-    python3 dataviz/dataviz/dataviz.py
+    python3 h5browse/h5browse/h5browse.py
 
 if your default python is python2
 
@@ -124,7 +124,7 @@ Images? Need to have a look at existing standards.
 
 Other software
 ==============
-dataviz is aimed at reading HDF5 files. 
+h5browse is aimed at reading HDF5 files. 
 
 If you want fine control over plotting, a possible candidate is veusz.
 
