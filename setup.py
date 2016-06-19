@@ -14,16 +14,15 @@ custom format. But the interface is generic enough to display simple
 HDF5 files. The tools are totally for neuronal data analysis. But the
 plan is to make it a more general tool.
 
-This is a rewrite of the old code. Replacing PyQwt with PyQtGraph (or
-some other module).
+This is a rewrite of the old code of dataviz. Replaced PyQwt with PyQtGraph.
 
 It uses  Python 3.x, numpy, PyQt5, h5py, PyQtGraph.
 
-Written from scratch in Python 3.
+Written from scratch in Python 3. Compatible with Python2.7.
 
 """,
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-      classifiers=['Development Status :: 1 - Planning', 
+      classifiers=['Development Status :: 3 - Alpha',
                    'Environment :: X11 Applications :: Qt',
                    'Programming Language :: Python',
                    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
