@@ -1,4 +1,4 @@
-#+TITLE: ~dataviz~ - a tool to visualize HDF5 data
+#+TITLE: ~h5browse~ - a tool to visualize HDF5 data
 #+AUTHOR:    Subhasis Ray
 #+EMAIL:     lastname dot firstname at gmail dot com
 #+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t -:t f:t *:t <:t email:t author:t timestamp:nil
@@ -8,7 +8,7 @@
 #+EXPORT_EXCLUDE_TAGS: noexport
 
 
-  ~dataviz~ is an application to explore and visualize HDF5 files. It
+  ~h5browse~ is an application to explore and visualize HDF5 files. It
   allows traversal of HDF5 nodes as a tree structure and inspection of
   datasets and attributes in table views. Moreover, it can plot
   numeric data from a dataset with choice for data along any
@@ -17,8 +17,8 @@
   It is written in python3 and uses ~h5py~ for accessing HDF5 data,
   ~PyQt5~ for GUI and ~pyqtgraph~ for plotting.
 
-  ~dataviz~ is a work in progress. You can get the source code here:
-  https://github.com/subhacom/dataviz.
+  ~h5browse~ is a work in progress. You can get the source code here:
+  https://github.com/subhacom/h5browse.
 
 
 [[file:dataviz_screenshot.png]]
