@@ -1,31 +1,40 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '0.1'
+try:
+    version = open('VERSION').read().strip()
+except IOError:
+    version = '0.2'
 
-setup(name='dataviz',
+setup(name='h5browse',
       version=version,
-      description="dataviz is a utility for viewing HDF5 datasets.",
+      description="h5browse is a utility for browsing HDF5 files.",
       long_description="""\ 
-dataviz is a utility for viewing HDF5 datasets.
+h5browse (formerly dataviz) is a utility for browsing HDF5 files.
 
 It was developed for analyzing neuronal simulation data saved in a
 custom format. But the interface is generic enough to display simple
 HDF5 files. The tools are totally for neuronal data analysis. But the
 plan is to make it a more general tool.
 
-This is a rewrite of the old code. Replacing PyQwt with PyQtGraph (or
-some other module).
+As of 2015-12-21, it supports displaying the tree structure of an HDF5
+file, node attributes and dataset contents. You can select arbitrary
+fields in a dataset for displaying X-Y plots.
 
-It uses  Python 3.x, numpy, PyQt5, h5py, PyQtGraph.
+Implementation of editing HDF5 is incomplete.
 
-Written from scratch in Python 3.
+Note that being based on h5py library it inherits the limitations of
+the same.
+
+This is a rewrite of the old code. Replaced PyQwt with
+PyQtGraph. Written from scratch in Python 3. Compatible with
+Python2.7.
 
 """,
       # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-      classifiers=['Development Status :: 1 - Planning', 
+      classifiers=['Development Status :: 3 - Alpha',
                    'Environment :: X11 Applications :: Qt',
-                   'Programming Language :: Python :: 3 :: Only',
+                   'Programming Language :: Python',
                    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                    'Intended Audience :: Science/Research',
                    'Natural Language :: English',
@@ -48,7 +57,7 @@ Written from scratch in Python 3.
       ],
       entry_points={
           'gui_scripts': [
-              'dataviz=dataviz.dataviz:main',
+              'h5browse=h5browse.h5browse:main',
           ]
       },
       )

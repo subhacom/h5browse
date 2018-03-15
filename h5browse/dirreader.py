@@ -7,9 +7,9 @@
 # Created: Fri Aug 28 16:43:08 2015 (-0400)
 # Version: 
 # Package-Requires: ()
-# Last-Updated: Fri Sep 18 13:21:59 2015 (-0400)
-#           By: Subhasis Ray
-#     Update #: 158
+# Last-Updated: Sun Jun 19 13:59:35 2016 (-0400)
+#           By: subha
+#     Update #: 159
 # URL: 
 # Doc URL: 
 # Keywords: 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     widget = DirReader()
     widget.show()
-    app.exec()
+    app.exec_()
     sys.exit(0)
 
 # 
