@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 24 20:54:11 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 21:08:59 2015 (-0400)
-#           By: subha
-#     Update #: 539
+# Last-Updated: Thu Mar 15 15:46:27 2018 (-0400)
+#           By: Subhasis Ray
+#     Update #: 577
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -101,17 +101,18 @@ class HDFTreeWidget(QtGui.QTreeView):
     sigPlotWidgetCreated = QtCore.pyqtSignal(QtGui.QWidget)
     sigPlotWidgetClosed = QtCore.pyqtSignal(QtGui.QWidget)
     sigPlotParamTreeCreated = QtCore.pyqtSignal(QtGui.QWidget)
+    sigDataWidgetActivated = QtCore.pyqtSignal(QtGui.QWidget)
 
     def __init__(self, parent=None):
         super(HDFTreeWidget, self).__init__(parent)
         model = HDFTreeModel([])
         self.setModel(model)
-        self.openDatasetWidgets = defaultdict(set)
-        self.openAttributeWidgets = defaultdict(set)
+        self.openDatasetWidgets = defaultdict(dict)
+        self.openAttributeWidgets = defaultdict(dict)
         self.openPlotWidgets = defaultdict(set)
         self.createActions()
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.showContextMenu)        
+        self.customContextMenuRequested.connect(self.showContextMenu)
 
     def createActions(self):
         self.insertDatasetAction = QtGui.QAction(QtGui.QIcon(), 'Insert dataset', self,
@@ -124,7 +125,7 @@ class HDFTreeWidget(QtGui.QTreeView):
                                         statusTip='Delete the currently selected node.',
                                         triggered=self.deleteNode)        
 
-    def openFiles(self, files, mode='r+'):
+    def openFiles(self, files, mode='r'):
         """Open the files listed in argument.
 
         files: list of file paths. For example, output of
@@ -150,16 +151,22 @@ class HDFTreeWidget(QtGui.QTreeView):
             item = self.model().getItem(index)            
             filename = item.h5node.file.filename
             if self.model().closeFile(index):
-                for datasetWidget in self.openDatasetWidgets[filename]:
+                for dataset, datasetWidget in self.openDatasetWidgets[filename]:
                     self.sigDatasetWidgetClosed.emit(datasetWidget)
                 self.openDatasetWidgets[filename].clear()
-                for attributeWidget in self.openAttributeWidgets[filename]:
+                for attribute, attributeWidget in self.openAttributeWidgets[filename]:
                     self.sigAttributeWidgetClosed.emit(attributeWidget)
                 self.openAttributeWidgets[filename].clear()
                 for plotWidget in self.openPlotWidgets[filename]:
                     self.sigPlotWidgetClosed.emit(plotWidget)
                 self.openPlotWidgets[filename].clear()
 
+    def removeBufferedWidget(self, widget):
+        if isinstance(widget, HDFDatasetWidget):
+            self.openDatasetWidgets[widget.model.dataset.file.filename].pop(widget.model.dataset)
+        elif isinstance(widget, HDFAttributeWidget):
+            self.openAttributeWidgets[widget.model.node.file.filename].pop(widget.model.node)
+                
     def createDatasetWidget(self, index):
         """Returns a dataset widget for specified index.
 
@@ -168,10 +175,13 @@ class HDFTreeWidget(QtGui.QTreeView):
         """
         item = self.model().getItem(index)
         if (item is not None) and item.isDataset():
-            # TODO maybe avoid duplicate windows for a dataset
-            widget = HDFDatasetWidget(dataset=item.h5node)            
-            self.openDatasetWidgets[item.h5node.file.filename].add(widget)
-            self.sigDatasetWidgetCreated.emit(widget)
+            try:
+                widget = self.openDatasetWidgets[item.h5node.file.filename][item.h5node]
+                self.sigDataWidgetActivated.emit(widget)
+            except KeyError:
+                widget = HDFDatasetWidget(dataset=item.h5node)
+                self.openDatasetWidgets[item.h5node.file.filename][item.h5node] = widget
+                self.sigDatasetWidgetCreated.emit(widget)
             
     def createAttributeWidget(self, index):
         """Creates an attribute widget for specified index.
@@ -180,11 +190,13 @@ class HDFTreeWidget(QtGui.QTreeView):
         """
         item = self.model().getItem(index)
         if item is not None:
-            # TODO maybe avoid duplicate windows for a attributes of a
-            # single node
-            widget = HDFAttributeWidget(node=item.h5node)            
-            self.openAttributeWidgets[item.h5node.file.filename].add(widget)
-            self.sigAttributeWidgetCreated.emit(widget)
+            try:
+                widget = self.openAttributeWidgets[item.h5node.file.filename][item.h5node]
+                self.sigDataWidgetActivated.emit(widget)
+            except KeyError:
+                widget = HDFAttributeWidget(node=item.h5node)
+                self.openAttributeWidgets[item.h5node.file.filename][item.h5node] = widget
+                self.sigAttributeWidgetCreated.emit(widget)
 
     def createPlotWidget(self, index):
         """Creates an plot widget for specified index.

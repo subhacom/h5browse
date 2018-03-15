@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Thu Jul 23 22:07:53 2015 (-0400)
 # Version: 
-# Last-Updated: Sun Sep 20 11:48:00 2015 (-0400)
-#           By: subha
-#     Update #: 716
+# Last-Updated: Thu Mar 15 15:51:10 2018 (-0400)
+#           By: Subhasis Ray
+#     Update #: 728
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -113,10 +113,9 @@ class HDFTreeItem(object):
     def child(self, row):
         if isinstance(self.h5node, h5.Group):
             if len(self.children) > 0:
-                return self.children[row]                
-            for name in self.h5node:
-                # __class__ allows this function to work for subclasses as well
-                self.children = [self.__class__(child, parent=self) for child in self.h5node.values()]                  
+                return self.children[row]
+            self.children = [self.__class__(self.h5node[child], parent=self)
+                             for child in self.h5node]
             return self.children[row]
 
     def childNumber(self):
@@ -309,7 +308,7 @@ class HDFTreeModel(QtCore.QAbstractItemModel):
                              self.rootItem.childCount(),
                              self.rootItem.childCount()+1)
         fd = h5.File(str(path), mode=mode)
-        # print('****', fd)
+        print('Opened {} in mode {}'.format(fd.filename, mode))
         if mode == 'r':
             fileItem = HDFTreeItem(fd, parent=self.rootItem)
         else:

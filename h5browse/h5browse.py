@@ -8,9 +8,9 @@
 # Maintainer: 
 # Created: Wed Jul 29 22:55:26 2015 (-0400)
 # Version: 
-# Last-Updated: Fri Sep 18 21:21:13 2015 (-0400)
-#           By: subha
-#     Update #: 486
+# Last-Updated: Thu Mar 15 15:49:26 2018 (-0400)
+#           By: Subhasis Ray
+#     Update #: 501
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -207,46 +207,53 @@ class DataViz(QtGui.QMainWindow):
         self.sigOpen.emit([filePath], 'w-')
         
     def createActions(self):
-        self.openFileReadOnlyAction = QtGui.QAction(QtGui.QIcon(), 'Open file(s) readonly', self,
-                                   # shortcut=QtGui.QKeySequence.Open,
-                                   statusTip='Open an HDF5 file for reading',
-                                      triggered=self.openFilesReadOnly)
-        self.openFileReadWriteAction = QtGui.QAction(QtGui.QIcon(), '&Open file(s) read/write', self,
-                                   shortcut=QtGui.QKeySequence.Open,
-                                   statusTip='Open an HDF5 file for editing',
-                                               triggered=self.openFilesReadWrite)
-        self.openFileOverwriteAction = QtGui.QAction(QtGui.QIcon(), 'Overwrite file', self,
-                                               # shortcut=QtGui.QKeySequence.Open,
-                                               statusTip='Open an HDF5 file for writing (overwrite existing)',
-                                               triggered=self.openFileOverwrite)
-        self.createFileAction = QtGui.QAction(QtGui.QIcon(), '&New file', self,
-                                               shortcut=QtGui.QKeySequence.New,
-                                               statusTip='Create a new HDF5 file',
-                                               triggered=self.createFile)
-        self.closeFileAction = QtGui.QAction(QtGui.QIcon(), '&Close file(s)',
-                                       self,
-                                       shortcut=QtGui.QKeySequence(QtCore.Qt.CTRL+QtCore.Qt.Key_K),
-                                       statusTip='Close selected files',
-                                       triggered=self.sigCloseFiles)
-        self.quitAction = QtGui.QAction(QtGui.QIcon(), '&Quit', self,
-                                  shortcut=QtGui.QKeySequence.Quit, 
-                                  statusTip='Quit dataviz', 
-                                  triggered=self.doQuit)
-        self.showAttributesAction = QtGui.QAction(QtGui.QIcon(), 'Show attributes', self,
-                                            shortcut=QtGui.QKeySequence.InsertParagraphSeparator,
-                                            statusTip='Show attributes',
-                                            triggered=self.sigShowAttributes)
-        self.showDatasetAction = QtGui.QAction(QtGui.QIcon(), 'Show dataset', self,
-                                            shortcut=QtGui.QKeySequence(QtCore.Qt.CTRL+QtCore.Qt.Key_Return),
-                                            statusTip='Show dataset',
-                                            triggered=self.sigShowDataset)
-        self.plotDatasetAction = QtGui.QAction(QtGui.QIcon(), 'Plot dataset', self,
-                                         shortcut=QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_P),
-                                         statusTip='Plot dataset',
-                                         triggered=self.sigPlotDataset)
+        self.openFileReadOnlyAction = QtGui.QAction(
+            QtGui.QIcon(), 'Open file(s) readonly', self,
+            shortcut=QtGui.QKeySequence.Open,
+            statusTip='Open an HDF5 file for reading',
+            triggered=self.openFilesReadOnly)
+        self.openFileReadWriteAction = QtGui.QAction(
+            QtGui.QIcon(), '&Open file(s) read/write', self,
+            # shortcut=QtGui.QKeySequence.Open,
+            statusTip='Open an HDF5 file for editing',
+            triggered=self.openFilesReadWrite)
+        self.openFileOverwriteAction = QtGui.QAction(
+            QtGui.QIcon(), 'Overwrite file', self,
+            # shortcut=QtGui.QKeySequence.Open,
+            statusTip='Open an HDF5 file for writing (overwrite existing)',
+            triggered=self.openFileOverwrite)
+        self.createFileAction = QtGui.QAction(
+            QtGui.QIcon(), '&New file', self,
+            shortcut=QtGui.QKeySequence.New,
+            statusTip='Create a new HDF5 file',
+            triggered=self.createFile)
+        self.closeFileAction = QtGui.QAction(
+            QtGui.QIcon(), '&Close file(s)',
+            self,
+            shortcut=QtGui.QKeySequence(QtCore.Qt.CTRL+QtCore.Qt.Key_K),
+            statusTip='Close selected files',
+            triggered=self.sigCloseFiles)
+        self.quitAction = QtGui.QAction(
+            QtGui.QIcon(), '&Quit', self,
+            shortcut=QtGui.QKeySequence.Quit, 
+            statusTip='Quit dataviz', 
+            triggered=self.doQuit)
+        self.showAttributesAction = QtGui.QAction(
+            QtGui.QIcon(), 'Show attributes', self,
+            shortcut=QtGui.QKeySequence(QtCore.Qt.Key_Return),
+            statusTip='Show attributes',
+            triggered=self.sigShowAttributes)
+        self.showDatasetAction = QtGui.QAction(
+            QtGui.QIcon(), 'Show dataset', self,
+            shortcut=QtGui.QKeySequence(QtCore.Qt.CTRL+QtCore.Qt.Key_Return),
+            statusTip='Show dataset',
+            triggered=self.sigShowDataset)
+        self.plotDatasetAction = QtGui.QAction(
+            QtGui.QIcon(), 'Plot dataset', self,
+            shortcut=QtGui.QKeySequence(QtCore.Qt.ALT + QtCore.Qt.Key_P),
+            statusTip='Plot dataset',
+            triggered=self.sigPlotDataset)
         
-
-
     def createMenus(self):
         self.menuBar().setVisible(True)
         self.fileMenu = self.menuBar().addMenu('&File')
@@ -279,6 +286,7 @@ class DataViz(QtGui.QMainWindow):
         self.tree.sigPlotWidgetCreated.connect(self.addMdiChildWindow)
         self.tree.sigPlotWidgetClosed.connect(self.closeMdiChildWindow)
         self.tree.sigPlotParamTreeCreated.connect(self.addPanelBelow)
+        self.tree.sigDataWidgetActivated.connect(self.activateDataWindow)
         # pipe signals of dataviz to those of hdftree widget
         self.sigShowAttributes.connect(self.tree.showAttributes)
         self.sigShowDataset.connect(self.tree.showDataset)
@@ -294,8 +302,16 @@ class DataViz(QtGui.QMainWindow):
             widget.show()
         return subwin
 
+    def activateDataWindow(self, widget):
+        if widget is not None:
+            for window in self.mdiArea.subWindowList():
+                if window.widget() == widget:
+                    self.mdiArea.setActiveSubWindow(window)
+        
+    
     def closeMdiChildWindow(self, widget):
         if widget is not None:
+            self.tree.removeBufferedWidget(widget)
             for window in self.mdiArea.subWindowList():
                 if window.widget() == widget:
                     window.deleteLater()
