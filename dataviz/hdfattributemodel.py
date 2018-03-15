@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Jul 31 20:48:19 2015 (-0400)
 # Version: 
-# Last-Updated: Mon Dec 21 00:48:12 2015 (-0500)
-#           By: subha
-#     Update #: 191
+# Last-Updated: Thu Mar 15 14:19:27 2018 (-0400)
+#           By: Subhasis Ray
+#     Update #: 215
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -88,41 +88,19 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
         except (OSError, IOError) as e:
             value = '<ERROR>'
             print(e)
-            # try:
-            #     ainfo = h5.h5a.get_info(self.node.id, name)
-            # if ainfo.data_size == 0:  # empty attribute - not supported by h5py
-                # value = '<empty>'
-            ## This does not work - unfortunately
-            # else:  # a hack to get around unicode issue in h5py
-            #     attr = h5.h5a.open(self.node.id, name)
-            #     buf = np.ndarray(attr.shape, dtype=attr.dtype)
-            #     attr.read(buf)
-            #     return buf
         if role == QtCore.Qt.DisplayRole:
             if index.column() == 1:                
-                # in Python 3 we have to decode the bytes to get
-                # string representation without leading 'b'. However,
-                # on second thought, it is not worth converting the
-                # strings - for large datasets it will be slow, and if
-                # we do the conversion for attributes but not for
-                # datasets it gets confusing for the user.
-                if value == None:
-                    value = '<Could not read>'
+                if isinstance(value, bytes) or isinstance(value, np.string_):
+                    return value.decode()
+                elif isinstance(value, np.ndarray) and value.dtype.type == np.string_:
+                    return str([entry.decode() for entry in value])                    
                 return str(value)
-                
-                # if isinstance(value, bytes):
-                #     return value.decode('utf-8')
-                # elif isinstance(value, np.ndarray) and value.dtype.type == np.string_:
-                #     return str([entry.decode('utf-8') for entry in value])                    
-                # return str(value)                
             elif index.column() == 2:
-                if value is not None:
-                    return type(value).__name__
-                aid = h5.h5a.open(self.node.id, name)
-                return aid.dtype.name
+                tinfo = type(value).__name__
+                if isinstance(value, np.ndarray): 
+                    tinfo += ' of {}'.format(value.dtype)
+                return tinfo
         elif role == QtCore.Qt.ToolTipRole:
-            # if isinstance(value, bytes) or isinstance(value, str):
-            #     return 'string: scalar'            
             if isinstance(value, np.ndarray):
                 return '{}: {}'.format(value.dtype, value.shape)
             elif isinstance(value, h5.Reference):
@@ -131,7 +109,7 @@ class HDFAttributeModel(QtCore.QAbstractTableModel):
                 else:
                     return 'RegionRef: {}'.format(aid.shape)
             if value is not None:
-                return '{}: {}'.format(type(value).__name__, value.shape)                
+                return '{}'.format(type(value).__name__)
             return '{}: {}'.format(aid.dtype.name, aid.shape)
         return None
 
